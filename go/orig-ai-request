@@ -1,0 +1,8 @@
+Create a project in GO for simulating multiple network devices.
+Each network device simulator will have snmpV3 and SSH servers, working in a request/reply mannet per thir protocol
+All simulators should have the same credentials for both snmpV3 and SSH, username: "simadmin" password: "simadmin".
+The snmpV3 and the SSH request/reply will be provided via a resource file containing the requests and responses for each
+command per the protocol.
+The input will be a starting ip address and a number of devices to simulate, where the first simulator binds to the starting ip
+and to the default snmpv3 & ssh ports. Each consecutive device will add +1 to the ip address and bind to the same ports.
+The app will have a RestAPI service to create/list/delete simulated devices.
