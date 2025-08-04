@@ -1,62 +1,62 @@
 # opensim
 Open device simulator that simulates snmp &amp; ssh network devices
 
-I've created a comprehensive network device simulator in Go with the following features:
-🌟 Key Features:
-Multi-Device Simulation:
+🛠️ Complete Setup Instructions
+1. Create the Go Module
+   bash# Create a new directory for your project
+   mkdir network-simulator
+   cd network-simulator
 
-Dynamic device creation with starting IP + device count
-Automatic IP increment for each new device
-Default ports: SNMP (161), SSH (22)
-Unified credentials: simadmin/simadmin for all devices
+# Initialize Go module
+go mod init network-simulator
 
-Protocol Support:
+# Create the main file
+# Copy the complete code from the artifact into simulator.go
+2. Install Dependencies
+   bash# This will download the required dependencies
+   go mod tidy
+   The go.mod file should look like this:
+   gomodule network-simulator
 
-SNMPv3 server with OID-based request/response
-SSH server with command-based request/response
-Resource file driven responses for both protocols
+go 1.19
 
-REST API Management:
-bashPOST   /api/v1/devices           # Create devices
-GET    /api/v1/devices           # List all devices  
-DELETE /api/v1/devices/{id}      # Delete specific device
-DELETE /api/v1/devices           # Delete all devices
-GET    /health                   # Health check
-🚀 Setup & Usage:
-1. Install Dependencies:
-   bashgo mod init network-simulator
-   go get github.com/gorilla/mux
-   go get golang.org/x/crypto/ssh
-2. Run the Simulator:
-   bashgo run main.go
-3. Create Devices via API:
-   bash# Create 5 devices starting from 192.168.1.10
-   curl -X POST http://localhost:8080/api/v1/devices \
-   -H "Content-Type: application/json" \
-   -d '{"start_ip": "192.168.1.10", "device_count": 5}'
+require (
+github.com/gorilla/mux v1.8.0
+golang.org/x/crypto v0.14.0
+)
+3. Build the Application
+   bash# Build the executable
+   go build -o simulator simulator.go
+4. Run with Root Privileges
+   bash# Run the simulator (requires root for TUN interfaces)
+   sudo ./simulator
+   ✅ What You Should See
+   When you run the application, you should see output like:
+   Network Device Simulator with TUN/TAP support starting...
+   Created default resources file: resources.json
+   Loaded 7 SNMP and 8 SSH resources
+   Network Device Simulator server starting on port :8080
 
-# List all devices
+🌐 Web UI:
+http://localhost:8080/
+http://localhost:8080/ui
+
+📡 API Endpoints:
+POST   /api/v1/devices           - Create devices
+GET    /api/v1/devices           - List devices
+DELETE /api/v1/devices/{id}      - Delete device
+DELETE /api/v1/devices           - Delete all devices
+GET    /health                   - Health check
+
+💡 Example curl commands:
+curl -X POST http://localhost:8080/api/v1/devices -H "Content-Type: application/json" -d '{"start_ip":"192.168.100.1","device_count":3,"netmask":"24"}'
 curl http://localhost:8080/api/v1/devices
 
-# Delete specific device
-curl -X DELETE http://localhost:8080/api/v1/devices/device-192.168.1.10
-
-# Delete all devices
-curl -X DELETE http://localhost:8080/api/v1/devices
-🧪 Testing Simulators:
-SNMP Testing:
-bashsnmpget -v3 -u simadmin -A simadmin -a MD5 -l authNoPriv 192.168.1.10:161 1.3.6.1.2.1.1.1.0
-SSH Testing:
-bashssh simadmin@192.168.1.10
-# Password: simadmin
-# Commands: show version, show interfaces, etc.
-📁 Resource File (resources.json):
-The simulator automatically creates a resource file with default SNMP OIDs and SSH commands. You can customize responses by editing this file.
-🔄 Device Lifecycle:
-
-Create devices via REST API with starting IP and count
-Each device gets incremented IP (192.168.1.10, 192.168.1.11, etc.)
-SNMP & SSH servers start automatically on default ports
-Manage devices via REST API (list, delete individual, delete all)
-
-The simulator provides a complete network lab environment with REST API control for dynamic device management!
+🔧 Usage Tips:
+- Open the Web UI in your browser for easy management
+- SSH to devices: ssh simadmin@<device-ip> (password: simadmin)
+- Test SNMP: snmpget -v2c -c public <device-ip> 1.3.6.1.2.1.1.1.0
+- Check TUN interfaces: ip addr show | grep sim
+  🌐 Access the Web UI
+  Open your browser and navigate to http://localhost:8080/ to see the beautiful web interface for managing your network device simulator!
+  The code is now complete and should compile without any issues. All functions, handlers, and the web UI are properly implemented.
