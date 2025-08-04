@@ -98,11 +98,11 @@ type SSHServer struct {
 
 // Simulator manager
 type SimulatorManager struct {
-	devices     map[string]*DeviceSimulator
-	mu          sync.RWMutex
-	resources   DeviceResources
-	nextIP      net.IP
-	tunCounter  int
+	devices      map[string]*DeviceSimulator
+	mu           sync.RWMutex
+	resources    DeviceResources
+	nextIP       net.IP
+	tunCounter   int
 	tunCounterMu sync.Mutex
 }
 
@@ -117,12 +117,12 @@ type CreateDevicesRequest struct {
 }
 
 type DeviceInfo struct {
-	ID         string `json:"id"`
-	IP         string `json:"ip"`
-	SNMPPort   int    `json:"snmp_port"`
-	SSHPort    int    `json:"ssh_port"`
-	Running    bool   `json:"running"`
-	Interface  string `json:"interface,omitempty"`
+	ID        string `json:"id"`
+	IP        string `json:"ip"`
+	SNMPPort  int    `json:"snmp_port"`
+	SSHPort   int    `json:"ssh_port"`
+	Running   bool   `json:"running"`
+	Interface string `json:"interface,omitempty"`
 }
 
 type APIResponse struct {
@@ -228,7 +228,7 @@ func NewSimulatorManager() *SimulatorManager {
 func (sm *SimulatorManager) getNextTunName() string {
 	sm.tunCounterMu.Lock()
 	defer sm.tunCounterMu.Unlock()
-	
+
 	name := fmt.Sprintf("%s%d", TUN_DEVICE_PREFIX, sm.tunCounter)
 	sm.tunCounter++
 	return name
@@ -352,7 +352,7 @@ func (sm *SimulatorManager) CreateDevices(startIP string, count int, netmask str
 			errMsg := fmt.Sprintf("failed to start device %s: %v", deviceID, err)
 			log.Printf(errMsg)
 			errors = append(errors, errMsg)
-			
+
 			// Clean up TUN interface
 			tunIface.destroy()
 			sm.incrementIP()
@@ -455,7 +455,7 @@ func (sm *SimulatorManager) DeleteAllDevices() error {
 
 	sm.devices = make(map[string]*DeviceSimulator)
 	log.Println("Deleted all devices")
-	
+
 	if len(errors) > 0 {
 		return fmt.Errorf("errors occurred while deleting devices: %s", strings.Join(errors, "; "))
 	}
@@ -493,7 +493,7 @@ func (d *DeviceSimulator) Start() error {
 	if d.tunIface != nil {
 		interfaceName = d.tunIface.Name
 	}
-	log.Printf("Device %s started on %s (interface: %s, SNMP:%d, SSH:%d)", 
+	log.Printf("Device %s started on %s (interface: %s, SNMP:%d, SSH:%d)",
 		d.ID, d.IP.String(), interfaceName, d.SNMPPort, d.SSHPort)
 	return nil
 }
@@ -1112,7 +1112,8 @@ func webUIHandler(w http.ResponseWriter, r *http.Request) {
                 elements.deviceList.innerHTML = '<div class="empty-state" style="grid-column: 1 / -1;"><div style="font-size: 4em; margin-bottom: 20px;">📱</div><h3>No Devices Found</h3><p>Create your first simulated network device to get started</p></div>';
                 return;
             }
-            elements.deviceList.innerHTML = devices.map(device => 
+            
+            elements.deviceList.innerHTML = devices.map((device, index) => 
                 '<div class="device-card">' +
                 '<div class="device-header">' +
                 '<div class="device-id">' + device.id + '</div>' +
@@ -1127,11 +1128,33 @@ func webUIHandler(w http.ResponseWriter, r *http.Request) {
                 '<div class="device-detail"><span class="label">Status:</span><span class="value">' + (device.running ? 'Active' : 'Inactive') + '</span></div>' +
                 '</div>' +
                 '<div class="device-actions">' +
-                '<button class="btn btn-small" onclick="testConnection(\\'' + device.ip + '\\', ' + device.ssh_port + ')">🔗 Test SSH</button>' +
-                '<button class="btn btn-small" onclick="pingDevice(\\'' + device.ip + '\\')">📡 Ping</button>' +
-                '<button class="btn btn-danger btn-small" onclick="deleteDevice(\\'' + device.id + '\\')">🗑️ Delete</button>' +
+                '<button class="btn btn-small" data-action="test-ssh" data-ip="' + device.ip + '" data-port="' + device.ssh_port + '">🔗 Test SSH</button>' +
+                '<button class="btn btn-small" data-action="ping" data-ip="' + device.ip + '">📡 Ping</button>' +
+                '<button class="btn btn-danger btn-small" data-action="delete" data-device-id="' + device.id + '">🗑️ Delete</button>' +
                 '</div></div>'
             ).join('');
+            
+            // Add event listeners for device actions
+            document.querySelectorAll('[data-action]').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const action = e.target.getAttribute('data-action');
+                    const ip = e.target.getAttribute('data-ip');
+                    const port = e.target.getAttribute('data-port');
+                    const deviceId = e.target.getAttribute('data-device-id');
+                    
+                    switch(action) {
+                        case 'test-ssh':
+                            testConnection(ip, parseInt(port));
+                            break;
+                        case 'ping':
+                            pingDevice(ip);
+                            break;
+                        case 'delete':
+                            deleteDevice(deviceId);
+                            break;
+                    }
+                });
+            });
         }
 
         function updateStats() {
@@ -1180,7 +1203,7 @@ func webUIHandler(w http.ResponseWriter, r *http.Request) {
     </script>
 </body>
 </html>`
-	
+
 	w.Header().Set("Content-Type", "text/html")
 	w.Write([]byte(html))
 }
