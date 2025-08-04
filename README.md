@@ -1,6 +1,8 @@
 # opensim
 Open device simulator that simulates snmp &amp; ssh network devices
 
+![alt text](https://github.com/saichler/opensim/blob/main/opensim.png)
+
 🛠️ Complete Setup Instructions
 1. Create the Go Module
    bash# Create a new directory for your project
