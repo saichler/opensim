@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -22,6 +23,19 @@ import (
 
 	"github.com/gorilla/mux"
 	"golang.org/x/crypto/ssh"
+)
+
+// SNMP ASN.1 BER/DER type tags
+const (
+	ASN1_SEQUENCE     = 0x30
+	ASN1_INTEGER      = 0x02
+	ASN1_OCTET_STRING = 0x04
+	ASN1_NULL         = 0x05
+	ASN1_OBJECT_ID    = 0x06
+	ASN1_GET_REQUEST  = 0xA0
+	ASN1_GET_NEXT     = 0xA1
+	ASN1_GET_RESPONSE = 0xA2
+	ASN1_SET_REQUEST  = 0xA3
 )
 
 // Configuration constants
@@ -589,12 +603,6 @@ func (s *SNMPServer) handleRequests() {
 
 		log.Printf("SNMP %s: %s -> %s", s.device.ID, oid, response)
 	}
-}
-
-func (s *SNMPServer) parseOIDFromRequest(data []byte) string {
-	// Simplified OID extraction - in practice, you'd use proper ASN.1 parsing
-	// For demo, we'll return a common system OID
-	return "1.3.6.1.2.1.1.1.0"
 }
 
 func (s *SNMPServer) findResponse(oid string) string {
@@ -1230,6 +1238,234 @@ func setupRoutes() *mux.Router {
 	}).Methods("GET")
 
 	return router
+}
+
+// parseOIDFromRequest extracts the first OID from an SNMP request packet
+func (s *SNMPServer) parseOIDFromRequest(data []byte) string {
+	if len(data) < 10 {
+		return "1.3.6.1.2.1.1.1.0" // Default fallback
+	}
+
+	// Find the OID in the SNMP packet
+	oid := extractOIDFromSNMPPacket(data)
+	if oid == "" {
+		return "1.3.6.1.2.1.1.1.0" // Default fallback
+	}
+
+	return oid
+}
+
+// extractOIDFromSNMPPacket parses SNMP BER/DER encoded packet to find OID
+func extractOIDFromSNMPPacket(data []byte) string {
+	pos := 0
+
+	// Parse the outer SEQUENCE
+	if pos >= len(data) || data[pos] != ASN1_SEQUENCE {
+		return ""
+	}
+	pos++
+
+	// Skip length of outer sequence
+	length, newPos := parseLength(data, pos)
+	if length == -1 {
+		return ""
+	}
+	pos = newPos
+
+	// Parse SNMP version (INTEGER)
+	if pos >= len(data) || data[pos] != ASN1_INTEGER {
+		return ""
+	}
+	pos++
+
+	// Skip version length and value
+	versionLen, newPos := parseLength(data, pos)
+	if versionLen == -1 {
+		return ""
+	}
+	pos = newPos + versionLen
+
+	// Parse community string (OCTET STRING)
+	if pos >= len(data) || data[pos] != ASN1_OCTET_STRING {
+		return ""
+	}
+	pos++
+
+	// Skip community length and value
+	communityLen, newPos := parseLength(data, pos)
+	if communityLen == -1 {
+		return ""
+	}
+	pos = newPos + communityLen
+
+	// Parse PDU (GET_REQUEST, GET_NEXT, etc.)
+	if pos >= len(data) {
+		return ""
+	}
+	pduType := data[pos]
+	if pduType != ASN1_GET_REQUEST && pduType != ASN1_GET_NEXT &&
+		pduType != ASN1_SET_REQUEST && pduType != ASN1_GET_RESPONSE {
+		return ""
+	}
+	pos++
+
+	// Skip PDU length
+	pduLen, newPos := parseLength(data, pos)
+	if pduLen == -1 {
+		return ""
+	}
+	pos = newPos
+
+	// Parse request ID (INTEGER)
+	if pos >= len(data) || data[pos] != ASN1_INTEGER {
+		return ""
+	}
+	pos++
+
+	// Skip request ID length and value
+	reqIdLen, newPos := parseLength(data, pos)
+	if reqIdLen == -1 {
+		return ""
+	}
+	pos = newPos + reqIdLen
+
+	// Parse error status (INTEGER)
+	if pos >= len(data) || data[pos] != ASN1_INTEGER {
+		return ""
+	}
+	pos++
+
+	// Skip error status length and value
+	errorLen, newPos := parseLength(data, pos)
+	if errorLen == -1 {
+		return ""
+	}
+	pos = newPos + errorLen
+
+	// Parse error index (INTEGER)
+	if pos >= len(data) || data[pos] != ASN1_INTEGER {
+		return ""
+	}
+	pos++
+
+	// Skip error index length and value
+	errorIdxLen, newPos := parseLength(data, pos)
+	if errorIdxLen == -1 {
+		return ""
+	}
+	pos = newPos + errorIdxLen
+
+	// Parse variable bindings (SEQUENCE)
+	if pos >= len(data) || data[pos] != ASN1_SEQUENCE {
+		return ""
+	}
+	pos++
+
+	// Skip varbind list length
+	varbindLen, newPos := parseLength(data, pos)
+	if varbindLen == -1 {
+		return ""
+	}
+	pos = newPos
+
+	// Parse first variable binding (SEQUENCE)
+	if pos >= len(data) || data[pos] != ASN1_SEQUENCE {
+		return ""
+	}
+	pos++
+
+	// Skip first varbind length
+	firstVarbindLen, newPos := parseLength(data, pos)
+	if firstVarbindLen == -1 {
+		return ""
+	}
+	pos = newPos
+
+	// Parse OID (OBJECT IDENTIFIER)
+	if pos >= len(data) || data[pos] != ASN1_OBJECT_ID {
+		return ""
+	}
+	pos++
+
+	// Parse OID length
+	oidLen, newPos := parseLength(data, pos)
+	if oidLen == -1 || newPos+oidLen > len(data) {
+		return ""
+	}
+	pos = newPos
+
+	// Extract and decode the OID
+	oidBytes := data[pos : pos+oidLen]
+	return decodeOID(oidBytes)
+}
+
+// parseLength parses ASN.1 BER/DER length encoding
+func parseLength(data []byte, pos int) (int, int) {
+	if pos >= len(data) {
+		return -1, pos
+	}
+
+	length := int(data[pos])
+	pos++
+
+	// Short form (length < 128)
+	if length < 0x80 {
+		return length, pos
+	}
+
+	// Long form
+	lengthBytes := length & 0x7F
+	if lengthBytes == 0 || lengthBytes > 4 || pos+lengthBytes > len(data) {
+		return -1, pos
+	}
+
+	length = 0
+	for i := 0; i < lengthBytes; i++ {
+		length = (length << 8) | int(data[pos])
+		pos++
+	}
+
+	return length, pos
+}
+
+// decodeOID converts ASN.1 encoded OID bytes to dot notation string
+func decodeOID(oidBytes []byte) string {
+	if len(oidBytes) == 0 {
+		return ""
+	}
+
+	var oid []string
+
+	// First byte encodes first two sub-identifiers
+	// first = byte / 40, second = byte % 40
+	firstByte := oidBytes[0]
+	first := firstByte / 40
+	second := firstByte % 40
+	oid = append(oid, strconv.Itoa(int(first)))
+	oid = append(oid, strconv.Itoa(int(second)))
+
+	// Process remaining bytes
+	pos := 1
+	for pos < len(oidBytes) {
+		value := 0
+
+		// Parse variable length encoding (base 128)
+		for pos < len(oidBytes) {
+			b := oidBytes[pos]
+			pos++
+
+			value = (value << 7) | int(b&0x7F)
+
+			// If high bit is 0, this is the last byte of this sub-identifier
+			if (b & 0x80) == 0 {
+				break
+			}
+		}
+
+		oid = append(oid, strconv.Itoa(value))
+	}
+
+	return strings.Join(oid, ".")
 }
 
 func main() {
