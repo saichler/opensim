@@ -1,31 +1,20 @@
 package main
 
 import (
-	"bufio"
-	"crypto/rand"
-	"crypto/rsa"
-	"crypto/x509"
 	"encoding/binary"
 	"encoding/json"
-	"encoding/pem"
 	"fmt"
 	"log"
 	"net"
 	"net/http"
 	"os"
 	"os/exec"
-	"strconv"
 	"strings"
-	"sync"
 	"syscall"
-	"time"
 	"unsafe"
-
-	"github.com/gorilla/mux"
-	"golang.org/x/crypto/ssh"
 )
 
-// SNMP ASN.1 BER/DER type tags
+// SNMP ASN.1 BER/DER type tags (shared constants defined here)
 const (
 	ASN1_SEQUENCE     = 0x30
 	ASN1_INTEGER      = 0x02
@@ -49,283 +38,146 @@ const (
 	TUN_DEVICE_PREFIX = "sim"
 )
 
-// TUN/TAP interface constants
-const (
-	TUNSETIFF   = 0x400454ca
-	IFF_TUN     = 0x0001
-	IFF_TAP     = 0x0002
-	IFF_NO_PI   = 0x1000
-	IFF_UP      = 0x1
-	IFF_RUNNING = 0x40
-)
-
-// TUN interface structure
-type TunInterface struct {
-	Name string
-	File *os.File
-	IP   net.IP
-	fd   int
-}
-
-// Device resource structures
-type SNMPResource struct {
-	OID      string `json:"oid"`
-	Response string `json:"response"`
-}
-
-type SSHResource struct {
-	Command  string `json:"command"`
-	Response string `json:"response"`
-}
-
-type DeviceResources struct {
-	SNMP []SNMPResource `json:"snmp"`
-	SSH  []SSHResource  `json:"ssh"`
-}
-
-// Device simulator structure
-type DeviceSimulator struct {
-	ID         string
-	IP         net.IP
-	SNMPPort   int
-	SSHPort    int
-	tunIface   *TunInterface
-	snmpServer *SNMPServer
-	sshServer  *SSHServer
-	resources  DeviceResources
-	running    bool
-	mu         sync.RWMutex
-}
-
-// SNMP Server structure
-type SNMPServer struct {
-	device   *DeviceSimulator
-	listener *net.UDPConn
-	running  bool
-}
-
-// SSH Server structure
-type SSHServer struct {
-	device   *DeviceSimulator
-	listener net.Listener
-	config   *ssh.ServerConfig
-	running  bool
-}
-
-// Simulator manager
-type SimulatorManager struct {
-	devices      map[string]*DeviceSimulator
-	mu           sync.RWMutex
-	resources    DeviceResources
-	nextIP       net.IP
-	tunCounter   int
-	tunCounterMu sync.Mutex
-}
-
 // Global manager instance
 var manager *SimulatorManager
 
-// REST API request/response structures
-type CreateDevicesRequest struct {
-	StartIP     string `json:"start_ip"`
-	DeviceCount int    `json:"device_count"`
-	Netmask     string `json:"netmask,omitempty"` // Optional, defaults to /24
-}
-
-type DeviceInfo struct {
-	ID        string `json:"id"`
-	IP        string `json:"ip"`
-	SNMPPort  int    `json:"snmp_port"`
-	SSHPort   int    `json:"ssh_port"`
-	Running   bool   `json:"running"`
-	Interface string `json:"interface,omitempty"`
-}
-
-type APIResponse struct {
-	Success bool        `json:"success"`
-	Message string      `json:"message"`
-	Data    interface{} `json:"data,omitempty"`
-}
-
-// TUN/TAP interface management
+// TUN interface management functions
 func createTunInterface(name string, ip net.IP, netmask string) (*TunInterface, error) {
-	// Check if running as root
-	if os.Geteuid() != 0 {
-		return nil, fmt.Errorf("TUN/TAP interface creation requires root privileges")
-	}
-
 	// Open TUN device
-	file, err := os.OpenFile("/dev/net/tun", os.O_RDWR, 0)
+	fd, err := syscall.Open("/dev/net/tun", syscall.O_RDWR, 0)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open /dev/net/tun: %v", err)
 	}
 
-	// Create interface request structure
-	var ifr struct {
-		name  [16]byte
-		flags uint16
-		_     [22]byte // padding
-	}
+	// Configure interface
+	ifr := make([]byte, 40)
+	copy(ifr, []byte(name))
+	binary.LittleEndian.PutUint16(ifr[16:18], 0x0001) // IFF_TUN
 
-	// Set interface name
-	copy(ifr.name[:], name)
-	ifr.flags = IFF_TUN | IFF_NO_PI
-
-	// Create TUN interface
-	_, _, errno := syscall.Syscall(syscall.SYS_IOCTL, file.Fd(), TUNSETIFF, uintptr(unsafe.Pointer(&ifr)))
+	// TUNSETIFF ioctl
+	_, _, errno := syscall.Syscall(syscall.SYS_IOCTL, uintptr(fd), 0x400454ca, uintptr(unsafe.Pointer(&ifr[0])))
 	if errno != 0 {
-		file.Close()
-		return nil, fmt.Errorf("failed to create TUN interface: %v", errno)
+		syscall.Close(fd)
+		return nil, fmt.Errorf("TUNSETIFF ioctl failed: %v", errno)
 	}
 
-	tunIface := &TunInterface{
+	tun := &TunInterface{
 		Name: name,
-		File: file,
 		IP:   ip,
-		fd:   int(file.Fd()),
+		fd:   fd,
 	}
 
 	// Configure the interface
-	err = tunIface.configure(netmask)
-	if err != nil {
-		file.Close()
-		return nil, fmt.Errorf("failed to configure TUN interface: %v", err)
+	if err := tun.configure(netmask); err != nil {
+		tun.destroy()
+		return nil, err
 	}
 
-	log.Printf("Created TUN interface %s with IP %s", name, ip.String())
-	return tunIface, nil
+	return tun, nil
 }
 
 func (tun *TunInterface) configure(netmask string) error {
-	if netmask == "" {
-		netmask = "24" // Default to /24
+	// Configure IP address using ip command
+	cmd := exec.Command("ip", "addr", "add", fmt.Sprintf("%s/%s", tun.IP.String(), netmask), "dev", tun.Name)
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to set IP address: %v", err)
 	}
 
-	// Bring interface up and assign IP
-	commands := [][]string{
-		{"ip", "link", "set", tun.Name, "up"},
-		{"ip", "addr", "add", fmt.Sprintf("%s/%s", tun.IP.String(), netmask), "dev", tun.Name},
+	// Bring interface up
+	cmd = exec.Command("ip", "link", "set", "dev", tun.Name, "up")
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to bring interface up: %v", err)
 	}
 
-	for _, cmd := range commands {
-		err := exec.Command(cmd[0], cmd[1:]...).Run()
-		if err != nil {
-			return fmt.Errorf("failed to execute %v: %v", cmd, err)
-		}
-	}
-
+	log.Printf("Created TUN interface %s with IP %s", tun.Name, tun.IP.String())
 	return nil
 }
 
 func (tun *TunInterface) destroy() error {
-	if tun.File != nil {
-		tun.File.Close()
+	if tun.fd > 0 {
+		return syscall.Close(tun.fd)
 	}
-
-	// Remove interface
-	err := exec.Command("ip", "link", "delete", tun.Name).Run()
-	if err != nil {
-		log.Printf("Warning: failed to delete interface %s: %v", tun.Name, err)
-	}
-
-	log.Printf("Destroyed TUN interface %s", tun.Name)
 	return nil
 }
 
-// Initialize simulator manager
+// SimulatorManager implementation
 func NewSimulatorManager() *SimulatorManager {
 	return &SimulatorManager{
-		devices:    make(map[string]*DeviceSimulator),
-		tunCounter: 0,
+		devices:      make(map[string]*DeviceSimulator),
+		nextTunIndex: 0,
 	}
 }
 
-// Generate unique TUN interface name
 func (sm *SimulatorManager) getNextTunName() string {
-	sm.tunCounterMu.Lock()
-	defer sm.tunCounterMu.Unlock()
-
-	name := fmt.Sprintf("%s%d", TUN_DEVICE_PREFIX, sm.tunCounter)
-	sm.tunCounter++
+	name := fmt.Sprintf("%s%d", TUN_DEVICE_PREFIX, sm.nextTunIndex)
+	sm.nextTunIndex++
 	return name
 }
 
-// Load resources from file
 func (sm *SimulatorManager) LoadResources(filename string) error {
+	// Check if file exists
+	if _, err := os.Stat(filename); os.IsNotExist(err) {
+		log.Printf("Resources file %s not found, creating default resources...", filename)
+		return sm.createDefaultResources(filename)
+	}
+
 	file, err := os.Open(filename)
 	if err != nil {
-		// Create default resources if file doesn't exist
-		return sm.createDefaultResources(filename)
+		return err
 	}
 	defer file.Close()
 
-	decoder := json.NewDecoder(file)
-	err = decoder.Decode(&sm.resources)
-	if err != nil {
-		return fmt.Errorf("error parsing resources file: %v", err)
+	if err := json.NewDecoder(file).Decode(&sm.deviceResources); err != nil {
+		return err
 	}
 
-	log.Printf("Loaded %d SNMP and %d SSH resources", len(sm.resources.SNMP), len(sm.resources.SSH))
+	log.Printf("Loaded %d SNMP and %d SSH resources", len(sm.deviceResources.SNMP), len(sm.deviceResources.SSH))
 	return nil
 }
 
-// Create default resources file
 func (sm *SimulatorManager) createDefaultResources(filename string) error {
-	defaultResources := DeviceResources{
+	defaultResources := &DeviceResources{
 		SNMP: []SNMPResource{
-			// System group (1.3.6.1.2.1.1)
 			{OID: "1.3.6.1.2.1.1.1.0", Response: "Cisco IOS Software, Router Version 15.1"},
 			{OID: "1.3.6.1.2.1.1.2.0", Response: "1.3.6.1.4.1.9.1.1"},
 			{OID: "1.3.6.1.2.1.1.3.0", Response: "123456789"},
 			{OID: "1.3.6.1.2.1.1.4.0", Response: "Network Administrator"},
 			{OID: "1.3.6.1.2.1.1.5.0", Response: "Router-Simulator"},
 			{OID: "1.3.6.1.2.1.1.6.0", Response: "Simulation Lab"},
-			{OID: "1.3.6.1.2.1.1.7.0", Response: "78"},
-			
-			// Interfaces group (1.3.6.1.2.1.2)
 			{OID: "1.3.6.1.2.1.2.1.0", Response: "4"},
 			{OID: "1.3.6.1.2.1.2.2.1.1.1", Response: "1"},
-			{OID: "1.3.6.1.2.1.2.2.1.1.2", Response: "2"},
-			{OID: "1.3.6.1.2.1.2.2.1.1.3", Response: "3"},
-			{OID: "1.3.6.1.2.1.2.2.1.1.4", Response: "4"},
-			{OID: "1.3.6.1.2.1.2.2.1.2.1", Response: "GigabitEthernet0/0"},
-			{OID: "1.3.6.1.2.1.2.2.1.2.2", Response: "GigabitEthernet0/1"},
-			{OID: "1.3.6.1.2.1.2.2.1.2.3", Response: "Serial0/0"},
-			{OID: "1.3.6.1.2.1.2.2.1.2.4", Response: "Loopback0"},
+			{OID: "1.3.6.1.2.1.2.2.1.2.1", Response: "FastEthernet0/0"},
 			{OID: "1.3.6.1.2.1.2.2.1.3.1", Response: "6"},
-			{OID: "1.3.6.1.2.1.2.2.1.3.2", Response: "6"},
-			{OID: "1.3.6.1.2.1.2.2.1.3.3", Response: "22"},
-			{OID: "1.3.6.1.2.1.2.2.1.3.4", Response: "24"},
+			{OID: "1.3.6.1.2.1.2.2.1.5.1", Response: "1000000000"},
+			{OID: "1.3.6.1.2.1.2.2.1.7.1", Response: "1"},
 			{OID: "1.3.6.1.2.1.2.2.1.8.1", Response: "1"},
-			{OID: "1.3.6.1.2.1.2.2.1.8.2", Response: "1"},
-			{OID: "1.3.6.1.2.1.2.2.1.8.3", Response: "2"},
-			{OID: "1.3.6.1.2.1.2.2.1.8.4", Response: "1"},
-			
-			// IP group (1.3.6.1.2.1.4)
+			{OID: "1.3.6.1.2.1.2.2.1.10.1", Response: "1000000"},
+			{OID: "1.3.6.1.2.1.2.2.1.16.1", Response: "500000"},
 			{OID: "1.3.6.1.2.1.4.1.0", Response: "1"},
 			{OID: "1.3.6.1.2.1.4.2.0", Response: "64"},
-			{OID: "1.3.6.1.2.1.4.3.0", Response: "1024"},
+			{OID: "1.3.6.1.2.1.4.3.0", Response: "100"},
 			{OID: "1.3.6.1.2.1.4.4.0", Response: "0"},
-			{OID: "1.3.6.1.2.1.4.5.0", Response: "128"},
-			
-			// TCP group (1.3.6.1.2.1.6)
-			{OID: "1.3.6.1.2.1.6.1.0", Response: "2"},
-			{OID: "1.3.6.1.2.1.6.5.0", Response: "180"},
-			{OID: "1.3.6.1.2.1.6.9.0", Response: "4"},
-			
-			// UDP group (1.3.6.1.2.1.7)
-			{OID: "1.3.6.1.2.1.7.1.0", Response: "256"},
-			{OID: "1.3.6.1.2.1.7.4.0", Response: "0"},
+			{OID: "1.3.6.1.2.1.4.5.0", Response: "10"},
+			{OID: "1.3.6.1.2.1.6.1.0", Response: "1"},
+			{OID: "1.3.6.1.2.1.6.2.0", Response: "60"},
+			{OID: "1.3.6.1.2.1.6.4.0", Response: "2"},
+			{OID: "1.3.6.1.2.1.6.5.0", Response: "1000"},
+			{OID: "1.3.6.1.2.1.6.6.0", Response: "500"},
+			{OID: "1.3.6.1.2.1.6.8.0", Response: "200"},
+			{OID: "1.3.6.1.2.1.6.9.0", Response: "100"},
+			{OID: "1.3.6.1.2.1.7.1.0", Response: "1"},
+			{OID: "1.3.6.1.2.1.7.2.0", Response: "1000"},
+			{OID: "1.3.6.1.2.1.7.3.0", Response: "500"},
 		},
 		SSH: []SSHResource{
-			{Command: "show version", Response: "Cisco IOS Software, C2900 Software\nSystem uptime is 15 days, 3 hours"},
-			{Command: "show interfaces", Response: "GigabitEthernet0/0 is up, line protocol is up\nGigabitEthernet0/1 is up, line protocol is up"},
-			{Command: "show ip route", Response: "Codes: C - connected, S - static, R - RIP\nGateway of last resort is 192.168.1.1"},
-			{Command: "show running-config", Response: "Building configuration...\n!\nhostname Router-Simulator\n!"},
-			{Command: "show memory", Response: "Head    Total(b)     Used(b)     Free(b)\nProcessor   262144000  45678900  216465100"},
-			{Command: "show cpu", Response: "CPU utilization: 23%/12%; one minute: 25%; five minutes: 28%"},
-			{Command: "show clock", Response: time.Now().Format("15:04:05.000 MST Mon Jan 2 2006")},
-			{Command: "show users", Response: "Line       User       Host(s)              Idle\nvty 0      simadmin   idle                 00:00:00"},
+			{Command: "show version", Response: "Cisco IOS Software, Router Version 15.1\nDevice Simulator v1.0\nUptime: 1 day, 2 hours, 30 minutes"},
+			{Command: "show interfaces", Response: "FastEthernet0/0 is up, line protocol is up\n  Hardware is FastEthernet, address is 0011.2233.4455\n  Internet address is 192.168.1.1/24\n  MTU 1500 bytes, BW 100000 Kbit/sec"},
+			{Command: "show ip route", Response: "Codes: L - local, C - connected, S - static\nGateway of last resort is 192.168.1.254 to network 0.0.0.0\nC    192.168.1.0/24 is directly connected, FastEthernet0/0"},
+			{Command: "show running-config", Response: "version 15.1\nhostname Router-Simulator\ninterface FastEthernet0/0\n ip address 192.168.1.1 255.255.255.0\n no shutdown"},
+			{Command: "show processes cpu", Response: "CPU utilization for five seconds: 2%/0%; one minute: 3%; five minutes: 4%\nPID Runtime(ms)     Invoked      uSecs   5Sec   1Min   5Min TTY Process\n  1        1000       10000        100  0.5%   0.6%   0.7%   0 Init"},
+			{Command: "show memory", Response: "Head    Total(b)     Used(b)     Free(b)   Lowest(b)  Largest(b)\nProcessor  67108864    33554432    33554432   30000000   30000000\n I/O     16777216     8388608     8388608    8000000    8000000"},
+			{Command: "ping 8.8.8.8", Response: "Type escape sequence to abort.\nSending 5, 100-byte ICMP Echos to 8.8.8.8, timeout is 2 seconds:\n!!!!!\nSuccess rate is 100 percent (5/5), round-trip min/avg/max = 1/2/4 ms"},
+			{Command: "traceroute 8.8.8.8", Response: "Type escape sequence to abort.\nTracing the route to 8.8.8.8\n  1 192.168.1.254 4 msec 2 msec 4 msec\n  2 * * *\n  3 8.8.8.8 20 msec 18 msec 20 msec"},
 		},
 	}
 
@@ -337,37 +189,36 @@ func (sm *SimulatorManager) createDefaultResources(filename string) error {
 
 	encoder := json.NewEncoder(file)
 	encoder.SetIndent("", "  ")
-	err = encoder.Encode(defaultResources)
-	if err != nil {
+	if err := encoder.Encode(defaultResources); err != nil {
 		return err
 	}
 
-	sm.resources = defaultResources
-	log.Printf("Created default resources file: %s", filename)
+	sm.deviceResources = defaultResources
+	log.Printf("Created default resources file %s with %d SNMP and %d SSH resources",
+		filename, len(defaultResources.SNMP), len(defaultResources.SSH))
+
 	return nil
 }
 
-// Create multiple devices
 func (sm *SimulatorManager) CreateDevices(startIP string, count int, netmask string) error {
-	ip := net.ParseIP(startIP)
-	if ip == nil {
-		return fmt.Errorf("invalid IP address: %s", startIP)
-	}
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
 
-	// Check root privileges for TUN interface creation
+	// Check for root privileges for TUN interface creation
 	if os.Geteuid() != 0 {
 		return fmt.Errorf("root privileges required to create TUN interfaces")
 	}
 
-	sm.mu.Lock()
-	defer sm.mu.Unlock()
+	ip := net.ParseIP(startIP)
+	if ip == nil {
+		return fmt.Errorf("invalid start IP address: %s", startIP)
+	}
 
-	sm.nextIP = ip
-	created := 0
-	var errors []string
+	sm.currentIP = ip
+	successCount := 0
 
 	for i := 0; i < count; i++ {
-		deviceID := fmt.Sprintf("device-%s", sm.nextIP.String())
+		deviceID := fmt.Sprintf("device-%s", sm.currentIP.String())
 
 		// Check if device already exists
 		if _, exists := sm.devices[deviceID]; exists {
@@ -376,83 +227,72 @@ func (sm *SimulatorManager) CreateDevices(startIP string, count int, netmask str
 			continue
 		}
 
-		// Create TUN interface for this device
+		// Create TUN interface
 		tunName := sm.getNextTunName()
-		tunIface, err := createTunInterface(tunName, sm.nextIP, netmask)
+		tunIface, err := createTunInterface(tunName, sm.currentIP, netmask)
 		if err != nil {
-			errMsg := fmt.Sprintf("failed to create TUN interface for %s: %v", deviceID, err)
-			log.Printf(errMsg)
-			errors = append(errors, errMsg)
+			log.Printf("Failed to create TUN interface for %s: %v", deviceID, err)
 			sm.incrementIP()
 			continue
 		}
 
+		// Create device
 		device := &DeviceSimulator{
 			ID:        deviceID,
-			IP:        make(net.IP, len(sm.nextIP)),
+			IP:        sm.currentIP,
 			SNMPPort:  DEFAULT_SNMP_PORT,
 			SSHPort:   DEFAULT_SSH_PORT,
 			tunIface:  tunIface,
-			resources: sm.resources,
-			running:   false,
+			resources: sm.deviceResources,
 		}
-		copy(device.IP, sm.nextIP)
 
-		// Start the device
-		err = device.Start()
-		if err != nil {
-			errMsg := fmt.Sprintf("failed to start device %s: %v", deviceID, err)
-			log.Printf(errMsg)
-			errors = append(errors, errMsg)
+		device.snmpServer = &SNMPServer{device: device}
+		device.sshServer = &SSHServer{device: device}
 
-			// Clean up TUN interface
-			tunIface.destroy()
-			sm.incrementIP()
+		// Start device services
+		if err := device.Start(); err != nil {
+			log.Printf("Failed to start device %s: %v", deviceID, err)
+			device.Stop() // Clean up
 			continue
 		}
 
 		sm.devices[deviceID] = device
-		log.Printf("Created device: %s on IP %s (interface: %s)", deviceID, device.IP.String(), tunName)
-		created++
+		successCount++
+
+		log.Printf("Created device: %s on IP %s (interface: %s)", deviceID, sm.currentIP.String(), tunName)
 		sm.incrementIP()
 	}
 
-	if created == 0 {
-		if len(errors) > 0 {
-			return fmt.Errorf("failed to create any devices. Errors: %s", strings.Join(errors, "; "))
-		}
-		return fmt.Errorf("failed to create any devices")
-	}
-
-	log.Printf("Successfully created %d out of %d requested devices", created, count)
-	if len(errors) > 0 {
-		log.Printf("Errors encountered: %s", strings.Join(errors, "; "))
-	}
+	log.Printf("Successfully created %d out of %d requested devices", successCount, count)
 	return nil
 }
 
-// Increment IP address
 func (sm *SimulatorManager) incrementIP() {
-	// Convert IP to 32-bit integer, increment, and convert back
-	ip := sm.nextIP.To4()
+	ip := sm.currentIP.To4()
 	if ip == nil {
-		return
+		return // Only support IPv4 for now
 	}
 
-	val := binary.BigEndian.Uint32(ip)
-	val++
-	binary.BigEndian.PutUint32(ip, val)
-	sm.nextIP = ip
+	// Increment the last octet
+	ip[3]++
+	if ip[3] == 0 {
+		ip[2]++
+		if ip[2] == 0 {
+			ip[1]++
+			if ip[1] == 0 {
+				ip[0]++
+			}
+		}
+	}
+	sm.currentIP = ip
 }
 
-// List all devices
 func (sm *SimulatorManager) ListDevices() []DeviceInfo {
 	sm.mu.RLock()
 	defer sm.mu.RUnlock()
 
-	devices := make([]DeviceInfo, 0, len(sm.devices))
+	var devices []DeviceInfo
 	for _, device := range sm.devices {
-		device.mu.RLock()
 		info := DeviceInfo{
 			ID:       device.ID,
 			IP:       device.IP.String(),
@@ -463,14 +303,12 @@ func (sm *SimulatorManager) ListDevices() []DeviceInfo {
 		if device.tunIface != nil {
 			info.Interface = device.tunIface.Name
 		}
-		device.mu.RUnlock()
 		devices = append(devices, info)
 	}
 
 	return devices
 }
 
-// Delete device
 func (sm *SimulatorManager) DeleteDevice(deviceID string) error {
 	sm.mu.Lock()
 	defer sm.mu.Unlock()
@@ -480,8 +318,8 @@ func (sm *SimulatorManager) DeleteDevice(deviceID string) error {
 		return fmt.Errorf("device %s not found", deviceID)
 	}
 
-	err := device.Stop()
-	if err != nil {
+	// Stop and cleanup device
+	if err := device.Stop(); err != nil {
 		log.Printf("Error stopping device %s: %v", deviceID, err)
 	}
 
@@ -490,63 +328,61 @@ func (sm *SimulatorManager) DeleteDevice(deviceID string) error {
 	return nil
 }
 
-// Delete all devices
 func (sm *SimulatorManager) DeleteAllDevices() error {
 	sm.mu.Lock()
 	defer sm.mu.Unlock()
 
 	var errors []string
+	count := len(sm.devices)
+
 	for deviceID, device := range sm.devices {
-		err := device.Stop()
-		if err != nil {
-			errMsg := fmt.Sprintf("error stopping device %s: %v", deviceID, err)
-			log.Printf(errMsg)
-			errors = append(errors, errMsg)
+		if err := device.Stop(); err != nil {
+			errors = append(errors, fmt.Sprintf("%s: %v", deviceID, err))
 		}
 	}
 
+	// Clear the devices map
 	sm.devices = make(map[string]*DeviceSimulator)
-	log.Println("Deleted all devices")
+	log.Printf("Deleted all %d devices", count)
 
 	if len(errors) > 0 {
-		return fmt.Errorf("errors occurred while deleting devices: %s", strings.Join(errors, "; "))
+		return fmt.Errorf("errors deleting devices: %s", strings.Join(errors, ", "))
 	}
 	return nil
 }
 
-// Device simulator methods
+// DeviceSimulator implementation
 func (d *DeviceSimulator) Start() error {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
 	if d.running {
-		return fmt.Errorf("device %s is already running", d.ID)
+		return nil
 	}
+
+	var errors []string
 
 	// Start SNMP server
-	snmpServer := &SNMPServer{device: d}
-	err := snmpServer.Start()
-	if err != nil {
-		return fmt.Errorf("failed to start SNMP server: %v", err)
+	if err := d.snmpServer.Start(); err != nil {
+		errors = append(errors, fmt.Sprintf("SNMP: %v", err))
 	}
-	d.snmpServer = snmpServer
 
 	// Start SSH server
-	sshServer := &SSHServer{device: d}
-	err = sshServer.Start()
-	if err != nil {
-		d.snmpServer.Stop()
-		return fmt.Errorf("failed to start SSH server: %v", err)
+	if err := d.sshServer.Start(); err != nil {
+		errors = append(errors, fmt.Sprintf("SSH: %v", err))
 	}
-	d.sshServer = sshServer
+
+	if len(errors) > 0 {
+		// Stop any services that did start
+		d.snmpServer.Stop()
+		d.sshServer.Stop()
+		return fmt.Errorf("failed to start services: %s", strings.Join(errors, ", "))
+	}
 
 	d.running = true
-	interfaceName := "unknown"
-	if d.tunIface != nil {
-		interfaceName = d.tunIface.Name
-	}
 	log.Printf("Device %s started on %s (interface: %s, SNMP:%d, SSH:%d)",
-		d.ID, d.IP.String(), interfaceName, d.SNMPPort, d.SSHPort)
+		d.ID, d.IP.String(), d.tunIface.Name, d.SNMPPort, d.SSHPort)
+
 	return nil
 }
 
@@ -586,1409 +422,6 @@ func (d *DeviceSimulator) Stop() error {
 		return fmt.Errorf("errors stopping services: %s", strings.Join(errors, ", "))
 	}
 	return nil
-}
-
-// SNMP Server implementation
-func (s *SNMPServer) Start() error {
-	addr := &net.UDPAddr{
-		IP:   s.device.IP,
-		Port: s.device.SNMPPort,
-	}
-
-	listener, err := net.ListenUDP("udp", addr)
-	if err != nil {
-		return err
-	}
-
-	s.listener = listener
-	s.running = true
-
-	go s.handleRequests()
-	return nil
-}
-
-func (s *SNMPServer) Stop() error {
-	if s.listener != nil {
-		s.running = false
-		return s.listener.Close()
-	}
-	return nil
-}
-
-func (s *SNMPServer) handleRequests() {
-	buffer := make([]byte, 1024)
-
-	for s.running {
-		n, clientAddr, err := s.listener.ReadFromUDP(buffer)
-		if err != nil {
-			if s.running {
-				log.Printf("SNMP server error reading UDP: %v", err)
-			}
-			continue
-		}
-
-		requestData := buffer[:n] // Store the full request
-
-		// Debug: Print hex dump of request packet
-		log.Printf("DEBUG: Request packet hex (%d bytes):", n)
-		for i := 0; i < n && i < 64; i += 16 {
-			end := i + 16
-			if end > n {
-				end = n
-			}
-			hexStr := fmt.Sprintf("  %04X: ", i)
-			for j := i; j < end; j++ {
-				hexStr += fmt.Sprintf("%02X ", requestData[j])
-			}
-			log.Printf(hexStr)
-		}
-
-		// Parse SNMP request to get OID and request type
-		req := s.parseIncomingRequest(requestData)
-		oid := req.OID
-		var response string
-		var responseOID string
-
-		// Determine PDU type from request data
-		pduType := s.getPDUType(requestData)
-		log.Printf("DEBUG: Received %s request for OID: %s (version=%d, community=%s, requestID=0x%X)", 
-			map[byte]string{ASN1_GET_REQUEST: "GET", ASN1_GET_NEXT: "GETNEXT"}[pduType], oid, req.Version, req.Community, req.RequestID)
-		
-		if pduType == ASN1_GET_NEXT {
-			// Handle GetNext request for SNMP walk
-			responseOID, response = s.findNextOID(oid)
-			if responseOID == "" {
-				// End of MIB view - use a special response
-				responseOID = oid
-				response = "endOfMibView"
-			}
-			log.Printf("SNMP %s: GetNext %s -> %s = %s", s.device.ID, oid, responseOID, response)
-			
-			// Additional debug - show all available OIDs for comparison
-			log.Printf("DEBUG: Available OIDs:")
-			for i, res := range s.device.resources.SNMP[:5] { // Show first 5
-				log.Printf("  %d: %s = %s", i, res.OID, res.Response)
-			}
-		} else {
-			// Handle regular Get request
-			responseOID = oid
-			response = s.findResponse(oid)
-			log.Printf("SNMP %s: Get %s -> %s", s.device.ID, oid, response)
-		}
-
-		// Create proper SNMP response (pass the request data)
-		responsePacket := s.createSNMPResponse(responseOID, response, requestData)
-
-		// Debug: Print hex dump of response packet
-		if len(responsePacket) > 0 {
-			log.Printf("DEBUG: Response packet hex (first 64 bytes):")
-			for i := 0; i < len(responsePacket) && i < 64; i += 16 {
-				end := i + 16
-				if end > len(responsePacket) {
-					end = len(responsePacket)
-				}
-				hexStr := fmt.Sprintf("  %04X: ", i)
-				for j := i; j < end; j++ {
-					hexStr += fmt.Sprintf("%02X ", responsePacket[j])
-				}
-				log.Printf(hexStr)
-			}
-		}
-
-		_, err = s.listener.WriteToUDP(responsePacket, clientAddr)
-		if err != nil {
-			log.Printf("Error sending SNMP response: %v", err)
-		} else {
-			log.Printf("DEBUG: Sent response packet (%d bytes) for %s request", len(responsePacket), 
-				map[byte]string{ASN1_GET_REQUEST: "GET", ASN1_GET_NEXT: "GETNEXT"}[pduType])
-		}
-	}
-}
-
-func (s *SNMPServer) findResponse(oid string) string {
-	for _, resource := range s.device.resources.SNMP {
-		if resource.OID == oid {
-			return resource.Response
-		}
-	}
-	return "OID not supported"
-}
-
-// Compare two OIDs lexicographically
-func compareOIDs(oid1, oid2 string) int {
-	parts1 := strings.Split(oid1, ".")
-	parts2 := strings.Split(oid2, ".")
-	
-	maxLen := len(parts1)
-	if len(parts2) > maxLen {
-		maxLen = len(parts2)
-	}
-	
-	for i := 0; i < maxLen; i++ {
-		var val1, val2 int
-		
-		if i < len(parts1) {
-			val1, _ = strconv.Atoi(parts1[i])
-		}
-		if i < len(parts2) {
-			val2, _ = strconv.Atoi(parts2[i])
-		}
-		
-		if val1 < val2 {
-			return -1
-		} else if val1 > val2 {
-			return 1
-		}
-	}
-	
-	if len(parts1) < len(parts2) {
-		return -1
-	} else if len(parts1) > len(parts2) {
-		return 1
-	}
-	
-	return 0
-}
-
-// Find the next OID in lexicographic order for SNMP GetNext requests
-func (s *SNMPServer) findNextOID(currentOID string) (string, string) {
-	var candidates []SNMPResource
-	
-	// Find all OIDs that are lexicographically greater than currentOID
-	for _, resource := range s.device.resources.SNMP {
-		if compareOIDs(resource.OID, currentOID) > 0 {
-			candidates = append(candidates, resource)
-		}
-	}
-	
-	if len(candidates) == 0 {
-		return "", "endOfMibView"
-	}
-	
-	// Find the smallest OID among candidates (lexicographically first)
-	nextOID := candidates[0]
-	for _, candidate := range candidates[1:] {
-		if compareOIDs(candidate.OID, nextOID.OID) < 0 {
-			nextOID = candidate
-		}
-	}
-	
-	return nextOID.OID, nextOID.Response
-}
-
-// Extract PDU type from SNMP request
-func (s *SNMPServer) getPDUType(data []byte) byte {
-	if len(data) < 10 {
-		return ASN1_GET_REQUEST // Default
-	}
-
-	pos := 0
-	
-	// Skip SEQUENCE tag and length
-	if data[pos] != ASN1_SEQUENCE {
-		return ASN1_GET_REQUEST
-	}
-	pos++
-	pos += s.skipLength(data[pos:])
-	
-	// Skip version
-	if pos < len(data) && data[pos] == ASN1_INTEGER {
-		pos++
-		pos += s.skipLength(data[pos:])
-		pos++ // skip version value
-	}
-	
-	// Skip community
-	if pos < len(data) && data[pos] == ASN1_OCTET_STRING {
-		pos++
-		communityLen := int(data[pos])
-		pos++
-		pos += communityLen
-	}
-	
-	// Get PDU type
-	if pos < len(data) {
-		return data[pos]
-	}
-	
-	return ASN1_GET_REQUEST
-}
-
-// SSH Server implementation
-func (s *SSHServer) Start() error {
-	// Generate host key
-	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		return err
-	}
-
-	privateKeyPEM := &pem.Block{
-		Type:  "RSA PRIVATE KEY",
-		Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
-	}
-	privateKeyBytes := pem.EncodeToMemory(privateKeyPEM)
-
-	signer, err := ssh.ParsePrivateKey(privateKeyBytes)
-	if err != nil {
-		return err
-	}
-
-	config := &ssh.ServerConfig{
-		PasswordCallback: func(c ssh.ConnMetadata, pass []byte) (*ssh.Permissions, error) {
-			if c.User() == USERNAME && string(pass) == PASSWORD {
-				return nil, nil
-			}
-			return nil, fmt.Errorf("invalid credentials")
-		},
-	}
-	config.AddHostKey(signer)
-
-	addr := fmt.Sprintf("%s:%d", s.device.IP.String(), s.device.SSHPort)
-	listener, err := net.Listen("tcp", addr)
-	if err != nil {
-		return err
-	}
-
-	s.listener = listener
-	s.config = config
-	s.running = true
-
-	go s.handleConnections()
-	return nil
-}
-
-func (s *SSHServer) Stop() error {
-	if s.listener != nil {
-		s.running = false
-		return s.listener.Close()
-	}
-	return nil
-}
-
-func (s *SSHServer) handleConnections() {
-	for s.running {
-		conn, err := s.listener.Accept()
-		if err != nil {
-			if s.running {
-				log.Printf("SSH server error accepting connection: %v", err)
-			}
-			continue
-		}
-
-		go s.handleConnection(conn)
-	}
-}
-
-func (s *SSHServer) handleConnection(conn net.Conn) {
-	defer conn.Close()
-
-	sshConn, channels, requests, err := ssh.NewServerConn(conn, s.config)
-	if err != nil {
-		log.Printf("SSH handshake error: %v", err)
-		return
-	}
-	defer sshConn.Close()
-
-	go ssh.DiscardRequests(requests)
-
-	for newChannel := range channels {
-		if newChannel.ChannelType() != "session" {
-			newChannel.Reject(ssh.UnknownChannelType, "unknown channel type")
-			continue
-		}
-
-		channel, requests, err := newChannel.Accept()
-		if err != nil {
-			log.Printf("Error accepting channel: %v", err)
-			continue
-		}
-
-		go s.handleSession(channel, requests)
-	}
-}
-
-func (s *SSHServer) handleSession(channel ssh.Channel, requests <-chan *ssh.Request) {
-	defer channel.Close()
-
-	// Handle session requests
-	go func() {
-		for req := range requests {
-			switch req.Type {
-			case "shell", "exec":
-				req.Reply(true, nil)
-			default:
-				req.Reply(false, nil)
-			}
-		}
-	}()
-
-	// Send welcome message
-	welcome := fmt.Sprintf("Welcome to %s\nDevice Simulator SSH Server\n\n", s.device.ID)
-	channel.Write([]byte(welcome))
-
-	scanner := bufio.NewScanner(channel)
-
-	for {
-		// Send prompt
-		channel.Write([]byte(fmt.Sprintf("%s> ", s.device.ID)))
-
-		// Read command
-		if !scanner.Scan() {
-			break
-		}
-
-		command := strings.TrimSpace(scanner.Text())
-		if command == "" {
-			continue
-		}
-
-		if command == "exit" || command == "quit" {
-			channel.Write([]byte("Goodbye!\n"))
-			break
-		}
-
-		// Find response
-		response := s.findCommandResponse(command)
-		channel.Write([]byte(response + "\n\n"))
-
-		log.Printf("SSH %s: %s -> %s", s.device.ID, command, strings.Split(response, "\n")[0])
-	}
-}
-
-func (s *SSHServer) findCommandResponse(command string) string {
-	for _, resource := range s.device.resources.SSH {
-		if strings.EqualFold(resource.Command, command) {
-			return resource.Response
-		}
-	}
-	return "Command not found"
-}
-
-// REST API handlers
-func createDevicesHandler(w http.ResponseWriter, r *http.Request) {
-	var req CreateDevicesRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		sendErrorResponse(w, "Invalid JSON", http.StatusBadRequest)
-		return
-	}
-
-	if req.DeviceCount <= 0 || req.DeviceCount > 100 {
-		sendErrorResponse(w, "Device count must be between 1 and 100", http.StatusBadRequest)
-		return
-	}
-
-	err = manager.CreateDevices(req.StartIP, req.DeviceCount, req.Netmask)
-	if err != nil {
-		sendErrorResponse(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	sendSuccessResponse(w, fmt.Sprintf("Created %d devices starting from %s", req.DeviceCount, req.StartIP))
-}
-
-func listDevicesHandler(w http.ResponseWriter, r *http.Request) {
-	devices := manager.ListDevices()
-	sendDataResponse(w, devices)
-}
-
-func deleteDeviceHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	deviceID := vars["id"]
-
-	err := manager.DeleteDevice(deviceID)
-	if err != nil {
-		sendErrorResponse(w, err.Error(), http.StatusNotFound)
-		return
-	}
-
-	sendSuccessResponse(w, fmt.Sprintf("Device %s deleted", deviceID))
-}
-
-func deleteAllDevicesHandler(w http.ResponseWriter, r *http.Request) {
-	err := manager.DeleteAllDevices()
-	if err != nil {
-		sendErrorResponse(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	sendSuccessResponse(w, "All devices deleted")
-}
-
-// Helper functions for API responses
-func sendSuccessResponse(w http.ResponseWriter, message string) {
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(APIResponse{
-		Success: true,
-		Message: message,
-	})
-}
-
-func sendDataResponse(w http.ResponseWriter, data interface{}) {
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(APIResponse{
-		Success: true,
-		Message: "Success",
-		Data:    data,
-	})
-}
-
-func sendErrorResponse(w http.ResponseWriter, message string, statusCode int) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(statusCode)
-	json.NewEncoder(w).Encode(APIResponse{
-		Success: false,
-		Message: message,
-	})
-}
-
-// Web UI handler
-func webUIHandler(w http.ResponseWriter, r *http.Request) {
-	html := `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Network Device Simulator</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh; padding: 20px;
-        }
-        .container { max-width: 1400px; margin: 0 auto; }
-        .header {
-            background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px);
-            border-radius: 20px; padding: 30px; margin-bottom: 30px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-        }
-        .header h1 { color: white; font-size: 2.5em; font-weight: 300; margin-bottom: 10px; text-align: center; }
-        .header p { color: rgba(255, 255, 255, 0.8); text-align: center; font-size: 1.1em; }
-        .controls, .status, .devices {
-            background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);
-            border-radius: 20px; padding: 30px; margin-bottom: 30px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        .controls h2, .devices h2 { color: #333; margin-bottom: 20px; font-weight: 600; }
-        .form-row { display: flex; gap: 20px; align-items: end; }
-        .form-row .form-group { flex: 1; margin-bottom: 0; }
-        .form-group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 8px; color: #555; font-weight: 500; }
-        input, select {
-            width: 100%; padding: 12px 16px; border: 2px solid #e1e5e9;
-            border-radius: 12px; font-size: 16px; transition: all 0.3s ease; background: white;
-        }
-        input:focus, select:focus {
-            outline: none; border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-        .btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white; border: none; padding: 12px 24px; border-radius: 12px;
-            cursor: pointer; font-size: 16px; font-weight: 600;
-            transition: all 0.3s ease; min-width: 120px;
-        }
-        .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3); }
-        .btn-danger { background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%); }
-        .btn-danger:hover { box-shadow: 0 8px 25px rgba(255, 107, 107, 0.3); }
-        .btn-small { padding: 8px 16px; font-size: 14px; min-width: auto; }
-        .status-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
-        .status-card {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white; padding: 20px; border-radius: 16px; text-align: center;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        }
-        .status-card h3 { font-size: 2em; margin-bottom: 5px; font-weight: 300; }
-        .status-card p { opacity: 0.9; }
-        .device-table {
-            width: 100%; background: white; border-radius: 16px; overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); border: 2px solid #e1e5e9;
-        }
-        .device-table table { width: 100%; border-collapse: collapse; }
-        .device-table thead {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-        .device-table thead th {
-            padding: 16px 12px; text-align: left; font-weight: 600; font-size: 14px;
-            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
-        }
-        .device-table tbody tr {
-            transition: all 0.2s ease; border-bottom: 1px solid #e1e5e9;
-        }
-        .device-table tbody tr:hover { background: rgba(102, 126, 234, 0.05); }
-        .device-table tbody tr:last-child { border-bottom: none; }
-        .device-table tbody td {
-            padding: 16px 12px; vertical-align: middle; font-size: 14px;
-        }
-        .device-id { font-weight: 600; color: #333; font-family: Monaco, monospace; }
-        .device-ip { font-family: Monaco, monospace; color: #333; }
-        .device-interface { font-family: Monaco, monospace; color: #666; }
-        .device-ports { font-family: Monaco, monospace; color: #666; font-size: 13px; }
-        .device-status { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; display: inline-block; }
-        .status-running { background: #d4edda; color: #155724; }
-        .status-stopped { background: #f8d7da; color: #721c24; }
-        .device-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-        .device-actions .btn { padding: 6px 12px; font-size: 12px; min-width: auto; }
-        .alert {
-            padding: 16px 20px; border-radius: 12px; margin-bottom: 20px;
-            border-left: 4px solid; animation: slideIn 0.3s ease;
-        }
-        .alert-success { background: #d4edda; color: #155724; border-left-color: #28a745; }
-        .alert-error { background: #f8d7da; color: #721c24; border-left-color: #dc3545; }
-        .alert-warning { background: #fff3cd; color: #856404; border-left-color: #ffc107; }
-        .loading {
-            display: inline-block; width: 20px; height: 20px; border: 2px solid #f3f3f3;
-            border-top: 2px solid #667eea; border-radius: 50%;
-            animation: spin 1s linear infinite; margin-left: 8px;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        @keyframes slideIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-        .empty-state { text-align: center; padding: 60px 20px; color: #666; }
-        .empty-state h3 { font-size: 1.5em; margin-bottom: 10px; color: #999; }
-        @media (max-width: 768px) {
-            .form-row { flex-direction: column; }
-            .status-grid { grid-template-columns: repeat(2, 1fr); }
-            .device-table table { font-size: 12px; }
-            .device-table thead th { padding: 12px 8px; }
-            .device-table tbody td { padding: 12px 8px; }
-            .device-actions { flex-direction: column; gap: 4px; }
-            .device-actions .btn { font-size: 11px; padding: 4px 8px; }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>🌐 Network Device Simulator</h1>
-            <p>Manage virtual network devices with TUN/TAP interfaces, SNMP, and SSH services</p>
-        </div>
-        <div id="alerts"></div>
-        <div class="controls">
-            <h2>Create New Devices</h2>
-            <form id="createForm">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="startIp">Start IP Address</label>
-                        <input type="text" id="startIp" placeholder="192.168.100.1" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="deviceCount">Number of Devices</label>
-                        <input type="number" id="deviceCount" min="1" max="100" value="1" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="netmask">Netmask</label>
-                        <select id="netmask">
-                            <option value="24">24 (/24 - 255.255.255.0)</option>
-                            <option value="16">16 (/16 - 255.255.0.0)</option>
-                            <option value="8">8 (/8 - 255.0.0.0)</option>
-                            <option value="32">32 (/32 - 255.255.255.255)</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <button type="submit" class="btn">
-                            Create Devices
-                            <span id="createLoading" class="loading" style="display: none;"></span>
-                        </button>
-                    </div>
-                </div>
-            </form>
-        </div>
-        <div class="status">
-            <div class="status-grid">
-                <div class="status-card"><h3 id="totalDevices">0</h3><p>Total Devices</p></div>
-                <div class="status-card"><h3 id="runningDevices">0</h3><p>Running</p></div>
-                <div class="status-card"><h3 id="stoppedDevices">0</h3><p>Stopped</p></div>
-                <div class="status-card"><h3 id="tunInterfaces">0</h3><p>TUN Interfaces</p></div>
-            </div>
-        </div>
-        <div class="devices">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2>Devices</h2>
-                <div style="display: flex; gap: 10px;">
-                    <button id="refreshBtn" class="btn btn-small">
-                        🔄 Refresh <span id="refreshLoading" class="loading" style="display: none;"></span>
-                    </button>
-                    <button id="deleteAllBtn" class="btn btn-danger btn-small">
-                        🗑️ Delete All <span id="deleteAllLoading" class="loading" style="display: none;"></span>
-                    </button>
-                </div>
-            </div>
-            <div id="deviceList" class="device-table"></div>
-        </div>
-    </div>
-    <script>
-        const API_BASE = '/api/v1';
-        let devices = [];
-        
-        const elements = {
-            createForm: document.getElementById('createForm'),
-            deviceList: document.getElementById('deviceList'),
-            alerts: document.getElementById('alerts'),
-            refreshBtn: document.getElementById('refreshBtn'),
-            deleteAllBtn: document.getElementById('deleteAllBtn'),
-            totalDevices: document.getElementById('totalDevices'),
-            runningDevices: document.getElementById('runningDevices'),
-            stoppedDevices: document.getElementById('stoppedDevices'),
-            tunInterfaces: document.getElementById('tunInterfaces')
-        };
-
-        function showAlert(message, type = 'success') {
-            const alertDiv = document.createElement('div');
-            alertDiv.className = 'alert alert-' + type;
-            alertDiv.textContent = message;
-            elements.alerts.appendChild(alertDiv);
-            setTimeout(() => {
-                if (alertDiv.parentNode) alertDiv.parentNode.removeChild(alertDiv);
-            }, 5000);
-        }
-
-        function setLoading(elementId, loading) {
-            const element = document.getElementById(elementId);
-            if (element) element.style.display = loading ? 'inline-block' : 'none';
-        }
-
-        async function apiCall(endpoint, options = {}) {
-            try {
-                const response = await fetch(API_BASE + endpoint, {
-                    headers: { 'Content-Type': 'application/json', ...options.headers },
-                    ...options
-                });
-                if (!response.ok) throw new Error('HTTP ' + response.status + ': ' + response.statusText);
-                return await response.json();
-            } catch (error) {
-                console.error('API Error:', error);
-                throw error;
-            }
-        }
-
-        async function loadDevices() {
-            try {
-                setLoading('refreshLoading', true);
-                const response = await apiCall('/devices');
-                devices = response.data || [];
-                renderDevices();
-                updateStats();
-            } catch (error) {
-                showAlert('Failed to load devices: ' + error.message, 'error');
-            } finally {
-                setLoading('refreshLoading', false);
-            }
-        }
-
-        async function createDevices(startIp, deviceCount, netmask) {
-            try {
-                setLoading('createLoading', true);
-                const response = await apiCall('/devices', {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        start_ip: startIp,
-                        device_count: parseInt(deviceCount),
-                        netmask: netmask
-                    })
-                });
-                showAlert(response.message, 'success');
-                await loadDevices();
-            } catch (error) {
-                showAlert('Failed to create devices: ' + error.message, 'error');
-            } finally {
-                setLoading('createLoading', false);
-            }
-        }
-
-        async function deleteDevice(deviceId) {
-            try {
-                const response = await apiCall('/devices/' + deviceId, { method: 'DELETE' });
-                showAlert(response.message, 'success');
-                await loadDevices();
-            } catch (error) {
-                showAlert('Failed to delete device: ' + error.message, 'error');
-            }
-        }
-
-        async function deleteAllDevices() {
-            if (!confirm('Are you sure you want to delete all devices?')) return;
-            try {
-                setLoading('deleteAllLoading', true);
-                const response = await apiCall('/devices', { method: 'DELETE' });
-                showAlert(response.message, 'success');
-                await loadDevices();
-            } catch (error) {
-                showAlert('Failed to delete all devices: ' + error.message, 'error');
-            } finally {
-                setLoading('deleteAllLoading', false);
-            }
-        }
-
-        function renderDevices() {
-            if (devices.length === 0) {
-                elements.deviceList.innerHTML = '<div class="empty-state"><div style="font-size: 4em; margin-bottom: 20px;">📱</div><h3>No Devices Found</h3><p>Create your first simulated network device to get started</p></div>';
-                return;
-            }
-            
-            const tableHTML = '<table>' +
-                '<thead>' +
-                '<tr>' +
-                '<th>Device ID</th>' +
-                '<th>IP Address</th>' +
-                '<th>Interface</th>' +
-                '<th>Ports</th>' +
-                '<th>Status</th>' +
-                '<th>Actions</th>' +
-                '</tr>' +
-                '</thead>' +
-                '<tbody>' +
-                devices.map(device => 
-                    '<tr>' +
-                    '<td><span class="device-id">' + device.id + '</span></td>' +
-                    '<td><span class="device-ip">' + device.ip + '</span></td>' +
-                    '<td><span class="device-interface">' + (device.interface || 'N/A') + '</span></td>' +
-                    '<td><span class="device-ports">SNMP:' + device.snmp_port + ' SSH:' + device.ssh_port + '</span></td>' +
-                    '<td><span class="device-status ' + (device.running ? 'status-running' : 'status-stopped') + '">' +
-                    (device.running ? '● RUNNING' : '● STOPPED') + '</span></td>' +
-                    '<td><div class="device-actions">' +
-                    '<button class="btn btn-small" data-action="test-ssh" data-ip="' + device.ip + '" data-port="' + device.ssh_port + '">🔗 SSH</button>' +
-                    '<button class="btn btn-small" data-action="ping" data-ip="' + device.ip + '">📡 Ping</button>' +
-                    '<button class="btn btn-danger btn-small" data-action="delete" data-device-id="' + device.id + '">🗑️ Delete</button>' +
-                    '</div></td>' +
-                    '</tr>'
-                ).join('') +
-                '</tbody>' +
-                '</table>';
-            
-            elements.deviceList.innerHTML = tableHTML;
-            
-            // Add event listeners for device actions
-            document.querySelectorAll('[data-action]').forEach(button => {
-                button.addEventListener('click', (e) => {
-                    const action = e.target.getAttribute('data-action');
-                    const ip = e.target.getAttribute('data-ip');
-                    const port = e.target.getAttribute('data-port');
-                    const deviceId = e.target.getAttribute('data-device-id');
-                    
-                    switch(action) {
-                        case 'test-ssh':
-                            testConnection(ip, parseInt(port));
-                            break;
-                        case 'ping':
-                            pingDevice(ip);
-                            break;
-                        case 'delete':
-                            deleteDevice(deviceId);
-                            break;
-                    }
-                });
-            });
-        }
-
-        function updateStats() {
-            const total = devices.length;
-            const running = devices.filter(d => d.running).length;
-            const stopped = total - running;
-            const interfaces = devices.filter(d => d.interface).length;
-            elements.totalDevices.textContent = total;
-            elements.runningDevices.textContent = running;
-            elements.stoppedDevices.textContent = stopped;
-            elements.tunInterfaces.textContent = interfaces;
-        }
-
-        function testConnection(ip, port) {
-            showAlert('SSH test: ssh simadmin@' + ip + ' (password: simadmin)', 'warning');
-        }
-
-        function pingDevice(ip) {
-            showAlert('Ping test for ' + ip + '. Check your terminal: ping ' + ip, 'warning');
-        }
-
-        elements.createForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const startIp = document.getElementById('startIp').value;
-            const deviceCount = document.getElementById('deviceCount').value;
-            const netmask = document.getElementById('netmask').value;
-            if (!startIp || !deviceCount) {
-                showAlert('Please fill in all required fields', 'error');
-                return;
-            }
-            await createDevices(startIp, deviceCount, netmask);
-            elements.createForm.reset();
-            document.getElementById('deviceCount').value = '1';
-            document.getElementById('netmask').value = '24';
-        });
-
-        elements.refreshBtn.addEventListener('click', loadDevices);
-        elements.deleteAllBtn.addEventListener('click', deleteAllDevices);
-        
-        setInterval(loadDevices, 30000);
-        
-        document.addEventListener('DOMContentLoaded', () => {
-            loadDevices();
-            showAlert('Network Device Simulator Web UI loaded successfully!', 'success');
-        });
-    </script>
-</body>
-</html>`
-
-	w.Header().Set("Content-Type", "text/html")
-	w.Write([]byte(html))
-}
-
-// Setup REST API routes
-func setupRoutes() *mux.Router {
-	router := mux.NewRouter()
-
-	// Web UI
-	router.HandleFunc("/", webUIHandler).Methods("GET")
-	router.HandleFunc("/ui", webUIHandler).Methods("GET")
-
-	// API routes
-	api := router.PathPrefix("/api/v1").Subrouter()
-	api.HandleFunc("/devices", createDevicesHandler).Methods("POST")
-	api.HandleFunc("/devices", listDevicesHandler).Methods("GET")
-	api.HandleFunc("/devices/{id}", deleteDeviceHandler).Methods("DELETE")
-	api.HandleFunc("/devices", deleteAllDevicesHandler).Methods("DELETE")
-
-	// Health check
-	router.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
-	}).Methods("GET")
-
-	return router
-}
-
-// parseOIDFromRequest extracts the first OID from an SNMP request packet
-func (s *SNMPServer) parseOIDFromRequest(data []byte) string {
-	if len(data) < 10 {
-		return "1.3.6.1.2.1.1.1.0" // Default fallback
-	}
-
-	// Find the OID in the SNMP packet
-	oid := extractOIDFromSNMPPacket(data)
-	if oid == "" {
-		return "1.3.6.1.2.1.1.1.0" // Default fallback
-	}
-
-	return oid
-}
-
-// extractOIDFromSNMPPacket parses SNMP BER/DER encoded packet to find OID
-func extractOIDFromSNMPPacket(data []byte) string {
-	pos := 0
-
-	// Parse the outer SEQUENCE
-	if pos >= len(data) || data[pos] != ASN1_SEQUENCE {
-		return ""
-	}
-	pos++
-
-	// Skip length of outer sequence
-	length, newPos := parseLength(data, pos)
-	if length == -1 {
-		return ""
-	}
-	pos = newPos
-
-	// Parse SNMP version (INTEGER)
-	if pos >= len(data) || data[pos] != ASN1_INTEGER {
-		return ""
-	}
-	pos++
-
-	// Skip version length and value
-	versionLen, newPos := parseLength(data, pos)
-	if versionLen == -1 {
-		return ""
-	}
-	pos = newPos + versionLen
-
-	// Parse community string (OCTET STRING)
-	if pos >= len(data) || data[pos] != ASN1_OCTET_STRING {
-		return ""
-	}
-	pos++
-
-	// Skip community length and value
-	communityLen, newPos := parseLength(data, pos)
-	if communityLen == -1 {
-		return ""
-	}
-	pos = newPos + communityLen
-
-	// Parse PDU (GET_REQUEST, GET_NEXT, etc.)
-	if pos >= len(data) {
-		return ""
-	}
-	pduType := data[pos]
-	if pduType != ASN1_GET_REQUEST && pduType != ASN1_GET_NEXT &&
-		pduType != ASN1_SET_REQUEST && pduType != ASN1_GET_RESPONSE {
-		return ""
-	}
-	pos++
-
-	// Skip PDU length
-	pduLen, newPos := parseLength(data, pos)
-	if pduLen == -1 {
-		return ""
-	}
-	pos = newPos
-
-	// Parse request ID (INTEGER)
-	if pos >= len(data) || data[pos] != ASN1_INTEGER {
-		return ""
-	}
-	pos++
-
-	// Skip request ID length and value
-	reqIdLen, newPos := parseLength(data, pos)
-	if reqIdLen == -1 {
-		return ""
-	}
-	pos = newPos + reqIdLen
-
-	// Parse error status (INTEGER)
-	if pos >= len(data) || data[pos] != ASN1_INTEGER {
-		return ""
-	}
-	pos++
-
-	// Skip error status length and value
-	errorLen, newPos := parseLength(data, pos)
-	if errorLen == -1 {
-		return ""
-	}
-	pos = newPos + errorLen
-
-	// Parse error index (INTEGER)
-	if pos >= len(data) || data[pos] != ASN1_INTEGER {
-		return ""
-	}
-	pos++
-
-	// Skip error index length and value
-	errorIdxLen, newPos := parseLength(data, pos)
-	if errorIdxLen == -1 {
-		return ""
-	}
-	pos = newPos + errorIdxLen
-
-	// Parse variable bindings (SEQUENCE)
-	if pos >= len(data) || data[pos] != ASN1_SEQUENCE {
-		return ""
-	}
-	pos++
-
-	// Skip varbind list length
-	varbindLen, newPos := parseLength(data, pos)
-	if varbindLen == -1 {
-		return ""
-	}
-	pos = newPos
-
-	// Parse first variable binding (SEQUENCE)
-	if pos >= len(data) || data[pos] != ASN1_SEQUENCE {
-		return ""
-	}
-	pos++
-
-	// Skip first varbind length
-	firstVarbindLen, newPos := parseLength(data, pos)
-	if firstVarbindLen == -1 {
-		return ""
-	}
-	pos = newPos
-
-	// Parse OID (OBJECT IDENTIFIER)
-	if pos >= len(data) || data[pos] != ASN1_OBJECT_ID {
-		return ""
-	}
-	pos++
-
-	// Parse OID length
-	oidLen, newPos := parseLength(data, pos)
-	if oidLen == -1 || newPos+oidLen > len(data) {
-		return ""
-	}
-	pos = newPos
-
-	// Extract and decode the OID
-	oidBytes := data[pos : pos+oidLen]
-	return decodeOID(oidBytes)
-}
-
-// parseLength parses ASN.1 BER/DER length encoding
-func parseLength(data []byte, pos int) (int, int) {
-	if pos >= len(data) {
-		return -1, pos
-	}
-
-	length := int(data[pos])
-	pos++
-
-	// Short form (length < 128)
-	if length < 0x80 {
-		return length, pos
-	}
-
-	// Long form
-	lengthBytes := length & 0x7F
-	if lengthBytes == 0 || lengthBytes > 4 || pos+lengthBytes > len(data) {
-		return -1, pos
-	}
-
-	length = 0
-	for i := 0; i < lengthBytes; i++ {
-		length = (length << 8) | int(data[pos])
-		pos++
-	}
-
-	return length, pos
-}
-
-// decodeOID converts ASN.1 encoded OID bytes to dot notation string
-func decodeOID(oidBytes []byte) string {
-	if len(oidBytes) == 0 {
-		return ""
-	}
-
-	var oid []string
-
-	// First byte encodes first two sub-identifiers
-	// first = byte / 40, second = byte % 40
-	firstByte := oidBytes[0]
-	first := firstByte / 40
-	second := firstByte % 40
-	oid = append(oid, strconv.Itoa(int(first)))
-	oid = append(oid, strconv.Itoa(int(second)))
-
-	// Process remaining bytes
-	pos := 1
-	for pos < len(oidBytes) {
-		value := 0
-
-		// Parse variable length encoding (base 128)
-		for pos < len(oidBytes) {
-			b := oidBytes[pos]
-			pos++
-
-			value = (value << 7) | int(b&0x7F)
-
-			// If high bit is 0, this is the last byte of this sub-identifier
-			if (b & 0x80) == 0 {
-				break
-			}
-		}
-
-		oid = append(oid, strconv.Itoa(value))
-	}
-
-	return strings.Join(oid, ".")
-}
-
-// ASN.1 encoding helper functions
-func encodeLength(length int) []byte {
-	if length < 0x80 {
-		return []byte{byte(length)}
-	}
-
-	// Long form
-	var bytes []byte
-	temp := length
-	for temp > 0 {
-		bytes = append([]byte{byte(temp & 0xff)}, bytes...)
-		temp >>= 8
-	}
-
-	result := make([]byte, len(bytes)+1)
-	result[0] = byte(0x80 | len(bytes))
-	copy(result[1:], bytes)
-	return result
-}
-
-func encodeInteger(value int) []byte {
-	var bytes []byte
-	if value == 0 {
-		bytes = []byte{0x00}
-	} else {
-		temp := value
-		for temp > 0 {
-			bytes = append([]byte{byte(temp & 0xff)}, bytes...)
-			temp >>= 8
-		}
-		// Add leading zero if high bit is set (to keep it positive)
-		if bytes[0]&0x80 != 0 {
-			bytes = append([]byte{0x00}, bytes...)
-		}
-	}
-
-	result := []byte{ASN1_INTEGER}
-	result = append(result, encodeLength(len(bytes))...)
-	result = append(result, bytes...)
-	return result
-}
-
-func encodeOctetString(value string) []byte {
-	data := []byte(value)
-	result := []byte{ASN1_OCTET_STRING}
-	result = append(result, encodeLength(len(data))...)
-	result = append(result, data...)
-	return result
-}
-
-func encodeOID(oid string) []byte {
-	parts := strings.Split(oid, ".")
-	if len(parts) < 2 {
-		return []byte{ASN1_OID, 0x00}
-	}
-
-	var encoded []byte
-
-	// First two components are encoded as 40*first + second
-	first, _ := strconv.Atoi(parts[0])
-	second, _ := strconv.Atoi(parts[1])
-	encoded = append(encoded, byte(40*first+second))
-
-	// Encode remaining components
-	for i := 2; i < len(parts); i++ {
-		val, _ := strconv.Atoi(parts[i])
-		encoded = append(encoded, encodeOIDComponent(val)...)
-	}
-
-	result := []byte{ASN1_OID}
-	result = append(result, encodeLength(len(encoded))...)
-	result = append(result, encoded...)
-	return result
-}
-
-func encodeOIDComponent(value int) []byte {
-	if value < 0x80 {
-		return []byte{byte(value)}
-	}
-
-	var result []byte
-	temp := value
-	for temp > 0x7f {
-		result = append([]byte{byte((temp & 0x7f) | 0x80)}, result...)
-		temp >>= 7
-	}
-	result = append([]byte{byte(temp)}, result...)
-	return result
-}
-
-func encodeSequence(contents []byte) []byte {
-	result := []byte{ASN1_SEQUENCE}
-	result = append(result, encodeLength(len(contents))...)
-	result = append(result, contents...)
-	return result
-}
-
-func encodeNull() []byte {
-	return []byte{ASN1_NULL, 0x00}
-}
-
-// SNMP request parser
-type SNMPRequest struct {
-	Community string
-	RequestID int
-	OID       string
-	Version   int
-}
-
-// Parse incoming SNMP request to extract all needed info
-func (s *SNMPServer) parseIncomingRequest(data []byte) SNMPRequest {
-	req := SNMPRequest{
-		Community: "public",
-		RequestID: 1,
-		OID:       "1.3.6.1.2.1.1.1.0",
-		Version:   1, // Default to SNMPv2c
-	}
-
-	if len(data) < 10 {
-		return req
-	}
-
-	log.Printf("DEBUG: Starting parse, data length: %d", len(data))
-
-	// Parse the SNMP packet structure
-	// SEQUENCE { version, community, PDU }
-	pos := 0
-
-	// Skip SEQUENCE tag and length
-	if data[pos] != ASN1_SEQUENCE {
-		log.Printf("DEBUG: Expected SEQUENCE tag at pos %d, got 0x%02X", pos, data[pos])
-		return req
-	}
-	log.Printf("DEBUG: Found SEQUENCE at pos %d", pos)
-	pos++
-	lengthSkip := s.skipLength(data[pos:])
-	log.Printf("DEBUG: Skipping %d bytes for SEQUENCE length", lengthSkip)
-	pos += lengthSkip
-
-	// Parse version
-	if pos < len(data) && data[pos] == ASN1_INTEGER {
-		log.Printf("DEBUG: Found version INTEGER at pos %d", pos)
-		pos++
-		versionLen := int(data[pos])
-		log.Printf("DEBUG: Version length: %d", versionLen)
-		pos++
-		if pos+versionLen <= len(data) && versionLen == 1 {
-			req.Version = int(data[pos])
-			log.Printf("DEBUG: Version: %d", req.Version)
-			pos += versionLen
-		} else {
-			log.Printf("DEBUG: Skipping version, invalid length")
-			pos += versionLen // skip if we can't parse
-		}
-	}
-
-	// Parse community
-	if pos < len(data) && data[pos] == ASN1_OCTET_STRING {
-		log.Printf("DEBUG: Found community STRING at pos %d", pos)
-		pos++
-		communityLen := int(data[pos])
-		log.Printf("DEBUG: Community length: %d", communityLen)
-		pos++
-		if pos+communityLen <= len(data) {
-			req.Community = string(data[pos : pos+communityLen])
-			log.Printf("DEBUG: Community: %s", req.Community)
-			pos += communityLen
-		}
-	}
-
-	// Parse PDU (GetRequest = 0xa0, GetNext = 0xa1)
-	log.Printf("DEBUG: Looking for PDU at pos %d, byte: 0x%02X", pos, data[pos])
-	if pos < len(data) && (data[pos] == 0xa0 || data[pos] == 0xa1) {
-		pduType := data[pos]
-		log.Printf("DEBUG: Found PDU type 0x%02X at pos %d", pduType, pos)
-		pos++
-		pduLengthSkip := s.skipLength(data[pos:])
-		log.Printf("DEBUG: Skipping %d bytes for PDU length", pduLengthSkip)
-		pos += pduLengthSkip
-
-		// Parse request ID
-		log.Printf("DEBUG: Looking for request ID at pos %d, byte: 0x%02X", pos, data[pos])
-		if pos < len(data) && data[pos] == ASN1_INTEGER {
-			log.Printf("DEBUG: Found request ID INTEGER at pos %d", pos)
-			pos++
-			reqIDLen := int(data[pos])
-			log.Printf("DEBUG: Request ID length: %d", reqIDLen)
-			pos++
-			if pos+reqIDLen <= len(data) && reqIDLen <= 4 {
-				req.RequestID = 0
-				log.Printf("DEBUG: Request ID bytes at pos %d:", pos)
-				for i := 0; i < reqIDLen; i++ {
-					log.Printf("  byte[%d] = 0x%02X", i, data[pos+i])
-					req.RequestID = (req.RequestID << 8) | int(data[pos+i])
-				}
-				pos += reqIDLen
-				log.Printf("DEBUG: Parsed Request ID: 0x%X (%d bytes)", req.RequestID, reqIDLen)
-			} else {
-				log.Printf("DEBUG: Invalid request ID length or bounds")
-			}
-		} else {
-			log.Printf("DEBUG: No INTEGER tag for request ID")
-		}
-
-		// Skip error-status and error-index
-		for i := 0; i < 2; i++ {
-			if pos < len(data) && data[pos] == ASN1_INTEGER {
-				pos++
-				pos += s.skipLength(data[pos:])
-				pos++ // skip value
-			}
-		}
-
-		// Parse variable bindings
-		if pos < len(data) && data[pos] == ASN1_SEQUENCE {
-			pos++
-			pos += s.skipLength(data[pos:])
-
-			// First variable binding
-			if pos < len(data) && data[pos] == ASN1_SEQUENCE {
-				pos++
-				pos += s.skipLength(data[pos:])
-
-				// Parse OID
-				if pos < len(data) && data[pos] == ASN1_OID {
-					pos++
-					oidLen := int(data[pos])
-					pos++
-					if pos+oidLen <= len(data) {
-						oidBytes := data[pos : pos+oidLen]
-						if oid := decodeOID(oidBytes); oid != "" {
-							req.OID = oid
-						}
-					}
-				}
-			}
-		}
-	}
-
-	return req
-}
-
-// Helper to skip length bytes
-func (s *SNMPServer) skipLength(data []byte) int {
-	if len(data) == 0 {
-		return 0
-	}
-
-	if data[0] < 0x80 {
-		return 1
-	}
-
-	lengthBytes := int(data[0] & 0x7f)
-	return 1 + lengthBytes
-}
-
-// Create proper SNMP response packet
-func (s *SNMPServer) createSNMPResponse(oid, value string, requestData []byte) []byte {
-	// Parse incoming request to get actual community and request ID
-	req := s.parseIncomingRequest(requestData)
-
-	// Determine SNMP data type based on OID and value
-	var valueBytes []byte
-
-	if value == "endOfMibView" {
-		// Special handling for endOfMibView (SNMPv2c)
-		valueBytes = []byte{0x82, 0x00} // endOfMibView exception
-	} else if intVal, err := strconv.Atoi(value); err == nil {
-		// Integer value
-		valueBytes = encodeInteger(intVal)
-	} else {
-		// String value
-		valueBytes = encodeOctetString(value)
-	}
-
-	// Create variable binding (OID + value)
-	oidBytes := encodeOID(oid)
-	varBind := encodeSequence(append(oidBytes, valueBytes...))
-
-	// Variable bindings list
-	varBindList := encodeSequence(varBind)
-
-	// PDU contents: request-id, error-status, error-index, variable-bindings
-	pduContents := []byte{}
-	pduContents = append(pduContents, encodeInteger(req.RequestID)...) // Use actual request ID
-	pduContents = append(pduContents, encodeInteger(0)...)             // error-status (noError)
-	pduContents = append(pduContents, encodeInteger(0)...)             // error-index
-	pduContents = append(pduContents, varBindList...)                  // variable-bindings
-
-	// GetResponse PDU
-	pdu := []byte{SNMP_GET_RESPONSE}
-	pdu = append(pdu, encodeLength(len(pduContents))...)
-	pdu = append(pdu, pduContents...)
-
-	// Message contents: version, community, PDU
-	msgContents := []byte{}
-	msgContents = append(msgContents, encodeInteger(req.Version)...)       // Use client's version
-	msgContents = append(msgContents, encodeOctetString(req.Community)...) // Use actual community
-	msgContents = append(msgContents, pdu...)                              // PDU
-
-	// Complete SNMP message
-	return encodeSequence(msgContents)
 }
 
 func main() {
