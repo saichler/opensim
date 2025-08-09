@@ -907,26 +907,36 @@ func webUIHandler(w http.ResponseWriter, r *http.Request) {
         }
         .status-card h3 { font-size: 2em; margin-bottom: 5px; font-weight: 300; }
         .status-card p { opacity: 0.9; }
-        .device-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px; }
-        .device-card {
-            background: white; border: 2px solid #e1e5e9; border-radius: 16px;
-            padding: 20px; transition: all 0.3s ease; position: relative; overflow: hidden;
+        .device-table {
+            width: 100%; background: white; border-radius: 16px; overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); border: 2px solid #e1e5e9;
         }
-        .device-card::before {
-            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+        .device-table table { width: 100%; border-collapse: collapse; }
+        .device-table thead {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
         }
-        .device-card:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1); }
-        .device-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .device-id { font-weight: 600; color: #333; font-size: 1.1em; }
-        .device-status { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .device-table thead th {
+            padding: 16px 12px; text-align: left; font-weight: 600; font-size: 14px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        .device-table tbody tr {
+            transition: all 0.2s ease; border-bottom: 1px solid #e1e5e9;
+        }
+        .device-table tbody tr:hover { background: rgba(102, 126, 234, 0.05); }
+        .device-table tbody tr:last-child { border-bottom: none; }
+        .device-table tbody td {
+            padding: 16px 12px; vertical-align: middle; font-size: 14px;
+        }
+        .device-id { font-weight: 600; color: #333; font-family: Monaco, monospace; }
+        .device-ip { font-family: Monaco, monospace; color: #333; }
+        .device-interface { font-family: Monaco, monospace; color: #666; }
+        .device-ports { font-family: Monaco, monospace; color: #666; font-size: 13px; }
+        .device-status { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; display: inline-block; }
         .status-running { background: #d4edda; color: #155724; }
         .status-stopped { background: #f8d7da; color: #721c24; }
-        .device-details { margin-bottom: 15px; }
-        .device-detail { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }
-        .device-detail .label { color: #666; font-weight: 500; }
-        .device-detail .value { color: #333; font-family: Monaco, monospace; }
-        .device-actions { display: flex; gap: 10px; }
+        .device-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+        .device-actions .btn { padding: 6px 12px; font-size: 12px; min-width: auto; }
         .alert {
             padding: 16px 20px; border-radius: 12px; margin-bottom: 20px;
             border-left: 4px solid; animation: slideIn 0.3s ease;
@@ -945,8 +955,12 @@ func webUIHandler(w http.ResponseWriter, r *http.Request) {
         .empty-state h3 { font-size: 1.5em; margin-bottom: 10px; color: #999; }
         @media (max-width: 768px) {
             .form-row { flex-direction: column; }
-            .device-grid { grid-template-columns: 1fr; }
             .status-grid { grid-template-columns: repeat(2, 1fr); }
+            .device-table table { font-size: 12px; }
+            .device-table thead th { padding: 12px 8px; }
+            .device-table tbody td { padding: 12px 8px; }
+            .device-actions { flex-direction: column; gap: 4px; }
+            .device-actions .btn { font-size: 11px; padding: 4px 8px; }
         }
     </style>
 </head>
@@ -1007,7 +1021,7 @@ func webUIHandler(w http.ResponseWriter, r *http.Request) {
                     </button>
                 </div>
             </div>
-            <div id="deviceList" class="device-grid"></div>
+            <div id="deviceList" class="device-table"></div>
         </div>
     </div>
     <script>
@@ -1115,30 +1129,41 @@ func webUIHandler(w http.ResponseWriter, r *http.Request) {
 
         function renderDevices() {
             if (devices.length === 0) {
-                elements.deviceList.innerHTML = '<div class="empty-state" style="grid-column: 1 / -1;"><div style="font-size: 4em; margin-bottom: 20px;">📱</div><h3>No Devices Found</h3><p>Create your first simulated network device to get started</p></div>';
+                elements.deviceList.innerHTML = '<div class="empty-state"><div style="font-size: 4em; margin-bottom: 20px;">📱</div><h3>No Devices Found</h3><p>Create your first simulated network device to get started</p></div>';
                 return;
             }
             
-            elements.deviceList.innerHTML = devices.map((device, index) => 
-                '<div class="device-card">' +
-                '<div class="device-header">' +
-                '<div class="device-id">' + device.id + '</div>' +
-                '<div class="device-status ' + (device.running ? 'status-running' : 'status-stopped') + '">' +
-                (device.running ? '● RUNNING' : '● STOPPED') +
-                '</div></div>' +
-                '<div class="device-details">' +
-                '<div class="device-detail"><span class="label">IP Address:</span><span class="value">' + device.ip + '</span></div>' +
-                '<div class="device-detail"><span class="label">Interface:</span><span class="value">' + (device.interface || 'N/A') + '</span></div>' +
-                '<div class="device-detail"><span class="label">SNMP Port:</span><span class="value">' + device.snmp_port + '</span></div>' +
-                '<div class="device-detail"><span class="label">SSH Port:</span><span class="value">' + device.ssh_port + '</span></div>' +
-                '<div class="device-detail"><span class="label">Status:</span><span class="value">' + (device.running ? 'Active' : 'Inactive') + '</span></div>' +
-                '</div>' +
-                '<div class="device-actions">' +
-                '<button class="btn btn-small" data-action="test-ssh" data-ip="' + device.ip + '" data-port="' + device.ssh_port + '">🔗 Test SSH</button>' +
-                '<button class="btn btn-small" data-action="ping" data-ip="' + device.ip + '">📡 Ping</button>' +
-                '<button class="btn btn-danger btn-small" data-action="delete" data-device-id="' + device.id + '">🗑️ Delete</button>' +
-                '</div></div>'
-            ).join('');
+            const tableHTML = '<table>' +
+                '<thead>' +
+                '<tr>' +
+                '<th>Device ID</th>' +
+                '<th>IP Address</th>' +
+                '<th>Interface</th>' +
+                '<th>Ports</th>' +
+                '<th>Status</th>' +
+                '<th>Actions</th>' +
+                '</tr>' +
+                '</thead>' +
+                '<tbody>' +
+                devices.map(device => 
+                    '<tr>' +
+                    '<td><span class="device-id">' + device.id + '</span></td>' +
+                    '<td><span class="device-ip">' + device.ip + '</span></td>' +
+                    '<td><span class="device-interface">' + (device.interface || 'N/A') + '</span></td>' +
+                    '<td><span class="device-ports">SNMP:' + device.snmp_port + ' SSH:' + device.ssh_port + '</span></td>' +
+                    '<td><span class="device-status ' + (device.running ? 'status-running' : 'status-stopped') + '">' +
+                    (device.running ? '● RUNNING' : '● STOPPED') + '</span></td>' +
+                    '<td><div class="device-actions">' +
+                    '<button class="btn btn-small" data-action="test-ssh" data-ip="' + device.ip + '" data-port="' + device.ssh_port + '">🔗 SSH</button>' +
+                    '<button class="btn btn-small" data-action="ping" data-ip="' + device.ip + '">📡 Ping</button>' +
+                    '<button class="btn btn-danger btn-small" data-action="delete" data-device-id="' + device.id + '">🗑️ Delete</button>' +
+                    '</div></td>' +
+                    '</tr>'
+                ).join('') +
+                '</tbody>' +
+                '</table>';
+            
+            elements.deviceList.innerHTML = tableHTML;
             
             // Add event listeners for device actions
             document.querySelectorAll('[data-action]').forEach(button => {
