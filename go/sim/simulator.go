@@ -36,6 +36,8 @@ const (
 	ASN1_GET_NEXT     = 0xA1
 	ASN1_GET_RESPONSE = 0xA2
 	ASN1_SET_REQUEST  = 0xA3
+	ASN1_OID          = 0x06
+	SNMP_GET_RESPONSE = 0xa2
 )
 
 // Configuration constants
@@ -589,12 +591,14 @@ func (s *SNMPServer) handleRequests() {
 			continue
 		}
 
-		// Parse SNMP request (simplified)
-		oid := s.parseOIDFromRequest(buffer[:n])
+		requestData := buffer[:n] // Store the full request
+
+		// Parse SNMP request (now properly implemented)
+		oid := s.parseOIDFromRequest(requestData)
 		response := s.findResponse(oid)
 
-		// Create simple SNMP response
-		responsePacket := s.createSNMPResponse(oid, response)
+		// Create proper SNMP response (pass the request data)
+		responsePacket := s.createSNMPResponse(oid, response, requestData)
 
 		_, err = s.listener.WriteToUDP(responsePacket, clientAddr)
 		if err != nil {
@@ -612,12 +616,6 @@ func (s *SNMPServer) findResponse(oid string) string {
 		}
 	}
 	return "OID not supported"
-}
-
-func (s *SNMPServer) createSNMPResponse(oid, value string) []byte {
-	// Create a basic SNMP response packet (simplified)
-	response := fmt.Sprintf("SNMP Response: %s = %s", oid, value)
-	return []byte(response)
 }
 
 // SSH Server implementation
@@ -1466,6 +1464,272 @@ func decodeOID(oidBytes []byte) string {
 	}
 
 	return strings.Join(oid, ".")
+}
+
+// ASN.1 encoding helper functions
+func encodeLength(length int) []byte {
+	if length < 0x80 {
+		return []byte{byte(length)}
+	}
+
+	// Long form
+	var bytes []byte
+	temp := length
+	for temp > 0 {
+		bytes = append([]byte{byte(temp & 0xff)}, bytes...)
+		temp >>= 8
+	}
+
+	result := make([]byte, len(bytes)+1)
+	result[0] = byte(0x80 | len(bytes))
+	copy(result[1:], bytes)
+	return result
+}
+
+func encodeInteger(value int) []byte {
+	var bytes []byte
+	if value == 0 {
+		bytes = []byte{0x00}
+	} else {
+		temp := value
+		for temp > 0 {
+			bytes = append([]byte{byte(temp & 0xff)}, bytes...)
+			temp >>= 8
+		}
+		// Add leading zero if high bit is set (to keep it positive)
+		if bytes[0]&0x80 != 0 {
+			bytes = append([]byte{0x00}, bytes...)
+		}
+	}
+
+	result := []byte{ASN1_INTEGER}
+	result = append(result, encodeLength(len(bytes))...)
+	result = append(result, bytes...)
+	return result
+}
+
+func encodeOctetString(value string) []byte {
+	data := []byte(value)
+	result := []byte{ASN1_OCTET_STRING}
+	result = append(result, encodeLength(len(data))...)
+	result = append(result, data...)
+	return result
+}
+
+func encodeOID(oid string) []byte {
+	parts := strings.Split(oid, ".")
+	if len(parts) < 2 {
+		return []byte{ASN1_OID, 0x00}
+	}
+
+	var encoded []byte
+
+	// First two components are encoded as 40*first + second
+	first, _ := strconv.Atoi(parts[0])
+	second, _ := strconv.Atoi(parts[1])
+	encoded = append(encoded, byte(40*first+second))
+
+	// Encode remaining components
+	for i := 2; i < len(parts); i++ {
+		val, _ := strconv.Atoi(parts[i])
+		encoded = append(encoded, encodeOIDComponent(val)...)
+	}
+
+	result := []byte{ASN1_OID}
+	result = append(result, encodeLength(len(encoded))...)
+	result = append(result, encoded...)
+	return result
+}
+
+func encodeOIDComponent(value int) []byte {
+	if value < 0x80 {
+		return []byte{byte(value)}
+	}
+
+	var result []byte
+	temp := value
+	for temp > 0x7f {
+		result = append([]byte{byte((temp & 0x7f) | 0x80)}, result...)
+		temp >>= 7
+	}
+	result = append([]byte{byte(temp)}, result...)
+	return result
+}
+
+func encodeSequence(contents []byte) []byte {
+	result := []byte{ASN1_SEQUENCE}
+	result = append(result, encodeLength(len(contents))...)
+	result = append(result, contents...)
+	return result
+}
+
+func encodeNull() []byte {
+	return []byte{ASN1_NULL, 0x00}
+}
+
+// SNMP request parser
+type SNMPRequest struct {
+	Community string
+	RequestID int
+	OID       string
+}
+
+// Parse incoming SNMP request to extract all needed info
+func (s *SNMPServer) parseIncomingRequest(data []byte) SNMPRequest {
+	req := SNMPRequest{
+		Community: "public",
+		RequestID: 1,
+		OID:       "1.3.6.1.2.1.1.1.0",
+	}
+
+	if len(data) < 10 {
+		return req
+	}
+
+	// Parse the SNMP packet structure
+	// SEQUENCE { version, community, PDU }
+	pos := 0
+
+	// Skip SEQUENCE tag and length
+	if data[pos] != ASN1_SEQUENCE {
+		return req
+	}
+	pos++
+	pos += s.skipLength(data[pos:])
+
+	// Skip version
+	if pos < len(data) && data[pos] == ASN1_INTEGER {
+		pos++
+		pos += s.skipLength(data[pos:])
+		pos++ // skip version value
+	}
+
+	// Parse community
+	if pos < len(data) && data[pos] == ASN1_OCTET_STRING {
+		pos++
+		communityLen := int(data[pos])
+		pos++
+		if pos+communityLen <= len(data) {
+			req.Community = string(data[pos : pos+communityLen])
+			pos += communityLen
+		}
+	}
+
+	// Parse PDU (GetRequest = 0xa0)
+	if pos < len(data) && data[pos] == 0xa0 {
+		pos++
+		pos += s.skipLength(data[pos:])
+
+		// Parse request ID
+		if pos < len(data) && data[pos] == ASN1_INTEGER {
+			pos++
+			reqIDLen := int(data[pos])
+			pos++
+			if pos+reqIDLen <= len(data) && reqIDLen <= 4 {
+				req.RequestID = 0
+				for i := 0; i < reqIDLen; i++ {
+					req.RequestID = (req.RequestID << 8) | int(data[pos+i])
+				}
+				pos += reqIDLen
+			}
+		}
+
+		// Skip error-status and error-index
+		for i := 0; i < 2; i++ {
+			if pos < len(data) && data[pos] == ASN1_INTEGER {
+				pos++
+				pos += s.skipLength(data[pos:])
+				pos++ // skip value
+			}
+		}
+
+		// Parse variable bindings
+		if pos < len(data) && data[pos] == ASN1_SEQUENCE {
+			pos++
+			pos += s.skipLength(data[pos:])
+
+			// First variable binding
+			if pos < len(data) && data[pos] == ASN1_SEQUENCE {
+				pos++
+				pos += s.skipLength(data[pos:])
+
+				// Parse OID
+				if pos < len(data) && data[pos] == ASN1_OID {
+					pos++
+					oidLen := int(data[pos])
+					pos++
+					if pos+oidLen <= len(data) {
+						oidBytes := data[pos : pos+oidLen]
+						if oid := decodeOID(oidBytes); oid != "" {
+							req.OID = oid
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return req
+}
+
+// Helper to skip length bytes
+func (s *SNMPServer) skipLength(data []byte) int {
+	if len(data) == 0 {
+		return 0
+	}
+
+	if data[0] < 0x80 {
+		return 1
+	}
+
+	lengthBytes := int(data[0] & 0x7f)
+	return 1 + lengthBytes
+}
+
+// Create proper SNMP response packet
+func (s *SNMPServer) createSNMPResponse(oid, value string, requestData []byte) []byte {
+	// Parse incoming request to get actual community and request ID
+	req := s.parseIncomingRequest(requestData)
+
+	// Determine SNMP data type based on OID and value
+	var valueBytes []byte
+
+	// Check if it's a numeric value
+	if intVal, err := strconv.Atoi(value); err == nil {
+		// Integer value
+		valueBytes = encodeInteger(intVal)
+	} else {
+		// String value
+		valueBytes = encodeOctetString(value)
+	}
+
+	// Create variable binding (OID + value)
+	oidBytes := encodeOID(oid)
+	varBind := encodeSequence(append(oidBytes, valueBytes...))
+
+	// Variable bindings list
+	varBindList := encodeSequence(varBind)
+
+	// PDU contents: request-id, error-status, error-index, variable-bindings
+	pduContents := []byte{}
+	pduContents = append(pduContents, encodeInteger(req.RequestID)...) // Use actual request ID
+	pduContents = append(pduContents, encodeInteger(0)...)             // error-status (noError)
+	pduContents = append(pduContents, encodeInteger(0)...)             // error-index
+	pduContents = append(pduContents, varBindList...)                  // variable-bindings
+
+	// GetResponse PDU
+	pdu := []byte{SNMP_GET_RESPONSE}
+	pdu = append(pdu, encodeLength(len(pduContents))...)
+	pdu = append(pdu, pduContents...)
+
+	// Message contents: version, community, PDU
+	msgContents := []byte{}
+	msgContents = append(msgContents, encodeInteger(1)...)                 // version (SNMPv2c = 1)
+	msgContents = append(msgContents, encodeOctetString(req.Community)...) // Use actual community
+	msgContents = append(msgContents, pdu...)                              // PDU
+
+	// Complete SNMP message
+	return encodeSequence(msgContents)
 }
 
 func main() {
