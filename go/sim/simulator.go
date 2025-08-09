@@ -273,13 +273,49 @@ func (sm *SimulatorManager) LoadResources(filename string) error {
 func (sm *SimulatorManager) createDefaultResources(filename string) error {
 	defaultResources := DeviceResources{
 		SNMP: []SNMPResource{
+			// System group (1.3.6.1.2.1.1)
 			{OID: "1.3.6.1.2.1.1.1.0", Response: "Cisco IOS Software, Router Version 15.1"},
 			{OID: "1.3.6.1.2.1.1.2.0", Response: "1.3.6.1.4.1.9.1.1"},
 			{OID: "1.3.6.1.2.1.1.3.0", Response: "123456789"},
 			{OID: "1.3.6.1.2.1.1.4.0", Response: "Network Administrator"},
 			{OID: "1.3.6.1.2.1.1.5.0", Response: "Router-Simulator"},
 			{OID: "1.3.6.1.2.1.1.6.0", Response: "Simulation Lab"},
+			{OID: "1.3.6.1.2.1.1.7.0", Response: "78"},
+			
+			// Interfaces group (1.3.6.1.2.1.2)
 			{OID: "1.3.6.1.2.1.2.1.0", Response: "4"},
+			{OID: "1.3.6.1.2.1.2.2.1.1.1", Response: "1"},
+			{OID: "1.3.6.1.2.1.2.2.1.1.2", Response: "2"},
+			{OID: "1.3.6.1.2.1.2.2.1.1.3", Response: "3"},
+			{OID: "1.3.6.1.2.1.2.2.1.1.4", Response: "4"},
+			{OID: "1.3.6.1.2.1.2.2.1.2.1", Response: "GigabitEthernet0/0"},
+			{OID: "1.3.6.1.2.1.2.2.1.2.2", Response: "GigabitEthernet0/1"},
+			{OID: "1.3.6.1.2.1.2.2.1.2.3", Response: "Serial0/0"},
+			{OID: "1.3.6.1.2.1.2.2.1.2.4", Response: "Loopback0"},
+			{OID: "1.3.6.1.2.1.2.2.1.3.1", Response: "6"},
+			{OID: "1.3.6.1.2.1.2.2.1.3.2", Response: "6"},
+			{OID: "1.3.6.1.2.1.2.2.1.3.3", Response: "22"},
+			{OID: "1.3.6.1.2.1.2.2.1.3.4", Response: "24"},
+			{OID: "1.3.6.1.2.1.2.2.1.8.1", Response: "1"},
+			{OID: "1.3.6.1.2.1.2.2.1.8.2", Response: "1"},
+			{OID: "1.3.6.1.2.1.2.2.1.8.3", Response: "2"},
+			{OID: "1.3.6.1.2.1.2.2.1.8.4", Response: "1"},
+			
+			// IP group (1.3.6.1.2.1.4)
+			{OID: "1.3.6.1.2.1.4.1.0", Response: "1"},
+			{OID: "1.3.6.1.2.1.4.2.0", Response: "64"},
+			{OID: "1.3.6.1.2.1.4.3.0", Response: "1024"},
+			{OID: "1.3.6.1.2.1.4.4.0", Response: "0"},
+			{OID: "1.3.6.1.2.1.4.5.0", Response: "128"},
+			
+			// TCP group (1.3.6.1.2.1.6)
+			{OID: "1.3.6.1.2.1.6.1.0", Response: "2"},
+			{OID: "1.3.6.1.2.1.6.5.0", Response: "180"},
+			{OID: "1.3.6.1.2.1.6.9.0", Response: "4"},
+			
+			// UDP group (1.3.6.1.2.1.7)
+			{OID: "1.3.6.1.2.1.7.1.0", Response: "256"},
+			{OID: "1.3.6.1.2.1.7.4.0", Response: "0"},
 		},
 		SSH: []SSHResource{
 			{Command: "show version", Response: "Cisco IOS Software, C2900 Software\nSystem uptime is 15 days, 3 hours"},
@@ -593,19 +629,79 @@ func (s *SNMPServer) handleRequests() {
 
 		requestData := buffer[:n] // Store the full request
 
-		// Parse SNMP request (now properly implemented)
-		oid := s.parseOIDFromRequest(requestData)
-		response := s.findResponse(oid)
+		// Debug: Print hex dump of request packet
+		log.Printf("DEBUG: Request packet hex (%d bytes):", n)
+		for i := 0; i < n && i < 64; i += 16 {
+			end := i + 16
+			if end > n {
+				end = n
+			}
+			hexStr := fmt.Sprintf("  %04X: ", i)
+			for j := i; j < end; j++ {
+				hexStr += fmt.Sprintf("%02X ", requestData[j])
+			}
+			log.Printf(hexStr)
+		}
+
+		// Parse SNMP request to get OID and request type
+		req := s.parseIncomingRequest(requestData)
+		oid := req.OID
+		var response string
+		var responseOID string
+
+		// Determine PDU type from request data
+		pduType := s.getPDUType(requestData)
+		log.Printf("DEBUG: Received %s request for OID: %s (version=%d, community=%s, requestID=0x%X)", 
+			map[byte]string{ASN1_GET_REQUEST: "GET", ASN1_GET_NEXT: "GETNEXT"}[pduType], oid, req.Version, req.Community, req.RequestID)
+		
+		if pduType == ASN1_GET_NEXT {
+			// Handle GetNext request for SNMP walk
+			responseOID, response = s.findNextOID(oid)
+			if responseOID == "" {
+				// End of MIB view - use a special response
+				responseOID = oid
+				response = "endOfMibView"
+			}
+			log.Printf("SNMP %s: GetNext %s -> %s = %s", s.device.ID, oid, responseOID, response)
+			
+			// Additional debug - show all available OIDs for comparison
+			log.Printf("DEBUG: Available OIDs:")
+			for i, res := range s.device.resources.SNMP[:5] { // Show first 5
+				log.Printf("  %d: %s = %s", i, res.OID, res.Response)
+			}
+		} else {
+			// Handle regular Get request
+			responseOID = oid
+			response = s.findResponse(oid)
+			log.Printf("SNMP %s: Get %s -> %s", s.device.ID, oid, response)
+		}
 
 		// Create proper SNMP response (pass the request data)
-		responsePacket := s.createSNMPResponse(oid, response, requestData)
+		responsePacket := s.createSNMPResponse(responseOID, response, requestData)
+
+		// Debug: Print hex dump of response packet
+		if len(responsePacket) > 0 {
+			log.Printf("DEBUG: Response packet hex (first 64 bytes):")
+			for i := 0; i < len(responsePacket) && i < 64; i += 16 {
+				end := i + 16
+				if end > len(responsePacket) {
+					end = len(responsePacket)
+				}
+				hexStr := fmt.Sprintf("  %04X: ", i)
+				for j := i; j < end; j++ {
+					hexStr += fmt.Sprintf("%02X ", responsePacket[j])
+				}
+				log.Printf(hexStr)
+			}
+		}
 
 		_, err = s.listener.WriteToUDP(responsePacket, clientAddr)
 		if err != nil {
 			log.Printf("Error sending SNMP response: %v", err)
+		} else {
+			log.Printf("DEBUG: Sent response packet (%d bytes) for %s request", len(responsePacket), 
+				map[byte]string{ASN1_GET_REQUEST: "GET", ASN1_GET_NEXT: "GETNEXT"}[pduType])
 		}
-
-		log.Printf("SNMP %s: %s -> %s", s.device.ID, oid, response)
 	}
 }
 
@@ -616,6 +712,106 @@ func (s *SNMPServer) findResponse(oid string) string {
 		}
 	}
 	return "OID not supported"
+}
+
+// Compare two OIDs lexicographically
+func compareOIDs(oid1, oid2 string) int {
+	parts1 := strings.Split(oid1, ".")
+	parts2 := strings.Split(oid2, ".")
+	
+	maxLen := len(parts1)
+	if len(parts2) > maxLen {
+		maxLen = len(parts2)
+	}
+	
+	for i := 0; i < maxLen; i++ {
+		var val1, val2 int
+		
+		if i < len(parts1) {
+			val1, _ = strconv.Atoi(parts1[i])
+		}
+		if i < len(parts2) {
+			val2, _ = strconv.Atoi(parts2[i])
+		}
+		
+		if val1 < val2 {
+			return -1
+		} else if val1 > val2 {
+			return 1
+		}
+	}
+	
+	if len(parts1) < len(parts2) {
+		return -1
+	} else if len(parts1) > len(parts2) {
+		return 1
+	}
+	
+	return 0
+}
+
+// Find the next OID in lexicographic order for SNMP GetNext requests
+func (s *SNMPServer) findNextOID(currentOID string) (string, string) {
+	var candidates []SNMPResource
+	
+	// Find all OIDs that are lexicographically greater than currentOID
+	for _, resource := range s.device.resources.SNMP {
+		if compareOIDs(resource.OID, currentOID) > 0 {
+			candidates = append(candidates, resource)
+		}
+	}
+	
+	if len(candidates) == 0 {
+		return "", "endOfMibView"
+	}
+	
+	// Find the smallest OID among candidates (lexicographically first)
+	nextOID := candidates[0]
+	for _, candidate := range candidates[1:] {
+		if compareOIDs(candidate.OID, nextOID.OID) < 0 {
+			nextOID = candidate
+		}
+	}
+	
+	return nextOID.OID, nextOID.Response
+}
+
+// Extract PDU type from SNMP request
+func (s *SNMPServer) getPDUType(data []byte) byte {
+	if len(data) < 10 {
+		return ASN1_GET_REQUEST // Default
+	}
+
+	pos := 0
+	
+	// Skip SEQUENCE tag and length
+	if data[pos] != ASN1_SEQUENCE {
+		return ASN1_GET_REQUEST
+	}
+	pos++
+	pos += s.skipLength(data[pos:])
+	
+	// Skip version
+	if pos < len(data) && data[pos] == ASN1_INTEGER {
+		pos++
+		pos += s.skipLength(data[pos:])
+		pos++ // skip version value
+	}
+	
+	// Skip community
+	if pos < len(data) && data[pos] == ASN1_OCTET_STRING {
+		pos++
+		communityLen := int(data[pos])
+		pos++
+		pos += communityLen
+	}
+	
+	// Get PDU type
+	if pos < len(data) {
+		return data[pos]
+	}
+	
+	return ASN1_GET_REQUEST
 }
 
 // SSH Server implementation
@@ -1597,6 +1793,7 @@ type SNMPRequest struct {
 	Community string
 	RequestID int
 	OID       string
+	Version   int
 }
 
 // Parse incoming SNMP request to extract all needed info
@@ -1605,11 +1802,14 @@ func (s *SNMPServer) parseIncomingRequest(data []byte) SNMPRequest {
 		Community: "public",
 		RequestID: 1,
 		OID:       "1.3.6.1.2.1.1.1.0",
+		Version:   1, // Default to SNMPv2c
 	}
 
 	if len(data) < 10 {
 		return req
 	}
+
+	log.Printf("DEBUG: Starting parse, data length: %d", len(data))
 
 	// Parse the SNMP packet structure
 	// SEQUENCE { version, community, PDU }
@@ -1617,46 +1817,78 @@ func (s *SNMPServer) parseIncomingRequest(data []byte) SNMPRequest {
 
 	// Skip SEQUENCE tag and length
 	if data[pos] != ASN1_SEQUENCE {
+		log.Printf("DEBUG: Expected SEQUENCE tag at pos %d, got 0x%02X", pos, data[pos])
 		return req
 	}
+	log.Printf("DEBUG: Found SEQUENCE at pos %d", pos)
 	pos++
-	pos += s.skipLength(data[pos:])
+	lengthSkip := s.skipLength(data[pos:])
+	log.Printf("DEBUG: Skipping %d bytes for SEQUENCE length", lengthSkip)
+	pos += lengthSkip
 
-	// Skip version
+	// Parse version
 	if pos < len(data) && data[pos] == ASN1_INTEGER {
+		log.Printf("DEBUG: Found version INTEGER at pos %d", pos)
 		pos++
-		pos += s.skipLength(data[pos:])
-		pos++ // skip version value
+		versionLen := int(data[pos])
+		log.Printf("DEBUG: Version length: %d", versionLen)
+		pos++
+		if pos+versionLen <= len(data) && versionLen == 1 {
+			req.Version = int(data[pos])
+			log.Printf("DEBUG: Version: %d", req.Version)
+			pos += versionLen
+		} else {
+			log.Printf("DEBUG: Skipping version, invalid length")
+			pos += versionLen // skip if we can't parse
+		}
 	}
 
 	// Parse community
 	if pos < len(data) && data[pos] == ASN1_OCTET_STRING {
+		log.Printf("DEBUG: Found community STRING at pos %d", pos)
 		pos++
 		communityLen := int(data[pos])
+		log.Printf("DEBUG: Community length: %d", communityLen)
 		pos++
 		if pos+communityLen <= len(data) {
 			req.Community = string(data[pos : pos+communityLen])
+			log.Printf("DEBUG: Community: %s", req.Community)
 			pos += communityLen
 		}
 	}
 
-	// Parse PDU (GetRequest = 0xa0)
-	if pos < len(data) && data[pos] == 0xa0 {
+	// Parse PDU (GetRequest = 0xa0, GetNext = 0xa1)
+	log.Printf("DEBUG: Looking for PDU at pos %d, byte: 0x%02X", pos, data[pos])
+	if pos < len(data) && (data[pos] == 0xa0 || data[pos] == 0xa1) {
+		pduType := data[pos]
+		log.Printf("DEBUG: Found PDU type 0x%02X at pos %d", pduType, pos)
 		pos++
-		pos += s.skipLength(data[pos:])
+		pduLengthSkip := s.skipLength(data[pos:])
+		log.Printf("DEBUG: Skipping %d bytes for PDU length", pduLengthSkip)
+		pos += pduLengthSkip
 
 		// Parse request ID
+		log.Printf("DEBUG: Looking for request ID at pos %d, byte: 0x%02X", pos, data[pos])
 		if pos < len(data) && data[pos] == ASN1_INTEGER {
+			log.Printf("DEBUG: Found request ID INTEGER at pos %d", pos)
 			pos++
 			reqIDLen := int(data[pos])
+			log.Printf("DEBUG: Request ID length: %d", reqIDLen)
 			pos++
 			if pos+reqIDLen <= len(data) && reqIDLen <= 4 {
 				req.RequestID = 0
+				log.Printf("DEBUG: Request ID bytes at pos %d:", pos)
 				for i := 0; i < reqIDLen; i++ {
+					log.Printf("  byte[%d] = 0x%02X", i, data[pos+i])
 					req.RequestID = (req.RequestID << 8) | int(data[pos+i])
 				}
 				pos += reqIDLen
+				log.Printf("DEBUG: Parsed Request ID: 0x%X (%d bytes)", req.RequestID, reqIDLen)
+			} else {
+				log.Printf("DEBUG: Invalid request ID length or bounds")
 			}
+		} else {
+			log.Printf("DEBUG: No INTEGER tag for request ID")
 		}
 
 		// Skip error-status and error-index
@@ -1719,8 +1951,10 @@ func (s *SNMPServer) createSNMPResponse(oid, value string, requestData []byte) [
 	// Determine SNMP data type based on OID and value
 	var valueBytes []byte
 
-	// Check if it's a numeric value
-	if intVal, err := strconv.Atoi(value); err == nil {
+	if value == "endOfMibView" {
+		// Special handling for endOfMibView (SNMPv2c)
+		valueBytes = []byte{0x82, 0x00} // endOfMibView exception
+	} else if intVal, err := strconv.Atoi(value); err == nil {
 		// Integer value
 		valueBytes = encodeInteger(intVal)
 	} else {
@@ -1749,7 +1983,7 @@ func (s *SNMPServer) createSNMPResponse(oid, value string, requestData []byte) [
 
 	// Message contents: version, community, PDU
 	msgContents := []byte{}
-	msgContents = append(msgContents, encodeInteger(1)...)                 // version (SNMPv2c = 1)
+	msgContents = append(msgContents, encodeInteger(req.Version)...)       // Use client's version
 	msgContents = append(msgContents, encodeOctetString(req.Community)...) // Use actual community
 	msgContents = append(msgContents, pdu...)                              // PDU
 
