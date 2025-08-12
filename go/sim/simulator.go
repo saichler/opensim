@@ -437,7 +437,7 @@ func main() {
 	manager = NewSimulatorManager()
 
 	// Load resources
-	err := manager.LoadResources("resources.json")
+	err := manager.LoadResources("resources_asr9k.json")
 	if err != nil {
 		log.Fatalf("Failed to load resources: %v", err)
 	}
