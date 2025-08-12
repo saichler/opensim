@@ -2,28 +2,35 @@ package main
 
 import (
 	"bufio"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"fmt"
 	"log"
 	"net"
 	"strings"
-	"time"
 
 	"golang.org/x/crypto/ssh"
 )
 
 // SSH Server implementation
 func (s *SSHServer) Start() error {
-	// Use shared SSH key from manager's resource pool
-	var sharedKey ssh.Signer
-	if manager != nil && manager.resourcePool != nil {
-		sharedKey = manager.resourcePool.sharedSSHKey
-	} else {
-		// Fallback: generate a key for this server (should not happen in normal operation)
-		key, err := generateSharedSSHKey()
-		if err != nil {
-			return fmt.Errorf("failed to generate SSH key: %v", err)
-		}
-		sharedKey = key
+	// Generate host key
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return err
+	}
+
+	privateKeyPEM := &pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
+	}
+	privateKeyBytes := pem.EncodeToMemory(privateKeyPEM)
+
+	signer, err := ssh.ParsePrivateKey(privateKeyBytes)
+	if err != nil {
+		return err
 	}
 
 	config := &ssh.ServerConfig{
@@ -34,7 +41,7 @@ func (s *SSHServer) Start() error {
 			return nil, fmt.Errorf("invalid credentials")
 		},
 	}
-	config.AddHostKey(sharedKey)
+	config.AddHostKey(signer)
 
 	addr := fmt.Sprintf("%s:%d", s.device.IP.String(), s.device.SSHPort)
 	listener, err := net.Listen("tcp", addr)
@@ -60,48 +67,17 @@ func (s *SSHServer) Stop() error {
 
 func (s *SSHServer) handleConnections() {
 	for s.running {
-		// Check if context is cancelled
-		select {
-		case <-s.ctx.Done():
-			return
-		default:
-		}
-		
-		// Set accept deadline to allow context cancellation
-		if tcpListener, ok := s.listener.(*net.TCPListener); ok {
-			tcpListener.SetDeadline(time.Now().Add(1 * time.Second))
-		}
 		conn, err := s.listener.Accept()
 		if err != nil {
-			// Check if it's a timeout error (expected for context cancellation)
-			if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
-				continue
-			}
 			if s.running {
 				log.Printf("SSH server error accepting connection: %v", err)
 			}
 			continue
 		}
-		
-		// Limit concurrent connections
-		select {
-		case s.connLimiter <- struct{}{}:
-			go s.handleConnectionWithLimit(conn)
-		default:
-			// Too many connections, reject
-			log.Printf("SSH server: rejecting connection, too many active connections")
-			conn.Close()
-		}
+
+		go s.handleConnection(conn)
 
 	}
-}
-
-func (s *SSHServer) handleConnectionWithLimit(conn net.Conn) {
-	defer func() {
-		// Release connection slot
-		<-s.connLimiter
-	}()
-	s.handleConnection(conn)
 }
 
 func (s *SSHServer) handleConnection(conn net.Conn) {
