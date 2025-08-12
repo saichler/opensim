@@ -227,16 +227,19 @@ func (sm *SimulatorManager) CreateDevices(startIP string, count int, netmask str
 			continue
 		}
 
-		// Create individual TUN interface for this device
+		// Create individual TUN interface for this device (make a copy of the IP)
 		tunName := sm.getNextTunName()
-		tunIface, err := createTunInterface(tunName, sm.currentIP, netmask)
+		tunIP := make(net.IP, len(sm.currentIP))
+		copy(tunIP, sm.currentIP)
+		
+		tunIface, err := createTunInterface(tunName, tunIP, netmask)
 		if err != nil {
 			log.Printf("Failed to create TUN interface for %s: %v", deviceID, err)
 			sm.incrementIP()
 			continue
 		}
 
-		// Create device with default ports (make a copy of the IP)
+		// Create device with default ports (make another copy of the IP for the device)
 		deviceIP := make(net.IP, len(sm.currentIP))
 		copy(deviceIP, sm.currentIP)
 		
