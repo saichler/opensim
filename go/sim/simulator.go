@@ -1,8 +1,13 @@
 package main
 
 import (
+	"context"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
 	"encoding/binary"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"log"
 	"net"
@@ -12,6 +17,8 @@ import (
 	"strings"
 	"syscall"
 	"unsafe"
+
+	"golang.org/x/crypto/ssh"
 )
 
 // SNMP ASN.1 BER/DER type tags (shared constants defined here)
@@ -31,17 +38,55 @@ const (
 
 // Configuration constants
 const (
-	DEFAULT_SNMP_PORT = 161
-	DEFAULT_SSH_PORT  = 22
+	DEFAULT_SNMP_PORT = 2161  // Start from higher port to avoid conflicts
+	DEFAULT_SSH_PORT  = 2222  // Start from higher port to avoid conflicts
 	USERNAME          = "simadmin"
 	PASSWORD          = "simadmin"
 	TUN_DEVICE_PREFIX = "sim"
+	MAX_GOROUTINES    = 50000  // Limit total goroutines
+	MAX_CONNECTIONS   = 10     // Max SSH connections per device
+	DEVICES_PER_TUN   = 256    // Devices per shared TUN interface
 )
 
 // Global manager instance
 var manager *SimulatorManager
 
-// TUN interface management functions
+// Shared TUN interface management functions
+func createSharedTunInterface(name string, network *net.IPNet) (*SharedTunInterface, error) {
+	// Open TUN device
+	fd, err := syscall.Open("/dev/net/tun", syscall.O_RDWR, 0)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open /dev/net/tun: %v", err)
+	}
+
+	// Configure interface
+	ifr := make([]byte, 40)
+	copy(ifr, []byte(name))
+	binary.LittleEndian.PutUint16(ifr[16:18], 0x0001) // IFF_TUN
+
+	// TUNSETIFF ioctl
+	_, _, errno := syscall.Syscall(syscall.SYS_IOCTL, uintptr(fd), 0x400454ca, uintptr(unsafe.Pointer(&ifr[0])))
+	if errno != 0 {
+		syscall.Close(fd)
+		return nil, fmt.Errorf("TUNSETIFF ioctl failed: %v", errno)
+	}
+
+	tun := &SharedTunInterface{
+		Name:    name,
+		Network: network,
+		fd:      fd,
+	}
+
+	// Configure the interface
+	if err := tun.configure(); err != nil {
+		tun.destroy()
+		return nil, err
+	}
+
+	return tun, nil
+}
+
+// Legacy function for compatibility
 func createTunInterface(name string, ip net.IP, netmask string) (*TunInterface, error) {
 	// Open TUN device
 	fd, err := syscall.Open("/dev/net/tun", syscall.O_RDWR, 0)
@@ -76,6 +121,23 @@ func createTunInterface(name string, ip net.IP, netmask string) (*TunInterface, 
 	return tun, nil
 }
 
+func (tun *SharedTunInterface) configure() error {
+	// Configure IP address using ip command
+	cmd := exec.Command("ip", "addr", "add", tun.Network.String(), "dev", tun.Name)
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to set IP address: %v", err)
+	}
+
+	// Bring interface up
+	cmd = exec.Command("ip", "link", "set", "dev", tun.Name, "up")
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to bring interface up: %v", err)
+	}
+
+	log.Printf("Created shared TUN interface %s with network %s", tun.Name, tun.Network.String())
+	return nil
+}
+
 func (tun *TunInterface) configure(netmask string) error {
 	// Configure IP address using ip command
 	cmd := exec.Command("ip", "addr", "add", fmt.Sprintf("%s/%s", tun.IP.String(), netmask), "dev", tun.Name)
@@ -93,6 +155,35 @@ func (tun *TunInterface) configure(netmask string) error {
 	return nil
 }
 
+func (tun *SharedTunInterface) destroy() error {
+	tun.mu.Lock()
+	defer tun.mu.Unlock()
+	
+	// Only destroy if no devices are using it
+	if tun.deviceCount > 0 {
+		return fmt.Errorf("cannot destroy TUN interface %s: still has %d devices", tun.Name, tun.deviceCount)
+	}
+	
+	if tun.fd > 0 {
+		return syscall.Close(tun.fd)
+	}
+	return nil
+}
+
+func (tun *SharedTunInterface) addDevice() {
+	tun.mu.Lock()
+	defer tun.mu.Unlock()
+	tun.deviceCount++
+}
+
+func (tun *SharedTunInterface) removeDevice() {
+	tun.mu.Lock()
+	defer tun.mu.Unlock()
+	if tun.deviceCount > 0 {
+		tun.deviceCount--
+	}
+}
+
 func (tun *TunInterface) destroy() error {
 	if tun.fd > 0 {
 		return syscall.Close(tun.fd)
@@ -100,12 +191,74 @@ func (tun *TunInterface) destroy() error {
 	return nil
 }
 
+// Resource pool implementation
+func NewResourcePool() (*ResourcePool, error) {
+	// Generate shared SSH key once
+	sharedKey, err := generateSharedSSHKey()
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate shared SSH key: %v", err)
+	}
+	
+	return &ResourcePool{
+		sharedTunIfaces: make(map[string]*SharedTunInterface),
+		sharedSSHKey:    sharedKey,
+		portAllocator: &PortAllocator{
+			snmpPorts: make(map[int]bool),
+			sshPorts:  make(map[int]bool),
+			nextSNMP:  DEFAULT_SNMP_PORT,
+			nextSSH:   DEFAULT_SSH_PORT,
+		},
+	}, nil
+}
+
 // SimulatorManager implementation
 func NewSimulatorManager() *SimulatorManager {
-	return &SimulatorManager{
-		devices:      make(map[string]*DeviceSimulator),
-		nextTunIndex: 0,
+	resourcePool, err := NewResourcePool()
+	if err != nil {
+		log.Fatalf("Failed to create resource pool: %v", err)
 	}
+	
+	return &SimulatorManager{
+		devices:       make(map[string]*DeviceSimulator),
+		nextTunIndex:  0,
+		resourcePool:  resourcePool,
+		goroutinePool: make(chan struct{}, MAX_GOROUTINES),
+		maxGoroutines: MAX_GOROUTINES,
+	}
+}
+
+func (sm *SimulatorManager) getOrCreateSharedTunInterface(ip net.IP) (*SharedTunInterface, error) {
+	sm.resourcePool.mu.Lock()
+	defer sm.resourcePool.mu.Unlock()
+	
+	// Calculate which TUN interface this IP should use
+	ipv4 := ip.To4()
+	if ipv4 == nil {
+		return nil, fmt.Errorf("only IPv4 addresses supported")
+	}
+	
+	// Group devices by /24 subnet
+	subnetBase := net.IPv4(ipv4[0], ipv4[1], ipv4[2], 0)
+	tunName := fmt.Sprintf("%s_%d_%d_%d", TUN_DEVICE_PREFIX, ipv4[0], ipv4[1], ipv4[2])
+	
+	// Check if TUN interface already exists
+	if existingTun, exists := sm.resourcePool.sharedTunIfaces[tunName]; exists {
+		return existingTun, nil
+	}
+	
+	// Create new shared TUN interface for this subnet
+	network := &net.IPNet{
+		IP:   subnetBase,
+		Mask: net.CIDRMask(24, 32),
+	}
+	
+	tunIface, err := createSharedTunInterface(tunName, network)
+	if err != nil {
+		return nil, err
+	}
+	
+	sm.resourcePool.sharedTunIfaces[tunName] = tunIface
+	return tunIface, nil
 }
 
 func (sm *SimulatorManager) getNextTunName() string {
@@ -130,6 +283,9 @@ func (sm *SimulatorManager) LoadResources(filename string) error {
 	if err := json.NewDecoder(file).Decode(&sm.deviceResources); err != nil {
 		return err
 	}
+
+	// Set shared resources in resource pool
+	sm.resourcePool.sharedResources = sm.deviceResources
 
 	log.Printf("Loaded %d SNMP and %d SSH resources", len(sm.deviceResources.SNMP), len(sm.deviceResources.SSH))
 	return nil
@@ -194,6 +350,9 @@ func (sm *SimulatorManager) createDefaultResources(filename string) error {
 	}
 
 	sm.deviceResources = defaultResources
+	// Set shared resources in resource pool
+	sm.resourcePool.sharedResources = defaultResources
+	
 	log.Printf("Created default resources file %s with %d SNMP and %d SSH resources",
 		filename, len(defaultResources.SNMP), len(defaultResources.SSH))
 
@@ -227,27 +386,42 @@ func (sm *SimulatorManager) CreateDevices(startIP string, count int, netmask str
 			continue
 		}
 
-		// Create TUN interface
-		tunName := sm.getNextTunName()
-		tunIface, err := createTunInterface(tunName, sm.currentIP, netmask)
+		// Get or create shared TUN interface
+		sharedTunIface, err := sm.getOrCreateSharedTunInterface(sm.currentIP)
 		if err != nil {
-			log.Printf("Failed to create TUN interface for %s: %v", deviceID, err)
+			log.Printf("Failed to get/create shared TUN interface for %s: %v", deviceID, err)
 			sm.incrementIP()
 			continue
 		}
 
+		// Allocate ports
+		snmpPort := sm.resourcePool.portAllocator.allocateSNMPPort()
+		sshPort := sm.resourcePool.portAllocator.allocateSSHPort()
+
 		// Create device
 		device := &DeviceSimulator{
-			ID:        deviceID,
-			IP:        sm.currentIP,
-			SNMPPort:  DEFAULT_SNMP_PORT,
-			SSHPort:   DEFAULT_SSH_PORT,
-			tunIface:  tunIface,
-			resources: sm.deviceResources,
+			ID:              deviceID,
+			IP:              sm.currentIP,
+			SNMPPort:        snmpPort,
+			SSHPort:         sshPort,
+			sharedTunIface:  sharedTunIface,
+			resources:       sm.resourcePool.sharedResources,
 		}
 
-		device.snmpServer = &SNMPServer{device: device}
-		device.sshServer = &SSHServer{device: device}
+		// Create servers with context and limits
+		ctx, cancel := context.WithCancel(context.Background())
+		device.snmpServer = &SNMPServer{
+			device: device,
+			ctx:    ctx,
+			cancel: cancel,
+		}
+		device.sshServer = &SSHServer{
+			device:      device,
+			ctx:         ctx,
+			cancel:      cancel,
+			connLimiter: make(chan struct{}, MAX_CONNECTIONS),
+			maxConns:    MAX_CONNECTIONS,
+		}
 
 		// Start device services
 		if err := device.Start(); err != nil {
@@ -256,10 +430,11 @@ func (sm *SimulatorManager) CreateDevices(startIP string, count int, netmask str
 			continue
 		}
 
+		sharedTunIface.addDevice()
 		sm.devices[deviceID] = device
 		successCount++
 
-		log.Printf("Created device: %s on IP %s (interface: %s)", deviceID, sm.currentIP.String(), tunName)
+		log.Printf("Created device: %s on IP %s (SNMP:%d, SSH:%d)", deviceID, sm.currentIP.String(), snmpPort, sshPort)
 		sm.incrementIP()
 	}
 
@@ -300,8 +475,8 @@ func (sm *SimulatorManager) ListDevices() []DeviceInfo {
 			SSHPort:  device.SSHPort,
 			Running:  device.running,
 		}
-		if device.tunIface != nil {
-			info.Interface = device.tunIface.Name
+		if device.sharedTunIface != nil {
+			info.Interface = device.sharedTunIface.Name
 		}
 		devices = append(devices, info)
 	}
@@ -321,6 +496,15 @@ func (sm *SimulatorManager) DeleteDevice(deviceID string) error {
 	// Stop and cleanup device
 	if err := device.Stop(); err != nil {
 		log.Printf("Error stopping device %s: %v", deviceID, err)
+	}
+
+	// Release ports
+	sm.resourcePool.portAllocator.releaseSNMPPort(device.SNMPPort)
+	sm.resourcePool.portAllocator.releaseSSHPort(device.SSHPort)
+
+	// Remove device from shared TUN interface
+	if device.sharedTunIface != nil {
+		device.sharedTunIface.removeDevice()
 	}
 
 	delete(sm.devices, deviceID)
@@ -349,6 +533,77 @@ func (sm *SimulatorManager) DeleteAllDevices() error {
 		return fmt.Errorf("errors deleting devices: %s", strings.Join(errors, ", "))
 	}
 	return nil
+}
+
+// Port allocation functions
+func (pa *PortAllocator) allocateSNMPPort() int {
+	pa.mu.Lock()
+	defer pa.mu.Unlock()
+	
+	for {
+		if !pa.snmpPorts[pa.nextSNMP] {
+			port := pa.nextSNMP
+			pa.snmpPorts[port] = true
+			pa.nextSNMP++
+			if pa.nextSNMP > 65535 {
+				pa.nextSNMP = DEFAULT_SNMP_PORT
+			}
+			return port
+		}
+		pa.nextSNMP++
+		if pa.nextSNMP > 65535 {
+			pa.nextSNMP = DEFAULT_SNMP_PORT
+		}
+	}
+}
+
+func (pa *PortAllocator) allocateSSHPort() int {
+	pa.mu.Lock()
+	defer pa.mu.Unlock()
+	
+	for {
+		if !pa.sshPorts[pa.nextSSH] {
+			port := pa.nextSSH
+			pa.sshPorts[port] = true
+			pa.nextSSH++
+			if pa.nextSSH > 65535 {
+				pa.nextSSH = DEFAULT_SSH_PORT
+			}
+			return port
+		}
+		pa.nextSSH++
+		if pa.nextSSH > 65535 {
+			pa.nextSSH = DEFAULT_SSH_PORT
+		}
+	}
+}
+
+func (pa *PortAllocator) releaseSNMPPort(port int) {
+	pa.mu.Lock()
+	defer pa.mu.Unlock()
+	delete(pa.snmpPorts, port)
+}
+
+func (pa *PortAllocator) releaseSSHPort(port int) {
+	pa.mu.Lock()
+	defer pa.mu.Unlock()
+	delete(pa.sshPorts, port)
+}
+
+// Shared SSH key generation
+func generateSharedSSHKey() (ssh.Signer, error) {
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return nil, err
+	}
+	
+	privateKeyPEM := &pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
+	}
+	privateKeyBytes := pem.EncodeToMemory(privateKeyPEM)
+	
+	return ssh.ParsePrivateKey(privateKeyBytes)
 }
 
 // DeviceSimulator implementation
@@ -381,7 +636,7 @@ func (d *DeviceSimulator) Start() error {
 
 	d.running = true
 	log.Printf("Device %s started on %s (interface: %s, SNMP:%d, SSH:%d)",
-		d.ID, d.IP.String(), d.tunIface.Name, d.SNMPPort, d.SSHPort)
+		d.ID, d.IP.String(), d.sharedTunIface.Name, d.SNMPPort, d.SSHPort)
 
 	return nil
 }
@@ -408,12 +663,8 @@ func (d *DeviceSimulator) Stop() error {
 		}
 	}
 
-	// Destroy TUN interface
-	if d.tunIface != nil {
-		if err := d.tunIface.destroy(); err != nil {
-			errors = append(errors, fmt.Sprintf("TUN: %v", err))
-		}
-	}
+	// Note: We don't destroy shared TUN interface here as other devices may use it
+	// The SimulatorManager handles TUN interface lifecycle
 
 	d.running = false
 	log.Printf("Device %s stopped", d.ID)

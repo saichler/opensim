@@ -6,6 +6,7 @@ import (
 	"net"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // SNMP Server implementation
@@ -39,8 +40,21 @@ func (s *SNMPServer) handleRequests() {
 	buffer := make([]byte, 1024)
 
 	for s.running {
+		// Check if context is cancelled
+		select {
+		case <-s.ctx.Done():
+			return
+		default:
+		}
+		
+		// Set read deadline to allow context cancellation
+		s.listener.SetReadDeadline(time.Now().Add(1 * time.Second))
 		n, clientAddr, err := s.listener.ReadFromUDP(buffer)
 		if err != nil {
+			// Check if it's a timeout error (expected for context cancellation)
+			if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
+				continue
+			}
 			if s.running {
 				log.Printf("SNMP server error reading UDP: %v", err)
 			}
