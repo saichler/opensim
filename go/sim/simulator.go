@@ -236,10 +236,13 @@ func (sm *SimulatorManager) CreateDevices(startIP string, count int, netmask str
 			continue
 		}
 
-		// Create device with default ports
+		// Create device with default ports (make a copy of the IP)
+		deviceIP := make(net.IP, len(sm.currentIP))
+		copy(deviceIP, sm.currentIP)
+		
 		device := &DeviceSimulator{
 			ID:        deviceID,
-			IP:        sm.currentIP,
+			IP:        deviceIP,
 			SNMPPort:  DEFAULT_SNMP_PORT,
 			SSHPort:   DEFAULT_SSH_PORT,
 			tunIface:  tunIface,
@@ -274,18 +277,22 @@ func (sm *SimulatorManager) incrementIP() {
 		return // Only support IPv4 for now
 	}
 
+	// Create a copy to avoid modifying the original IP
+	newIP := make(net.IP, len(ip))
+	copy(newIP, ip)
+
 	// Increment the last octet
-	ip[3]++
-	if ip[3] == 0 {
-		ip[2]++
-		if ip[2] == 0 {
-			ip[1]++
-			if ip[1] == 0 {
-				ip[0]++
+	newIP[3]++
+	if newIP[3] == 0 {
+		newIP[2]++
+		if newIP[2] == 0 {
+			newIP[1]++
+			if newIP[1] == 0 {
+				newIP[0]++
 			}
 		}
 	}
-	sm.currentIP = ip
+	sm.currentIP = newIP
 }
 
 func (sm *SimulatorManager) ListDevices() []DeviceInfo {
