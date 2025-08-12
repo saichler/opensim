@@ -33,13 +33,33 @@ check_file() {
     fi
 }
 
-# Function to check kernel module
+# Function to check kernel module (improved TUN detection)
 check_module() {
-    if lsmod | grep -q "^$1 "; then
-        echo "✅ $1 module: LOADED"
+    if [ "$1" = "tun" ]; then
+        # Special handling for TUN module
+        if [ -c /dev/net/tun ]; then
+            echo "✅ TUN support: AVAILABLE (/dev/net/tun exists)"
+            
+            # Check if it's a module or built-in
+            if lsmod | grep -q "^tun "; then
+                echo "   └─ TUN loaded as module"
+            elif grep -q "CONFIG_TUN=y" /boot/config-$(uname -r) 2>/dev/null; then
+                echo "   └─ TUN built into kernel"
+            else
+                echo "   └─ TUN available (method unknown)"
+            fi
+        else
+            echo "❌ TUN support: NOT AVAILABLE (/dev/net/tun missing)"
+            return 1
+        fi
     else
-        echo "❌ $1 module: NOT LOADED"
-        return 1
+        # Standard module check for other modules
+        if lsmod | grep -q "^$1 "; then
+            echo "✅ $1 module: LOADED"
+        else
+            echo "❌ $1 module: NOT LOADED"
+            return 1
+        fi
     fi
 }
 
