@@ -1,9 +1,13 @@
 package main
 
 import (
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
+	"strings"
+	"time"
 
 	"github.com/gorilla/mux"
 )
@@ -18,8 +22,8 @@ func createDevicesHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.DeviceCount <= 0 || req.DeviceCount > 100 {
-		sendErrorResponse(w, "Device count must be between 1 and 100", http.StatusBadRequest)
+	if req.DeviceCount <= 0 {
+		sendErrorResponse(w, "Device count must be greater than 0", http.StatusBadRequest)
 		return
 	}
 
@@ -58,6 +62,142 @@ func deleteAllDevicesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sendSuccessResponse(w, "All devices deleted")
+}
+
+func exportDevicesCSVHandler(w http.ResponseWriter, r *http.Request) {
+	devices := manager.ListDevices()
+	
+	// Set headers for CSV download
+	filename := fmt.Sprintf("devices_%s.csv", time.Now().Format("2006-01-02_15-04-05"))
+	w.Header().Set("Content-Type", "text/csv")
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filename))
+	
+	// Create CSV writer
+	writer := csv.NewWriter(w)
+	defer writer.Flush()
+	
+	// Write CSV headers
+	headers := []string{"Device ID", "IP Address", "Interface", "SNMP Port", "SSH Port", "Status"}
+	if err := writer.Write(headers); err != nil {
+		http.Error(w, "Failed to write CSV headers", http.StatusInternalServerError)
+		return
+	}
+	
+	// Write device data
+	for _, device := range devices {
+		status := "Stopped"
+		if device.Running {
+			status = "Running"
+		}
+		
+		interfaceName := device.Interface
+		if interfaceName == "" {
+			interfaceName = "N/A"
+		}
+		
+		record := []string{
+			device.ID,
+			device.IP,
+			interfaceName,
+			fmt.Sprintf("%d", device.SNMPPort),
+			fmt.Sprintf("%d", device.SSHPort),
+			status,
+		}
+		
+		if err := writer.Write(record); err != nil {
+			http.Error(w, "Failed to write CSV record", http.StatusInternalServerError)
+			return
+		}
+	}
+}
+
+func generateRouteScriptHandler(w http.ResponseWriter, r *http.Request) {
+	devices := manager.ListDevices()
+	
+	// Set headers for script download
+	filename := fmt.Sprintf("add_simulator_routes_%s.sh", time.Now().Format("2006-01-02_15-04-05"))
+	w.Header().Set("Content-Type", "application/x-sh")
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filename))
+	
+	// Generate bash script content
+	script := generateRouteScript(devices)
+	w.Write([]byte(script))
+}
+
+func generateRouteScript(devices []DeviceInfo) string {
+	if len(devices) == 0 {
+		return `#!/bin/bash
+# No devices found in simulator
+echo "No devices found in simulator"
+exit 1
+`
+	}
+	
+	// Collect unique subnets from devices
+	subnets := make(map[string]bool)
+	for _, device := range devices {
+		ip := net.ParseIP(device.IP)
+		if ip != nil {
+			// Assume /24 subnet for route calculation
+			subnet := fmt.Sprintf("%d.%d.%d.0/24", ip[12], ip[13], ip[14])
+			subnets[subnet] = true
+		}
+	}
+	
+	var script strings.Builder
+	script.WriteString(`#!/bin/bash
+#
+# Static Route Configuration Script for Network Device Simulator
+# Generated on: ` + time.Now().Format("2006-01-02 15:04:05") + `
+#
+# Usage: ./add_simulator_routes.sh <SIMULATOR_HOST_IP>
+# Example: ./add_simulator_routes.sh 192.168.1.100
+#
+
+if [ $# -ne 1 ]; then
+    echo "Usage: $0 <SIMULATOR_HOST_IP>"
+    echo "Example: $0 192.168.1.100"
+    echo ""
+    echo "This script will add static routes for the following subnets:"
+`)
+
+	// Add subnet list to help text
+	for subnet := range subnets {
+		script.WriteString(fmt.Sprintf(`    echo "  - %s"`, subnet))
+		script.WriteString("\n")
+	}
+	
+	script.WriteString(`    exit 1
+fi
+
+SIMULATOR_HOST=$1
+
+echo "Adding static routes to simulator subnets via $SIMULATOR_HOST"
+echo ""
+
+`)
+
+	// Add simple route commands for each subnet
+	for subnet := range subnets {
+		script.WriteString(fmt.Sprintf(`# Add route for %s
+echo "Adding route: %s via $SIMULATOR_HOST"
+sudo ip route add %s via $SIMULATOR_HOST 2>/dev/null || echo "Route %s already exists or failed to add"
+
+`, subnet, subnet, subnet, subnet))
+	}
+	
+	script.WriteString(`echo ""
+echo "Route configuration complete!"
+echo ""
+echo "To remove these routes later, run:"
+`)
+
+	for subnet := range subnets {
+		script.WriteString(fmt.Sprintf(`echo "  sudo ip route del %s"`, subnet))
+		script.WriteString("\n")
+	}
+
+	return script.String()
 }
 
 // Helper functions for API responses
@@ -178,6 +318,54 @@ func webUIHandler(w http.ResponseWriter, r *http.Request) {
         .status-stopped { background: #f8d7da; color: #721c24; }
         .device-actions { display: flex; gap: 8px; flex-wrap: wrap; }
         .device-actions .btn { padding: 6px 12px; font-size: 12px; min-width: auto; }
+        .pagination-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            padding: 15px 0;
+            border-top: 1px solid #eee;
+        }
+        .pagination-info {
+            color: #666;
+            font-size: 0.9em;
+        }
+        .pagination-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        .pagination-buttons .btn {
+            min-width: 80px;
+        }
+        .pagination-buttons .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .filter-controls {
+            margin-bottom: 15px;
+        }
+        .filter-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .filter-row th {
+            padding: 8px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+        }
+        .filter-input {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 0.85em;
+            background: white;
+        }
+        .filter-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+        }
         .alert {
             padding: 16px 20px; border-radius: 12px; margin-bottom: 20px;
             border-left: 4px solid; animation: slideIn 0.3s ease;
@@ -222,7 +410,7 @@ func webUIHandler(w http.ResponseWriter, r *http.Request) {
                     </div>
                     <div class="form-group">
                         <label for="deviceCount">Number of Devices</label>
-                        <input type="number" id="deviceCount" min="1" max="100" value="1" required>
+                        <input type="number" id="deviceCount" min="1" value="1" required>
                     </div>
                     <div class="form-group">
                         <label for="netmask">Netmask</label>
@@ -254,6 +442,12 @@ func webUIHandler(w http.ResponseWriter, r *http.Request) {
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h2>Devices</h2>
                 <div style="display: flex; gap: 10px;">
+                    <button id="exportBtn" class="btn btn-small">
+                        📊 Export CSV <span id="exportLoading" class="loading" style="display: none;"></span>
+                    </button>
+                    <button id="routeScriptBtn" class="btn btn-small">
+                        🛤️ Route Script <span id="routeScriptLoading" class="loading" style="display: none;"></span>
+                    </button>
                     <button id="refreshBtn" class="btn btn-small">
                         🔄 Refresh <span id="refreshLoading" class="loading" style="display: none;"></span>
                     </button>
@@ -262,23 +456,73 @@ func webUIHandler(w http.ResponseWriter, r *http.Request) {
                     </button>
                 </div>
             </div>
-            <div id="deviceList" class="device-table"></div>
+            <div id="deviceList" class="device-table">
+                <div id="filterControls" class="filter-controls">
+                    <table class="filter-table">
+                        <tr class="filter-row">
+                            <th><input type="text" id="filterDeviceId" placeholder="Filter ID..." class="filter-input"></th>
+                            <th><input type="text" id="filterIp" placeholder="Filter IP..." class="filter-input"></th>
+                            <th><input type="text" id="filterInterface" placeholder="Filter interface..." class="filter-input"></th>
+                            <th><input type="text" id="filterPorts" placeholder="Filter ports..." class="filter-input"></th>
+                            <th><select id="filterStatus" class="filter-input"><option value="">All</option><option value="running">Running</option><option value="stopped">Stopped</option></select></th>
+                            <th><button id="clearFiltersBtn" class="btn btn-small">Clear</button></th>
+                        </tr>
+                    </table>
+                </div>
+                <div id="deviceTable"></div>
+            </div>
+            <div id="paginationControls" class="pagination-controls" style="display: none;">
+                <div class="pagination-info">
+                    <span id="pageInfo">Page 1 of 1 (0 devices)</span>
+                </div>
+                <div class="pagination-buttons">
+                    <button id="prevPageBtn" class="btn btn-small" disabled>‹ Previous</button>
+                    <button id="nextPageBtn" class="btn btn-small" disabled>Next ›</button>
+                </div>
+            </div>
         </div>
     </div>
     <script>
         const API_BASE = '/api/v1';
         let devices = [];
         
+        // Pagination state
+        const DEVICES_PER_PAGE = 50;
+        let currentPage = 1;
+        
+        // Filter state
+        let filters = {
+            id: '',
+            ip: '',
+            interface: '',
+            ports: '',
+            status: ''
+        };
+        
         const elements = {
             createForm: document.getElementById('createForm'),
             deviceList: document.getElementById('deviceList'),
             alerts: document.getElementById('alerts'),
+            exportBtn: document.getElementById('exportBtn'),
+            routeScriptBtn: document.getElementById('routeScriptBtn'),
             refreshBtn: document.getElementById('refreshBtn'),
             deleteAllBtn: document.getElementById('deleteAllBtn'),
             totalDevices: document.getElementById('totalDevices'),
             runningDevices: document.getElementById('runningDevices'),
             stoppedDevices: document.getElementById('stoppedDevices'),
-            tunInterfaces: document.getElementById('tunInterfaces')
+            tunInterfaces: document.getElementById('tunInterfaces'),
+            paginationControls: document.getElementById('paginationControls'),
+            pageInfo: document.getElementById('pageInfo'),
+            prevPageBtn: document.getElementById('prevPageBtn'),
+            nextPageBtn: document.getElementById('nextPageBtn'),
+            filterControls: document.getElementById('filterControls'),
+            deviceTable: document.getElementById('deviceTable'),
+            filterDeviceId: document.getElementById('filterDeviceId'),
+            filterIp: document.getElementById('filterIp'),
+            filterInterface: document.getElementById('filterInterface'),
+            filterPorts: document.getElementById('filterPorts'),
+            filterStatus: document.getElementById('filterStatus'),
+            clearFiltersBtn: document.getElementById('clearFiltersBtn')
         };
 
         function showAlert(message, type = 'success') {
@@ -368,9 +612,182 @@ func webUIHandler(w http.ResponseWriter, r *http.Request) {
             }
         }
 
+        function exportDevicesCSV() {
+            try {
+                setLoading('exportLoading', true);
+                
+                if (devices.length === 0) {
+                    showAlert('No devices to export', 'warning');
+                    return;
+                }
+
+                // Direct download from API endpoint
+                const link = document.createElement('a');
+                link.href = API_BASE + '/devices/export';
+                link.download = 'devices.csv';
+                link.style.display = 'none';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                showAlert('Device list exported successfully', 'success');
+            } catch (error) {
+                showAlert('Failed to export devices: ' + error.message, 'error');
+            } finally {
+                setLoading('exportLoading', false);
+            }
+        }
+
+        function downloadRouteScript() {
+            try {
+                setLoading('routeScriptLoading', true);
+                
+                if (devices.length === 0) {
+                    showAlert('No devices to generate routes for', 'warning');
+                    return;
+                }
+
+                // Direct download from API endpoint
+                const link = document.createElement('a');
+                link.href = API_BASE + '/devices/routes';
+                link.download = 'add_simulator_routes.sh';
+                link.style.display = 'none';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                showAlert('Route configuration script downloaded successfully', 'success');
+            } catch (error) {
+                showAlert('Failed to download route script: ' + error.message, 'error');
+            } finally {
+                setLoading('routeScriptLoading', false);
+            }
+        }
+
+        // Filter helper functions
+        function getFilteredDevices() {
+            return devices.filter(device => {
+                const matchesId = !filters.id || device.id.toLowerCase().includes(filters.id.toLowerCase());
+                const matchesIp = !filters.ip || device.ip.includes(filters.ip);
+                const matchesInterface = !filters.interface || (device.interface && device.interface.toLowerCase().includes(filters.interface.toLowerCase()));
+                const matchesPorts = !filters.ports || 
+                    (device.snmp_port.toString().includes(filters.ports) || 
+                     device.ssh_port.toString().includes(filters.ports));
+                const matchesStatus = !filters.status || 
+                    (filters.status === 'running' && device.running) ||
+                    (filters.status === 'stopped' && !device.running);
+                
+                return matchesId && matchesIp && matchesInterface && matchesPorts && matchesStatus;
+            });
+        }
+
+        function updateFiltersFromInputs() {
+            filters.id = elements.filterDeviceId.value;
+            filters.ip = elements.filterIp.value;
+            filters.interface = elements.filterInterface.value;
+            filters.ports = elements.filterPorts.value;
+            filters.status = elements.filterStatus.value;
+        }
+
+        function clearAllFilters() {
+            filters.id = '';
+            filters.ip = '';
+            filters.interface = '';
+            filters.ports = '';
+            filters.status = '';
+            
+            elements.filterDeviceId.value = '';
+            elements.filterIp.value = '';
+            elements.filterInterface.value = '';
+            elements.filterPorts.value = '';
+            elements.filterStatus.value = '';
+            
+            currentPage = 1;
+            renderDevices();
+        }
+
+        function applyFilters() {
+            updateFiltersFromInputs();
+            currentPage = 1; // Reset to first page when filtering
+            renderDevices();
+        }
+
+        // Pagination helper functions
+        function getTotalPages() {
+            const filteredDevices = getFilteredDevices();
+            return Math.ceil(filteredDevices.length / DEVICES_PER_PAGE);
+        }
+
+        function getCurrentPageDevices() {
+            const filteredDevices = getFilteredDevices();
+            const startIndex = (currentPage - 1) * DEVICES_PER_PAGE;
+            const endIndex = startIndex + DEVICES_PER_PAGE;
+            return filteredDevices.slice(startIndex, endIndex);
+        }
+
+        function updatePaginationControls() {
+            const filteredDevices = getFilteredDevices();
+            const totalPages = getTotalPages();
+            const hasDevices = filteredDevices.length > 0;
+            
+            // Show/hide pagination controls
+            elements.paginationControls.style.display = hasDevices ? 'flex' : 'none';
+            
+            if (hasDevices) {
+                // Update page info
+                const showingCount = getCurrentPageDevices().length;
+                const totalFiltered = filteredDevices.length;
+                const totalDevices = devices.length;
+                
+                let pageInfoText = 'Page ' + currentPage + ' of ' + totalPages + ' (' + showingCount + ' of ' + totalFiltered + ' devices';
+                if (totalFiltered !== totalDevices) {
+                    pageInfoText += ' filtered from ' + totalDevices + ' total';
+                }
+                pageInfoText += ')';
+                
+                elements.pageInfo.textContent = pageInfoText;
+                
+                // Update button states
+                elements.prevPageBtn.disabled = currentPage <= 1;
+                elements.nextPageBtn.disabled = currentPage >= totalPages;
+            }
+        }
+
+        function goToPage(page) {
+            const totalPages = getTotalPages();
+            if (page >= 1 && page <= totalPages) {
+                currentPage = page;
+                renderDevices();
+                updatePaginationControls();
+            }
+        }
+
+        function goToPreviousPage() {
+            if (currentPage > 1) {
+                goToPage(currentPage - 1);
+            }
+        }
+
+        function goToNextPage() {
+            const totalPages = getTotalPages();
+            if (currentPage < totalPages) {
+                goToPage(currentPage + 1);
+            }
+        }
+
         function renderDevices() {
+            // Filter controls are always visible
+            
             if (devices.length === 0) {
-                elements.deviceList.innerHTML = '<div class="empty-state"><div style="font-size: 4em; margin-bottom: 20px;">📱</div><h3>No Devices Found</h3><p>Create your first simulated network device to get started</p></div>';
+                elements.deviceTable.innerHTML = '<div class="empty-state"><div style="font-size: 4em; margin-bottom: 20px;">📱</div><h3>No Devices Found</h3><p>Create your first simulated network device to get started</p></div>';
+                updatePaginationControls();
+                return;
+            }
+
+            const filteredDevices = getFilteredDevices();
+            if (filteredDevices.length === 0) {
+                elements.deviceTable.innerHTML = '<div class="empty-state"><div style="font-size: 4em; margin-bottom: 20px;">🔍</div><h3>No Devices Match Filters</h3><p>Try adjusting your filter criteria or clear filters to see all devices</p></div>';
+                updatePaginationControls();
                 return;
             }
             
@@ -386,7 +803,7 @@ func webUIHandler(w http.ResponseWriter, r *http.Request) {
                 '</tr>' +
                 '</thead>' +
                 '<tbody>' +
-                devices.map(device => 
+                getCurrentPageDevices().map(device => 
                     '<tr>' +
                     '<td><span class="device-id">' + device.id + '</span></td>' +
                     '<td><span class="device-ip">' + device.ip + '</span></td>' +
@@ -404,7 +821,7 @@ func webUIHandler(w http.ResponseWriter, r *http.Request) {
                 '</tbody>' +
                 '</table>';
             
-            elements.deviceList.innerHTML = tableHTML;
+            elements.deviceTable.innerHTML = tableHTML;
             
             // Add event listeners for device actions
             document.querySelectorAll('[data-action]').forEach(button => {
@@ -427,6 +844,10 @@ func webUIHandler(w http.ResponseWriter, r *http.Request) {
                     }
                 });
             });
+            
+            
+            // Update pagination controls
+            updatePaginationControls();
         }
 
         function updateStats() {
@@ -463,8 +884,22 @@ func webUIHandler(w http.ResponseWriter, r *http.Request) {
             document.getElementById('netmask').value = '24';
         });
 
+        elements.exportBtn.addEventListener('click', exportDevicesCSV);
+        elements.routeScriptBtn.addEventListener('click', downloadRouteScript);
         elements.refreshBtn.addEventListener('click', loadDevices);
         elements.deleteAllBtn.addEventListener('click', deleteAllDevices);
+        
+        // Pagination event listeners
+        elements.prevPageBtn.addEventListener('click', goToPreviousPage);
+        elements.nextPageBtn.addEventListener('click', goToNextPage);
+        
+        // Filter event listeners (attached once during initialization)
+        elements.filterDeviceId.addEventListener('input', applyFilters);
+        elements.filterIp.addEventListener('input', applyFilters);
+        elements.filterInterface.addEventListener('input', applyFilters);
+        elements.filterPorts.addEventListener('input', applyFilters);
+        elements.filterStatus.addEventListener('change', applyFilters);
+        elements.clearFiltersBtn.addEventListener('click', clearAllFilters);
         
         setInterval(loadDevices, 30000);
         
@@ -492,6 +927,8 @@ func setupRoutes() *mux.Router {
 	api := router.PathPrefix("/api/v1").Subrouter()
 	api.HandleFunc("/devices", createDevicesHandler).Methods("POST")
 	api.HandleFunc("/devices", listDevicesHandler).Methods("GET")
+	api.HandleFunc("/devices/export", exportDevicesCSVHandler).Methods("GET")
+	api.HandleFunc("/devices/routes", generateRouteScriptHandler).Methods("GET")
 	api.HandleFunc("/devices/{id}", deleteDeviceHandler).Methods("DELETE")
 	api.HandleFunc("/devices", deleteAllDevicesHandler).Methods("DELETE")
 
