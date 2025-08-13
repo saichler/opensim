@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/binary"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
 	"net"
@@ -432,6 +433,35 @@ func (d *DeviceSimulator) Stop() error {
 }
 
 func main() {
+	// Define command-line flags
+	var (
+		autoStartIP    = flag.String("auto-start-ip", "", "Auto-create devices starting from this IP address (e.g., 192.168.100.1)")
+		autoCount      = flag.Int("auto-count", 0, "Number of devices to auto-create (requires -auto-start-ip)")
+		autoNetmask    = flag.String("auto-netmask", "24", "Netmask for auto-created devices (default: 24)")
+		port           = flag.String("port", "8080", "Server port (default: 8080)")
+		showHelp       = flag.Bool("help", false, "Show this help message")
+	)
+	
+	flag.Parse()
+	
+	// Show help if requested
+	if *showHelp {
+		fmt.Println("Network Device Simulator with TUN/TAP support")
+		fmt.Println()
+		fmt.Println("Usage:")
+		fmt.Printf("  %s [options]\n", os.Args[0])
+		fmt.Println()
+		fmt.Println("Options:")
+		flag.PrintDefaults()
+		fmt.Println()
+		fmt.Println("Examples:")
+		fmt.Printf("  %s                                                    # Start server only\n", os.Args[0])
+		fmt.Printf("  %s -auto-start-ip 192.168.100.1 -auto-count 5       # Auto-create 5 devices\n", os.Args[0])
+		fmt.Printf("  %s -auto-start-ip 10.10.10.1 -auto-count 3 -port 9090  # Custom port\n", os.Args[0])
+		fmt.Println()
+		return
+	}
+
 	log.Println("Network Device Simulator with TUN/TAP support starting...")
 
 	// Check if running as root
@@ -449,11 +479,29 @@ func main() {
 		log.Fatalf("Failed to load resources: %v", err)
 	}
 
+	// Validate auto-creation parameters
+	if *autoStartIP != "" && *autoCount <= 0 {
+		log.Println("WARNING: -auto-start-ip provided but -auto-count is 0 or negative. No devices will be auto-created.")
+	} else if *autoStartIP == "" && *autoCount > 0 {
+		log.Println("WARNING: -auto-count provided but -auto-start-ip is empty. No devices will be auto-created.")
+	}
+
+	// Auto-create devices if requested
+	if *autoStartIP != "" && *autoCount > 0 {
+		log.Printf("Auto-creating %d devices starting from %s with netmask /%s", *autoCount, *autoStartIP, *autoNetmask)
+		err := manager.CreateDevices(*autoStartIP, *autoCount, *autoNetmask)
+		if err != nil {
+			log.Printf("Failed to auto-create devices: %v", err)
+		} else {
+			log.Printf("Successfully auto-created %d devices", *autoCount)
+		}
+	}
+
 	// Setup REST API
 	router := setupRoutes()
 
 	// Start API server
-	apiPort := ":8080"
+	apiPort := ":" + *port
 	log.Printf("Network Device Simulator server starting on port %s", apiPort)
 	log.Println()
 	log.Println("🌐 Web UI:")
@@ -470,10 +518,14 @@ func main() {
 	log.Println("  GET    /health                   - Health check")
 	log.Println()
 	log.Println("💡 Example curl commands:")
-	log.Println(`  curl -X POST http://localhost:8080/api/v1/devices -H "Content-Type: application/json" -d '{"start_ip":"192.168.100.1","device_count":3,"netmask":"24"}'`)
-	log.Println(`  curl http://localhost:8080/api/v1/devices`)
-	log.Println(`  curl http://localhost:8080/api/v1/devices/export -o devices.csv`)
-	log.Println(`  curl http://localhost:8080/api/v1/devices/routes -o add_routes.sh`)
+	log.Printf(`  curl -X POST http://localhost%s/api/v1/devices -H "Content-Type: application/json" -d '{"start_ip":"192.168.100.1","device_count":3,"netmask":"24"}'`, apiPort)
+	log.Println()
+	log.Printf(`  curl http://localhost%s/api/v1/devices`, apiPort)
+	log.Println()
+	log.Printf(`  curl http://localhost%s/api/v1/devices/export -o devices.csv`, apiPort)
+	log.Println()
+	log.Printf(`  curl http://localhost%s/api/v1/devices/routes -o add_routes.sh`, apiPort)
+	log.Println()
 	log.Println()
 	log.Println("🔧 Usage Tips:")
 	log.Println("  - Open the Web UI in your browser for easy management")
