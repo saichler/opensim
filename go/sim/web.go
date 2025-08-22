@@ -27,7 +27,7 @@ func createDevicesHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = manager.CreateDevices(req.StartIP, req.DeviceCount, req.Netmask)
+	err = manager.CreateDevices(req.StartIP, req.DeviceCount, req.Netmask, req.SNMPv3)
 	if err != nil {
 		sendErrorResponse(w, err.Error(), http.StatusInternalServerError)
 		return

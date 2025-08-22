@@ -43,10 +43,46 @@ type DeviceSimulator struct {
 	mu         sync.RWMutex
 }
 
+// SNMPv3 USM (User-based Security Model) configuration
+type SNMPv3Config struct {
+	Enabled      bool   `json:"enabled"`
+	EngineID     string `json:"engine_id"`
+	Username     string `json:"username"`
+	Password     string `json:"password"`
+	AuthProtocol int    `json:"auth_protocol"` // 0=none, 1=MD5, 2=SHA1
+	PrivProtocol int    `json:"priv_protocol"` // 0=none, 1=DES, 2=AES128
+	PrivPassword string `json:"priv_password"` // Can be same as auth password
+}
+
+// SNMPv3 message structures
+type SNMPv3Message struct {
+	Version        int
+	GlobalData     SNMPv3GlobalData
+	SecurityParams SNMPv3SecurityParams
+	ScopedPDU      []byte // Can be encrypted
+}
+
+type SNMPv3GlobalData struct {
+	MsgID           int
+	MsgMaxSize      int
+	MsgFlags        byte
+	MsgSecurityModel int
+}
+
+type SNMPv3SecurityParams struct {
+	AuthoritativeEngineID    string
+	AuthoritativeEngineBoots int
+	AuthoritativeEngineTime  int
+	UserName                 string
+	AuthParams               []byte
+	PrivParams               []byte
+}
+
 type SNMPServer struct {
-	device   *DeviceSimulator
-	listener *net.UDPConn
-	running  bool
+	device    *DeviceSimulator
+	listener  *net.UDPConn
+	running   bool
+	v3Config  *SNMPv3Config
 }
 
 type SSHServer struct {
@@ -67,9 +103,10 @@ type SimulatorManager struct {
 
 // API request/response structures
 type CreateDevicesRequest struct {
-	StartIP     string `json:"start_ip"`
-	DeviceCount int    `json:"device_count"`
-	Netmask     string `json:"netmask"`
+	StartIP     string         `json:"start_ip"`
+	DeviceCount int            `json:"device_count"`
+	Netmask     string         `json:"netmask"`
+	SNMPv3      *SNMPv3Config  `json:"snmpv3,omitempty"`
 }
 
 type DeviceInfo struct {

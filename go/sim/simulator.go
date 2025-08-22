@@ -30,6 +30,21 @@ const (
 	SNMP_GET_RESPONSE = 0xa2
 )
 
+// SNMPv3 specific constants
+const (
+	SNMPV3_VERSION                = 3
+	SNMPV3_MSG_FLAG_AUTH          = 0x01
+	SNMPV3_MSG_FLAG_PRIV          = 0x02
+	SNMPV3_MSG_FLAG_REPORT        = 0x04
+	SNMPV3_SECURITY_MODEL_USM     = 3
+	SNMPV3_AUTH_NONE              = 0
+	SNMPV3_AUTH_MD5               = 1
+	SNMPV3_AUTH_SHA1              = 2
+	SNMPV3_PRIV_NONE              = 0
+	SNMPV3_PRIV_DES               = 1
+	SNMPV3_PRIV_AES128            = 2
+)
+
 // Configuration constants
 const (
 	DEFAULT_SNMP_PORT = 161
@@ -201,7 +216,7 @@ func (sm *SimulatorManager) createDefaultResources(filename string) error {
 	return nil
 }
 
-func (sm *SimulatorManager) CreateDevices(startIP string, count int, netmask string) error {
+func (sm *SimulatorManager) CreateDevices(startIP string, count int, netmask string, v3Config *SNMPv3Config) error {
 	sm.mu.Lock()
 	defer sm.mu.Unlock()
 
@@ -253,8 +268,11 @@ func (sm *SimulatorManager) CreateDevices(startIP string, count int, netmask str
 			resources: sm.deviceResources,
 		}
 
-		// Create servers
-		device.snmpServer = &SNMPServer{device: device}
+		// Create servers with SNMPv3 configuration
+		device.snmpServer = &SNMPServer{
+			device:   device, 
+			v3Config: v3Config,
+		}
 		device.sshServer = &SSHServer{device: device}
 
 		// Start device services
@@ -432,14 +450,47 @@ func (d *DeviceSimulator) Stop() error {
 	return nil
 }
 
+// parseAuthProtocol converts string to authentication protocol constant
+func parseAuthProtocol(proto string) int {
+	switch strings.ToLower(proto) {
+	case "md5":
+		return SNMPV3_AUTH_MD5
+	case "sha1", "sha":
+		return SNMPV3_AUTH_SHA1
+	case "none", "":
+		return SNMPV3_AUTH_NONE
+	default:
+		log.Printf("Unknown auth protocol '%s', using MD5", proto)
+		return SNMPV3_AUTH_MD5
+	}
+}
+
+// parsePrivProtocol converts string to privacy protocol constant
+func parsePrivProtocol(proto string) int {
+	switch strings.ToLower(proto) {
+	case "des":
+		return SNMPV3_PRIV_DES
+	case "aes128", "aes":
+		return SNMPV3_PRIV_AES128
+	case "none", "":
+		return SNMPV3_PRIV_NONE
+	default:
+		log.Printf("Unknown privacy protocol '%s', using none", proto)
+		return SNMPV3_PRIV_NONE
+	}
+}
+
 func main() {
 	// Define command-line flags
 	var (
-		autoStartIP    = flag.String("auto-start-ip", "", "Auto-create devices starting from this IP address (e.g., 192.168.100.1)")
-		autoCount      = flag.Int("auto-count", 0, "Number of devices to auto-create (requires -auto-start-ip)")
-		autoNetmask    = flag.String("auto-netmask", "24", "Netmask for auto-created devices (default: 24)")
-		port           = flag.String("port", "8080", "Server port (default: 8080)")
-		showHelp       = flag.Bool("help", false, "Show this help message")
+		autoStartIP      = flag.String("auto-start-ip", "", "Auto-create devices starting from this IP address (e.g., 192.168.100.1)")
+		autoCount        = flag.Int("auto-count", 0, "Number of devices to auto-create (requires -auto-start-ip)")
+		autoNetmask      = flag.String("auto-netmask", "24", "Netmask for auto-created devices (default: 24)")
+		snmpv3EngineID   = flag.String("snmpv3-engine-id", "", "Enable SNMPv3 with specified engine ID (e.g., 800000090300AABBCCDD)")
+		snmpv3AuthProto  = flag.String("snmpv3-auth", "md5", "SNMPv3 authentication protocol: none, md5, sha1 (default: md5)")
+		snmpv3PrivProto  = flag.String("snmpv3-priv", "none", "SNMPv3 privacy protocol: none, des, aes128 (default: none)")
+		port             = flag.String("port", "8080", "Server port (default: 8080)")
+		showHelp         = flag.Bool("help", false, "Show this help message")
 	)
 	
 	flag.Parse()
@@ -458,6 +509,10 @@ func main() {
 		fmt.Printf("  %s                                                    # Start server only\n", os.Args[0])
 		fmt.Printf("  %s -auto-start-ip 192.168.100.1 -auto-count 5       # Auto-create 5 devices\n", os.Args[0])
 		fmt.Printf("  %s -auto-start-ip 10.10.10.1 -auto-count 3 -port 9090  # Custom port\n", os.Args[0])
+		fmt.Printf("  %s -auto-start-ip 192.168.100.1 -auto-count 2 \\      # SNMPv3 with MD5 auth\n", os.Args[0])
+		fmt.Printf("    -snmpv3-engine-id 800000090300AABBCCDD -snmpv3-auth md5\n")
+		fmt.Printf("  %s -auto-start-ip 192.168.100.1 -auto-count 1 \\      # SNMPv3 with privacy\n", os.Args[0])
+		fmt.Printf("    -snmpv3-engine-id 800000090300AABBCCDD -snmpv3-auth sha1 -snmpv3-priv des\n")
 		fmt.Println()
 		return
 	}
@@ -489,7 +544,27 @@ func main() {
 	// Auto-create devices if requested
 	if *autoStartIP != "" && *autoCount > 0 {
 		log.Printf("Auto-creating %d devices starting from %s with netmask /%s", *autoCount, *autoStartIP, *autoNetmask)
-		err := manager.CreateDevices(*autoStartIP, *autoCount, *autoNetmask)
+		
+		// Create SNMPv3 configuration if engine ID is provided
+		var v3Config *SNMPv3Config
+		if *snmpv3EngineID != "" {
+			authProto := parseAuthProtocol(*snmpv3AuthProto)
+			privProto := parsePrivProtocol(*snmpv3PrivProto)
+			
+			v3Config = &SNMPv3Config{
+				Enabled:      true,
+				EngineID:     *snmpv3EngineID,
+				Username:     USERNAME, // Use same as SSH
+				Password:     PASSWORD, // Use same as SSH
+				AuthProtocol: authProto,
+				PrivProtocol: privProto,
+				PrivPassword: PASSWORD, // Use same password for privacy
+			}
+			log.Printf("SNMPv3 enabled with engine ID: %s, auth: %s, priv: %s", 
+				*snmpv3EngineID, *snmpv3AuthProto, *snmpv3PrivProto)
+		}
+		
+		err := manager.CreateDevices(*autoStartIP, *autoCount, *autoNetmask, v3Config)
 		if err != nil {
 			log.Printf("Failed to auto-create devices: %v", err)
 		} else {

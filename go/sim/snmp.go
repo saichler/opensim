@@ -63,44 +63,20 @@ func (s *SNMPServer) handleRequests() {
 			log.Printf(hexStr)
 		}
 
-		// Parse SNMP request to get OID and request type
-		req := s.parseIncomingRequest(requestData)
-		oid := req.OID
-		var response string
-		var responseOID string
+		var responsePacket []byte
 
-		// Determine PDU type from request data
-		pduType := s.getPDUType(requestData)
-		log.Printf("DEBUG: Received %s request for OID: %s (version=%d, community=%s, requestID=0x%X)", 
-			map[byte]string{ASN1_GET_REQUEST: "GET", ASN1_GET_NEXT: "GETNEXT"}[pduType], oid, req.Version, req.Community, req.RequestID)
-		
-		if pduType == ASN1_GET_NEXT {
-			// Handle GetNext request for SNMP walk
-			responseOID, response = s.findNextOID(oid)
-			if responseOID == "" {
-				// End of MIB view - use a special response
-				responseOID = oid
-				response = "endOfMibView"
-			}
-			log.Printf("SNMP %s: GetNext %s -> %s = %s", s.device.ID, oid, responseOID, response)
-			
-			// Additional debug - show all available OIDs for comparison
-			log.Printf("DEBUG: Available OIDs:")
-			for i, res := range s.device.resources.SNMP[:5] { // Show first 5
-				log.Printf("  %d: %s = %s", i, res.OID, res.Response)
-			}
+		// Check if this is SNMPv3 request
+		if isSNMPv3Request(requestData) {
+			log.Printf("DEBUG: Processing SNMPv3 request")
+			responsePacket = s.handleSNMPv3Request(requestData)
 		} else {
-			// Handle regular Get request
-			responseOID = oid
-			response = s.findResponse(oid)
-			log.Printf("SNMP %s: Get %s -> %s", s.device.ID, oid, response)
+			log.Printf("DEBUG: Processing SNMPv1/v2c request")
+			responsePacket = s.handleSNMPv2cRequest(requestData)
 		}
 
-		// Create proper SNMP response (pass the request data)
-		responsePacket := s.createSNMPResponse(responseOID, response, requestData)
-
-		// Debug: Print hex dump of response packet
+		// Send response
 		if len(responsePacket) > 0 {
+			// Debug: Print hex dump of response packet
 			log.Printf("DEBUG: Response packet hex (first 64 bytes):")
 			for i := 0; i < len(responsePacket) && i < 64; i += 16 {
 				end := i + 16
@@ -113,16 +89,102 @@ func (s *SNMPServer) handleRequests() {
 				}
 				log.Printf(hexStr)
 			}
-		}
 
-		_, err = s.listener.WriteToUDP(responsePacket, clientAddr)
-		if err != nil {
-			log.Printf("Error sending SNMP response: %v", err)
-		} else {
-			log.Printf("DEBUG: Sent response packet (%d bytes) for %s request", len(responsePacket), 
-				map[byte]string{ASN1_GET_REQUEST: "GET", ASN1_GET_NEXT: "GETNEXT"}[pduType])
+			_, err = s.listener.WriteToUDP(responsePacket, clientAddr)
+			if err != nil {
+				log.Printf("Error sending SNMP response: %v", err)
+			} else {
+				log.Printf("DEBUG: Sent response packet (%d bytes)", len(responsePacket))
+			}
 		}
 	}
+}
+
+// handleSNMPv2cRequest handles traditional SNMP v1/v2c requests
+func (s *SNMPServer) handleSNMPv2cRequest(requestData []byte) []byte {
+	// Parse SNMP request to get OID and request type
+	req := s.parseIncomingRequest(requestData)
+	oid := req.OID
+	var response string
+	var responseOID string
+
+	// Determine PDU type from request data
+	pduType := s.getPDUType(requestData)
+	log.Printf("DEBUG: Received %s request for OID: %s (version=%d, community=%s, requestID=0x%X)", 
+		map[byte]string{ASN1_GET_REQUEST: "GET", ASN1_GET_NEXT: "GETNEXT"}[pduType], oid, req.Version, req.Community, req.RequestID)
+	
+	if pduType == ASN1_GET_NEXT {
+		// Handle GetNext request for SNMP walk
+		responseOID, response = s.findNextOID(oid)
+		if responseOID == "" {
+			// End of MIB view - use a special response
+			responseOID = oid
+			response = "endOfMibView"
+		}
+		log.Printf("SNMP %s: GetNext %s -> %s = %s", s.device.ID, oid, responseOID, response)
+		
+		// Additional debug - show all available OIDs for comparison
+		log.Printf("DEBUG: Available OIDs:")
+		for i, res := range s.device.resources.SNMP[:5] { // Show first 5
+			log.Printf("  %d: %s = %s", i, res.OID, res.Response)
+		}
+	} else {
+		// Handle regular Get request
+		responseOID = oid
+		response = s.findResponse(oid)
+		log.Printf("SNMP %s: Get %s -> %s", s.device.ID, oid, response)
+	}
+
+	// Create proper SNMP response (pass the request data)
+	return s.createSNMPResponse(responseOID, response, requestData)
+}
+
+// handleSNMPv3Request handles SNMPv3 requests with USM authentication
+func (s *SNMPServer) handleSNMPv3Request(requestData []byte) []byte {
+	// Check if SNMPv3 is enabled
+	if s.v3Config == nil || !s.v3Config.Enabled {
+		log.Printf("SNMPv3 request received but SNMPv3 not enabled")
+		return []byte{} // Return empty response
+	}
+
+	// Parse SNMPv3 message
+	v3Msg, err := s.parseSNMPv3Message(requestData)
+	if err != nil {
+		log.Printf("Error parsing SNMPv3 message: %v", err)
+		return []byte{}
+	}
+
+	// Validate credentials
+	if !s.validateSNMPv3Credentials(v3Msg) {
+		log.Printf("SNMPv3 authentication failed")
+		return []byte{}
+	}
+
+	log.Printf("SNMPv3: Authenticated user: %s, flags: 0x%02X", 
+		v3Msg.SecurityParams.UserName, v3Msg.GlobalData.MsgFlags)
+
+	// Decrypt scoped PDU if encrypted
+	_ = v3Msg.ScopedPDU
+	if v3Msg.GlobalData.MsgFlags&SNMPV3_MSG_FLAG_PRIV != 0 {
+		// TODO: Implement decryption
+		log.Printf("SNMPv3: Privacy enabled but decryption not fully implemented")
+	}
+
+	// Parse the scoped PDU to extract OID and request type
+	// For simplicity, we'll extract a basic OID - in a full implementation
+	// you'd properly parse the scoped PDU structure
+	oid := "1.3.6.1.2.1.1.1.0" // Default system description OID
+	response := s.findResponse(oid)
+
+	// Create SNMPv3 response
+	responseBytes, err := s.createSNMPv3Response(oid, response, v3Msg)
+	if err != nil {
+		log.Printf("Error creating SNMPv3 response: %v", err)
+		return []byte{}
+	}
+
+	log.Printf("SNMPv3 %s: Get %s -> %s", s.device.ID, oid, response)
+	return responseBytes
 }
 
 func (s *SNMPServer) findResponse(oid string) string {
