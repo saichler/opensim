@@ -480,6 +480,14 @@ func parsePrivProtocol(proto string) int {
 	}
 }
 
+// getFirstDeviceKey returns the first device key from the map
+func getFirstDeviceKey(devices map[string]*DeviceSimulator) string {
+	for key := range devices {
+		return key
+	}
+	return ""
+}
+
 func main() {
 	// Define command-line flags
 	var (
@@ -602,11 +610,46 @@ func main() {
 	log.Printf(`  curl http://localhost%s/api/v1/devices/routes -o add_routes.sh`, apiPort)
 	log.Println()
 	log.Println()
-	log.Println("🔧 Usage Tips:")
+	log.Println("🔐 SNMPv3 + SSH Examples:")
+	log.Println("  Create devices with SNMPv3 support:")
+	log.Printf("    sudo ./sim -auto-start-ip 192.168.100.1 -auto-count 2 \\")
+	log.Println()
+	log.Printf("      -snmpv3-engine-id 800000090300AABBCCDD -snmpv3-auth md5")
+	log.Println()
+	log.Println()
+	log.Printf("  Or via REST API with SNMPv3:")
+	log.Printf(`    curl -X POST http://localhost%s/api/v1/devices \`, apiPort)
+	log.Println()
+	log.Printf(`      -H "Content-Type: application/json" \`)
+	log.Println()
+	log.Printf(`      -d '{"start_ip":"192.168.100.1","device_count":1,"netmask":"24",`)
+	log.Println()
+	log.Printf(`           "snmpv3":{"enabled":true,"engine_id":"800000090300AABBCCDD",`)
+	log.Println()
+	log.Printf(`           "username":"simadmin","password":"simadmin","auth_protocol":1,"priv_protocol":0}}'`)
+	log.Println()
+	log.Println()
+	log.Println("🔧 Connection Examples:")
+	log.Println("  SSH (same credentials for all devices):")
+	log.Println("    ssh simadmin@<device-ip>")
+	log.Println("    Password: simadmin")
+	log.Println()
+	log.Println("  SNMP v2c (traditional):")
+	log.Println("    snmpwalk -v2c -c public <device-ip> 1.3.6.1.2.1.1.1.0")
+	log.Println()
+	log.Println("  SNMPv3 (when enabled):")
+	log.Println("    # MD5 auth, no privacy:")
+	log.Println("    snmpwalk -v3 -u simadmin -A simadmin -a MD5 -l authNoPriv <device-ip> 1.3.6.1.2.1.1.1.0")
+	log.Println()
+	log.Println("    # MD5 auth + DES privacy:")
+	log.Println("    snmpwalk -v3 -u simadmin -A simadmin -X simadmin -a MD5 -x DES -l authPriv <device-ip> 1.3.6.1.2.1.1.1.0")
+	log.Println()
+	log.Println("🔧 Additional Tips:")
 	log.Println("  - Open the Web UI in your browser for easy management")
-	log.Println("  - SSH to devices: ssh simadmin@<device-ip> (password: simadmin)")
-	log.Println("  - Test SNMP: snmpget -v2c -c public <device-ip> 1.3.6.1.2.1.1.1.0")
+	log.Println("  - All devices use same credentials: simadmin/simadmin")
+	log.Println("  - SNMPv2c community: public")
 	log.Println("  - Check TUN interfaces: ip addr show | grep sim")
+	log.Println("  - Test script available: ./test_snmpv3.sh")
 
 	log.Fatal(http.ListenAndServe(apiPort, router))
 }

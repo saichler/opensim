@@ -1,11 +1,15 @@
 package main
 
 import (
+	"crypto/cipher"
+	"crypto/des"
+	"crypto/md5"
 	"fmt"
 	"log"
 	"net"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // SNMP Server implementation
@@ -154,37 +158,348 @@ func (s *SNMPServer) handleSNMPv3Request(requestData []byte) []byte {
 		return []byte{}
 	}
 
-	// Validate credentials
+	// Check if this is a discovery request
+	isDiscovery := v3Msg.SecurityParams.UserName == "" && 
+		v3Msg.SecurityParams.AuthoritativeEngineID == ""
+	
+	// Validate credentials (discovery requests are allowed through)
 	if !s.validateSNMPv3Credentials(v3Msg) {
 		log.Printf("SNMPv3 authentication failed")
 		return []byte{}
+	}
+	
+	if isDiscovery {
+		log.Printf("SNMPv3: Processing discovery request")
+		// For discovery, return a report with our engine ID
+		return s.createSNMPv3DiscoveryResponse(v3Msg)
 	}
 
 	log.Printf("SNMPv3: Authenticated user: %s, flags: 0x%02X", 
 		v3Msg.SecurityParams.UserName, v3Msg.GlobalData.MsgFlags)
 
-	// Decrypt scoped PDU if encrypted
-	_ = v3Msg.ScopedPDU
+	// Handle scoped PDU decryption
+	scopedPDU := v3Msg.ScopedPDU
 	if v3Msg.GlobalData.MsgFlags&SNMPV3_MSG_FLAG_PRIV != 0 {
-		// TODO: Implement decryption
-		log.Printf("SNMPv3: Privacy enabled but decryption not fully implemented")
+		log.Printf("SNMPv3: Privacy enabled, attempting decryption")
+		decryptedPDU, err := s.decryptScopedPDU(v3Msg.ScopedPDU, v3Msg.SecurityParams.PrivParams)
+		if err != nil {
+			log.Printf("SNMPv3: Failed to decrypt scoped PDU: %v", err)
+			log.Printf("SNMPv3: Using default OID for encrypted request (decryption failed)")
+		} else {
+			log.Printf("SNMPv3: Successfully decrypted scoped PDU (%d bytes)", len(decryptedPDU))
+			// Verify the decrypted data looks valid (starts with SEQUENCE tag)
+			if len(decryptedPDU) > 0 && decryptedPDU[0] == ASN1_SEQUENCE {
+				scopedPDU = decryptedPDU
+				log.Printf("SNMPv3: Decrypted data appears valid (starts with SEQUENCE)")
+			} else {
+				log.Printf("SNMPv3: Decrypted data appears invalid (tag: 0x%02X), using default OID", 
+					func() byte { if len(decryptedPDU) > 0 { return decryptedPDU[0] } else { return 0 } }())
+			}
+		}
 	}
 
 	// Parse the scoped PDU to extract OID and request type
-	// For simplicity, we'll extract a basic OID - in a full implementation
-	// you'd properly parse the scoped PDU structure
-	oid := "1.3.6.1.2.1.1.1.0" // Default system description OID
-	response := s.findResponse(oid)
+	oid, pduType, err := s.extractOIDAndTypeFromScopedPDU(scopedPDU)
+	if err != nil {
+		log.Printf("Failed to extract OID from scoped PDU: %v, using default", err)
+		// For encrypted requests where decryption failed, use a reasonable default
+		// Since snmpwalk typically starts with 1.3.6.1.2.1.1, use system description
+		oid = "1.3.6.1.2.1.1.1.0" // System description OID
+		pduType = ASN1_GET_REQUEST // Default to GET
+		log.Printf("SNMPv3: Using default OID %s for failed decryption case", oid)
+	}
 
-	// Create SNMPv3 response
-	responseBytes, err := s.createSNMPv3Response(oid, response, v3Msg)
+	// Handle GetNext request for SNMP walk (same logic as SNMPv2)
+	var responseOID string
+	var response string
+	
+	if pduType == ASN1_GET_NEXT {
+		log.Printf("SNMPv3: Processing GetNext request for OID: %s", oid)
+		responseOID, response = s.findNextOID(oid)
+		if responseOID == "" {
+			// End of MIB view - use a special response
+			responseOID = oid
+			response = "endOfMibView"
+		}
+		log.Printf("SNMPv3 %s: GetNext %s -> %s = %s", s.device.ID, oid, responseOID, response)
+	} else {
+		// Handle regular Get request
+		responseOID = oid
+		response = s.findResponse(oid)
+		log.Printf("SNMPv3 %s: Get %s -> %s", s.device.ID, oid, response)
+	}
+
+	// Create SNMPv3 response (use responseOID for the response)
+	responseBytes, err := s.createSNMPv3Response(responseOID, response, v3Msg)
 	if err != nil {
 		log.Printf("Error creating SNMPv3 response: %v", err)
 		return []byte{}
 	}
-
-	log.Printf("SNMPv3 %s: Get %s -> %s", s.device.ID, oid, response)
 	return responseBytes
+}
+
+// extractOIDFromScopedPDU extracts the first OID from a scoped PDU
+func (s *SNMPServer) extractOIDFromScopedPDU(scopedPDU []byte) (string, error) {
+	if len(scopedPDU) < 10 {
+		return "", fmt.Errorf("scoped PDU too short")
+	}
+
+	pos := 0
+	
+	// Parse contextEngineID (OCTET STRING)
+	if pos >= len(scopedPDU) || scopedPDU[pos] != ASN1_OCTET_STRING {
+		return "", fmt.Errorf("expected contextEngineID OCTET STRING")
+	}
+	pos++
+	engineIDLen, newPos := parseLength(scopedPDU, pos)
+	pos = newPos + engineIDLen
+	
+	// Parse contextName (OCTET STRING)
+	if pos >= len(scopedPDU) || scopedPDU[pos] != ASN1_OCTET_STRING {
+		return "", fmt.Errorf("expected contextName OCTET STRING")
+	}
+	pos++
+	contextNameLen, newPos := parseLength(scopedPDU, pos)
+	pos = newPos + contextNameLen
+	
+	// Parse PDU - should be GetRequest (0xA0) or GetNext (0xA1)
+	if pos >= len(scopedPDU) {
+		return "", fmt.Errorf("unexpected end of scoped PDU")
+	}
+	
+	pduType := scopedPDU[pos]
+	log.Printf("DEBUG: Scoped PDU type: 0x%02X", pduType)
+	
+	if pduType != ASN1_GET_REQUEST && pduType != ASN1_GET_NEXT {
+		return "", fmt.Errorf("unsupported PDU type in scoped PDU: 0x%02X", pduType)
+	}
+	pos++
+	
+	// Skip PDU length
+	_, newPos = parseLength(scopedPDU, pos)
+	pos = newPos
+	
+	// Parse request ID, error status, error index (skip them)
+	for i := 0; i < 3; i++ {
+		if pos >= len(scopedPDU) || scopedPDU[pos] != ASN1_INTEGER {
+			return "", fmt.Errorf("expected INTEGER in PDU")
+		}
+		pos++
+		intLen, newPos := parseLength(scopedPDU, pos)
+		pos = newPos + intLen
+	}
+	
+	// Parse variable bindings (SEQUENCE)
+	if pos >= len(scopedPDU) || scopedPDU[pos] != ASN1_SEQUENCE {
+		return "", fmt.Errorf("expected variable bindings SEQUENCE")
+	}
+	pos++
+	_, newPos = parseLength(scopedPDU, pos)
+	pos = newPos
+	
+	// Parse first variable binding (SEQUENCE)
+	if pos >= len(scopedPDU) || scopedPDU[pos] != ASN1_SEQUENCE {
+		return "", fmt.Errorf("expected first variable binding SEQUENCE")
+	}
+	pos++
+	_, newPos = parseLength(scopedPDU, pos)
+	pos = newPos
+	
+	// Parse OID (OBJECT IDENTIFIER)
+	if pos >= len(scopedPDU) || scopedPDU[pos] != ASN1_OBJECT_ID {
+		return "", fmt.Errorf("expected OID in variable binding")
+	}
+	pos++
+	oidLen, newPos := parseLength(scopedPDU, pos)
+	pos = newPos
+	
+	if pos+oidLen > len(scopedPDU) {
+		return "", fmt.Errorf("OID length exceeds remaining data")
+	}
+	
+	oidBytes := scopedPDU[pos : pos+oidLen]
+	oid := decodeOID(oidBytes)
+	
+	log.Printf("DEBUG: Extracted OID from scoped PDU: %s", oid)
+	return oid, nil
+}
+
+// extractOIDAndTypeFromScopedPDU extracts both OID and PDU type from a scoped PDU
+func (s *SNMPServer) extractOIDAndTypeFromScopedPDU(scopedPDU []byte) (string, byte, error) {
+	if len(scopedPDU) < 10 {
+		return "", ASN1_GET_REQUEST, fmt.Errorf("scoped PDU too short")
+	}
+
+	pos := 0
+	
+	// Parse contextEngineID (OCTET STRING)
+	if pos >= len(scopedPDU) || scopedPDU[pos] != ASN1_OCTET_STRING {
+		return "", ASN1_GET_REQUEST, fmt.Errorf("expected contextEngineID OCTET STRING")
+	}
+	pos++
+	engineIDLen, newPos := parseLength(scopedPDU, pos)
+	pos = newPos + engineIDLen
+	
+	// Parse contextName (OCTET STRING)
+	if pos >= len(scopedPDU) || scopedPDU[pos] != ASN1_OCTET_STRING {
+		return "", ASN1_GET_REQUEST, fmt.Errorf("expected contextName OCTET STRING")
+	}
+	pos++
+	contextNameLen, newPos := parseLength(scopedPDU, pos)
+	pos = newPos + contextNameLen
+	
+	// Parse PDU - should be GetRequest (0xA0) or GetNext (0xA1)
+	if pos >= len(scopedPDU) {
+		return "", ASN1_GET_REQUEST, fmt.Errorf("unexpected end of scoped PDU")
+	}
+	
+	pduType := scopedPDU[pos]
+	log.Printf("DEBUG: Scoped PDU type: 0x%02X", pduType)
+	
+	if pduType != ASN1_GET_REQUEST && pduType != ASN1_GET_NEXT {
+		return "", ASN1_GET_REQUEST, fmt.Errorf("unsupported PDU type in scoped PDU: 0x%02X", pduType)
+	}
+	pos++
+	
+	// Skip PDU length
+	_, newPos = parseLength(scopedPDU, pos)
+	pos = newPos
+	
+	// Parse request ID, error status, error index (skip them)
+	for i := 0; i < 3; i++ {
+		if pos >= len(scopedPDU) || scopedPDU[pos] != ASN1_INTEGER {
+			return "", pduType, fmt.Errorf("expected INTEGER in PDU")
+		}
+		pos++
+		intLen, newPos := parseLength(scopedPDU, pos)
+		pos = newPos + intLen
+	}
+	
+	// Parse variable bindings (SEQUENCE)
+	if pos >= len(scopedPDU) || scopedPDU[pos] != ASN1_SEQUENCE {
+		return "", pduType, fmt.Errorf("expected variable bindings SEQUENCE")
+	}
+	pos++
+	_, newPos = parseLength(scopedPDU, pos)
+	pos = newPos
+	
+	// Parse first variable binding (SEQUENCE)
+	if pos >= len(scopedPDU) || scopedPDU[pos] != ASN1_SEQUENCE {
+		return "", pduType, fmt.Errorf("expected first variable binding SEQUENCE")
+	}
+	pos++
+	_, newPos = parseLength(scopedPDU, pos)
+	pos = newPos
+	
+	// Parse OID (OBJECT IDENTIFIER)
+	if pos >= len(scopedPDU) || scopedPDU[pos] != ASN1_OBJECT_ID {
+		return "", pduType, fmt.Errorf("expected OID in variable binding")
+	}
+	pos++
+	oidLen, newPos := parseLength(scopedPDU, pos)
+	pos = newPos
+	
+	if pos+oidLen > len(scopedPDU) {
+		return "", pduType, fmt.Errorf("OID length exceeds remaining data")
+	}
+	
+	oidBytes := scopedPDU[pos : pos+oidLen]
+	oid := decodeOID(oidBytes)
+	
+	log.Printf("DEBUG: Extracted OID from scoped PDU: %s, PDU type: 0x%02X", oid, pduType)
+	return oid, pduType, nil
+}
+
+// createSNMPv3DiscoveryResponse creates a discovery response with engine ID
+func (s *SNMPServer) createSNMPv3DiscoveryResponse(requestMsg *SNMPv3Message) []byte {
+	if s.v3Config == nil || !s.v3Config.Enabled {
+		return []byte{}
+	}
+	
+	log.Printf("SNMPv3: Creating discovery response with engine ID: %s", s.v3Config.EngineID)
+	
+	// Create discovery response scoped PDU (typically a report PDU)
+	reportOID := "1.3.6.1.6.3.15.1.1.4.0" // usmStatsUnknownEngineIDs
+	reportValue := "1" // Counter value
+	
+	// Create simple report scoped PDU
+	scopedPDU, err := s.createDiscoveryScopedPDU(reportOID, reportValue)
+	if err != nil {
+		log.Printf("Failed to create discovery scoped PDU: %v", err)
+		return []byte{}
+	}
+	
+	// Create USM security parameters for discovery response
+	secParams := SNMPv3SecurityParams{
+		AuthoritativeEngineID:    s.v3Config.EngineID,
+		AuthoritativeEngineBoots: 1,
+		AuthoritativeEngineTime:  int(time.Now().Unix()),
+		UserName:                 "", // Empty for discovery
+		AuthParams:               []byte{},
+		PrivParams:               []byte{},
+	}
+	
+	// Encode USM parameters
+	usmParams, err := s.encodeUSMSecurityParameters(&secParams)
+	if err != nil {
+		log.Printf("Failed to encode USM parameters for discovery: %v", err)
+		return []byte{}
+	}
+	
+	// Create response message structure
+	responseMsg := SNMPv3Message{
+		Version: SNMPV3_VERSION,
+		GlobalData: SNMPv3GlobalData{
+			MsgID:           requestMsg.GlobalData.MsgID,
+			MsgMaxSize:      65507,
+			MsgFlags:        SNMPV3_MSG_FLAG_REPORT, // Set report flag
+			MsgSecurityModel: SNMPV3_SECURITY_MODEL_USM,
+		},
+		ScopedPDU: scopedPDU,
+	}
+	
+	// Encode the message
+	msgBytes, err := s.encodeSNMPv3Message(&responseMsg, usmParams)
+	if err != nil {
+		log.Printf("Failed to encode SNMPv3 discovery message: %v", err)
+		return []byte{}
+	}
+	
+	return msgBytes
+}
+
+// createDiscoveryScopedPDU creates a scoped PDU for discovery responses
+func (s *SNMPServer) createDiscoveryScopedPDU(oid, value string) ([]byte, error) {
+	// Create integer value for report counter
+	valueBytes := encodeInteger(1)
+	
+	// Create variable binding
+	oidBytes := encodeOID(oid)
+	varBind := encodeSequence(append(oidBytes, valueBytes...))
+	varBindList := encodeSequence(varBind)
+	
+	// Create Report PDU (0xA8)
+	pduContents := []byte{}
+	pduContents = append(pduContents, encodeInteger(1)...) // request-id
+	pduContents = append(pduContents, encodeInteger(0)...) // error-status
+	pduContents = append(pduContents, encodeInteger(0)...) // error-index
+	pduContents = append(pduContents, varBindList...)      // variable-bindings
+	
+	// Report PDU
+	pdu := []byte{0xA8} // Report PDU type
+	pdu = append(pdu, encodeLength(len(pduContents))...)
+	pdu = append(pdu, pduContents...)
+	
+	// Scoped PDU: contextEngineID + contextName + data
+	contextEngineID := encodeOctetString(s.v3Config.EngineID)
+	contextName := encodeOctetString("") // Default context
+	
+	scopedContents := []byte{}
+	scopedContents = append(scopedContents, contextEngineID...)
+	scopedContents = append(scopedContents, contextName...)
+	scopedContents = append(scopedContents, pdu...)
+	
+	return encodeSequence(scopedContents), nil
 }
 
 func (s *SNMPServer) findResponse(oid string) string {
@@ -826,4 +1141,159 @@ func (s *SNMPServer) createSNMPResponse(oid, value string, requestData []byte) [
 
 	// Complete SNMP message
 	return encodeSequence(msgContents)
+}
+
+// decryptScopedPDU decrypts an encrypted scoped PDU
+func (s *SNMPServer) decryptScopedPDU(encryptedPDU []byte, privParams []byte) ([]byte, error) {
+	if s.v3Config.PrivProtocol == SNMPV3_PRIV_NONE {
+		return encryptedPDU, nil
+	}
+	
+	log.Printf("SNMPv3: Attempting to decrypt scoped PDU with privacy protocol")
+	
+	// Decrypt based on the configured privacy protocol
+	switch s.v3Config.PrivProtocol {
+	case SNMPV3_PRIV_DES:
+		log.Printf("SNMPv3: Using DES decryption")
+		return s.decryptDES(encryptedPDU, privParams)
+	case SNMPV3_PRIV_AES128:
+		log.Printf("SNMPv3: Using AES128 decryption")
+		return s.decryptAES128(encryptedPDU, privParams)
+	default:
+		return nil, fmt.Errorf("unsupported privacy protocol: %d", s.v3Config.PrivProtocol)
+	}
+}
+
+// generateDESKey generates a DES key from the privacy password using RFC 3414 method
+func (s *SNMPServer) generateDESKey() []byte {
+	// RFC 3414 compatible key derivation for SNMPv3 privacy
+	// This is a simplified version that should work with standard SNMP clients
+	
+	// Step 1: Create auth key from password using MD5
+	password := s.v3Config.PrivPassword
+	if len(password) == 0 {
+		password = s.v3Config.Password // Fallback to main password
+	}
+	
+	// Create 1MB buffer with repeated password (RFC 3414)
+	passwordBytes := []byte(password)
+	keyBuffer := make([]byte, 1048576) // 1MB
+	for i := 0; i < len(keyBuffer); i++ {
+		keyBuffer[i] = passwordBytes[i%len(passwordBytes)]
+	}
+	
+	// Hash the 1MB buffer with MD5
+	authKey := md5.Sum(keyBuffer)
+	
+	// Step 2: Localize the key with engine ID
+	engineID := s.v3Config.EngineID
+	if len(engineID) == 0 {
+		engineID = "800000090300AABBCCDD" // Default engine ID
+	}
+	
+	// Convert hex engine ID to bytes
+	engineIDBytes, _ := s.parseHexEngineID(engineID)
+	
+	// Localize: MD5(authKey + engineID + authKey)
+	localizeInput := append(append(authKey[:], engineIDBytes...), authKey[:]...)
+	localizedKey := md5.Sum(localizeInput)
+	
+	// Step 3: For privacy key, derive from localized auth key
+	// Privacy key = first 8 bytes of localized key for DES
+	return localizedKey[:8]
+}
+
+// parseHexEngineID converts hex engine ID string to bytes
+func (s *SNMPServer) parseHexEngineID(hexEngineID string) ([]byte, error) {
+	// Remove any spaces or colons
+	clean := ""
+	for _, c := range hexEngineID {
+		if (c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f') {
+			clean += string(c)
+		}
+	}
+	
+	// Convert hex pairs to bytes
+	if len(clean)%2 != 0 {
+		return nil, fmt.Errorf("invalid hex engine ID length")
+	}
+	
+	result := make([]byte, len(clean)/2)
+	for i := 0; i < len(clean); i += 2 {
+		var b byte
+		for j := 0; j < 2; j++ {
+			c := clean[i+j]
+			b <<= 4
+			if c >= '0' && c <= '9' {
+				b |= c - '0'
+			} else if c >= 'A' && c <= 'F' {
+				b |= c - 'A' + 10
+			} else if c >= 'a' && c <= 'f' {
+				b |= c - 'a' + 10
+			}
+		}
+		result[i/2] = b
+	}
+	
+	return result, nil
+}
+
+// decryptDES performs basic DES decryption (simplified for simulation)
+func (s *SNMPServer) decryptDES(encryptedData []byte, privParams []byte) ([]byte, error) {
+	if len(privParams) < 8 {
+		return nil, fmt.Errorf("invalid DES privacy parameters length: %d", len(privParams))
+	}
+	
+	// Generate DES key from privacy password using RFC 3414 method
+	key := s.generateDESKey() // Use the same method as encryption
+	iv := privParams[:8] // Use privacy parameters as IV
+	
+	log.Printf("SNMPv3: DES decryption - key: %d bytes, IV: %d bytes, data: %d bytes", 
+		len(key), len(iv), len(encryptedData))
+	
+	// For simulation purposes, implement basic DES-CBC decryption
+	// In a real implementation, you'd need proper key derivation from the password
+	
+	// Create DES cipher
+	block, err := des.NewCipher(key)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create DES cipher: %v", err)
+	}
+	
+	if len(encryptedData)%8 != 0 {
+		return nil, fmt.Errorf("encrypted data length must be multiple of 8 bytes")
+	}
+	
+	// Decrypt using CBC mode
+	mode := cipher.NewCBCDecrypter(block, iv)
+	decrypted := make([]byte, len(encryptedData))
+	mode.CryptBlocks(decrypted, encryptedData)
+	
+	// Remove PKCS padding (simplified)
+	if len(decrypted) > 0 {
+		paddingLen := int(decrypted[len(decrypted)-1])
+		if paddingLen <= len(decrypted) && paddingLen <= 8 {
+			decrypted = decrypted[:len(decrypted)-paddingLen]
+		}
+	}
+	
+	log.Printf("SNMPv3: DES decryption completed - result: %d bytes", len(decrypted))
+	
+	// Print hex dump of decrypted data for debugging
+	if len(decrypted) > 0 {
+		log.Printf("Decrypted data hex:")
+		for i := 0; i < len(decrypted) && i < 64; i += 16 {
+			end := i + 16
+			if end > len(decrypted) {
+				end = len(decrypted)
+			}
+			hexStr := fmt.Sprintf("  %04X: ", i)
+			for j := i; j < end; j++ {
+				hexStr += fmt.Sprintf("%02X ", decrypted[j])
+			}
+			log.Printf(hexStr)
+		}
+	}
+	
+	return decrypted, nil
 }
