@@ -27,7 +27,7 @@ func createDevicesHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = manager.CreateDevices(req.StartIP, req.DeviceCount, req.Netmask, req.SNMPv3)
+	err = manager.CreateDevices(req.StartIP, req.DeviceCount, req.Netmask, req.ResourceFile, req.SNMPv3)
 	if err != nil {
 		sendErrorResponse(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -39,6 +39,11 @@ func createDevicesHandler(w http.ResponseWriter, r *http.Request) {
 func listDevicesHandler(w http.ResponseWriter, r *http.Request) {
 	devices := manager.ListDevices()
 	sendDataResponse(w, devices)
+}
+
+func listResourcesHandler(w http.ResponseWriter, r *http.Request) {
+	resources := manager.ListAvailableResources()
+	sendDataResponse(w, resources)
 }
 
 func deleteDeviceHandler(w http.ResponseWriter, r *http.Request) {
@@ -312,6 +317,7 @@ func webUIHandler(w http.ResponseWriter, r *http.Request) {
         .device-id { font-weight: 600; color: #333; font-family: Monaco, monospace; }
         .device-ip { font-family: Monaco, monospace; color: #333; }
         .device-interface { font-family: Monaco, monospace; color: #666; }
+        .device-type { font-weight: 500; color: #4a5568; font-size: 13px; }
         .device-ports { font-family: Monaco, monospace; color: #666; font-size: 13px; }
         .device-status { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; display: inline-block; }
         .status-running { background: #d4edda; color: #155724; }
@@ -396,7 +402,10 @@ func webUIHandler(w http.ResponseWriter, r *http.Request) {
 <body>
     <div class="container">
         <div class="header">
-            <h1>🌐 Network Device Simulator</h1>
+            <div style="position: relative; display: flex; align-items: center; justify-content: center;">
+                <img src="/cr.gif" alt="Logo" style="position: absolute; left: 0; width: 200px; height: 120px;">
+                <h1 style="margin: 0; text-align: center;">Network Device Simulator</h1>
+            </div>
             <p>Manage virtual network devices with TUN/TAP interfaces, SNMP, and SSH services</p>
         </div>
         <div id="alerts"></div>
@@ -419,6 +428,12 @@ func webUIHandler(w http.ResponseWriter, r *http.Request) {
                             <option value="16">16 (/16 - 255.255.0.0)</option>
                             <option value="8">8 (/8 - 255.0.0.0)</option>
                             <option value="32">32 (/32 - 255.255.255.255)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="resourceFile">Device Type</label>
+                        <select id="resourceFile">
+                            <option value="">Default (Auto-detect)</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -463,6 +478,7 @@ func webUIHandler(w http.ResponseWriter, r *http.Request) {
                             <th><input type="text" id="filterDeviceId" placeholder="Filter ID..." class="filter-input"></th>
                             <th><input type="text" id="filterIp" placeholder="Filter IP..." class="filter-input"></th>
                             <th><input type="text" id="filterInterface" placeholder="Filter interface..." class="filter-input"></th>
+                            <th><input type="text" id="filterDeviceType" placeholder="Filter type..." class="filter-input"></th>
                             <th><input type="text" id="filterPorts" placeholder="Filter ports..." class="filter-input"></th>
                             <th><select id="filterStatus" class="filter-input"><option value="">All</option><option value="running">Running</option><option value="stopped">Stopped</option></select></th>
                             <th><button id="clearFiltersBtn" class="btn btn-small">Clear</button></th>
@@ -485,6 +501,7 @@ func webUIHandler(w http.ResponseWriter, r *http.Request) {
     <script>
         const API_BASE = '/api/v1';
         let devices = [];
+        let resources = [];
         
         // Pagination state
         const DEVICES_PER_PAGE = 50;
@@ -495,6 +512,7 @@ func webUIHandler(w http.ResponseWriter, r *http.Request) {
             id: '',
             ip: '',
             interface: '',
+            deviceType: '',
             ports: '',
             status: ''
         };
@@ -520,6 +538,7 @@ func webUIHandler(w http.ResponseWriter, r *http.Request) {
             filterDeviceId: document.getElementById('filterDeviceId'),
             filterIp: document.getElementById('filterIp'),
             filterInterface: document.getElementById('filterInterface'),
+            filterDeviceType: document.getElementById('filterDeviceType'),
             filterPorts: document.getElementById('filterPorts'),
             filterStatus: document.getElementById('filterStatus'),
             clearFiltersBtn: document.getElementById('clearFiltersBtn')
@@ -568,16 +587,48 @@ func webUIHandler(w http.ResponseWriter, r *http.Request) {
             }
         }
 
-        async function createDevices(startIp, deviceCount, netmask) {
+        async function loadResources() {
+            try {
+                const response = await apiCall('/resources');
+                resources = response.data || [];
+                populateResourceSelect();
+            } catch (error) {
+                console.error('Failed to load resources: ' + error.message);
+                showAlert('Failed to load device types: ' + error.message, 'warning');
+            }
+        }
+
+        function populateResourceSelect() {
+            const select = document.getElementById('resourceFile');
+            // Clear existing options except default
+            select.innerHTML = '<option value="">Default (Auto-detect)</option>';
+            
+            // Add resource file options
+            resources.forEach(resource => {
+                const option = document.createElement('option');
+                option.value = resource.filename;
+                option.textContent = resource.name + ' (' + resource.type + ')';
+                select.appendChild(option);
+            });
+        }
+
+        async function createDevices(startIp, deviceCount, netmask, resourceFile) {
             try {
                 setLoading('createLoading', true);
+                const requestData = {
+                    start_ip: startIp,
+                    device_count: parseInt(deviceCount),
+                    netmask: netmask
+                };
+                
+                // Add resource file if selected
+                if (resourceFile) {
+                    requestData.resource_file = resourceFile;
+                }
+                
                 const response = await apiCall('/devices', {
                     method: 'POST',
-                    body: JSON.stringify({
-                        start_ip: startIp,
-                        device_count: parseInt(deviceCount),
-                        netmask: netmask
-                    })
+                    body: JSON.stringify(requestData)
                 });
                 showAlert(response.message, 'success');
                 await loadDevices();
@@ -670,6 +721,7 @@ func webUIHandler(w http.ResponseWriter, r *http.Request) {
                 const matchesId = !filters.id || device.id.toLowerCase().includes(filters.id.toLowerCase());
                 const matchesIp = !filters.ip || device.ip.includes(filters.ip);
                 const matchesInterface = !filters.interface || (device.interface && device.interface.toLowerCase().includes(filters.interface.toLowerCase()));
+                const matchesDeviceType = !filters.deviceType || (device.device_type && device.device_type.toLowerCase().includes(filters.deviceType.toLowerCase()));
                 const matchesPorts = !filters.ports || 
                     (device.snmp_port.toString().includes(filters.ports) || 
                      device.ssh_port.toString().includes(filters.ports));
@@ -677,7 +729,7 @@ func webUIHandler(w http.ResponseWriter, r *http.Request) {
                     (filters.status === 'running' && device.running) ||
                     (filters.status === 'stopped' && !device.running);
                 
-                return matchesId && matchesIp && matchesInterface && matchesPorts && matchesStatus;
+                return matchesId && matchesIp && matchesInterface && matchesDeviceType && matchesPorts && matchesStatus;
             });
         }
 
@@ -685,6 +737,7 @@ func webUIHandler(w http.ResponseWriter, r *http.Request) {
             filters.id = elements.filterDeviceId.value;
             filters.ip = elements.filterIp.value;
             filters.interface = elements.filterInterface.value;
+            filters.deviceType = elements.filterDeviceType.value;
             filters.ports = elements.filterPorts.value;
             filters.status = elements.filterStatus.value;
         }
@@ -693,12 +746,14 @@ func webUIHandler(w http.ResponseWriter, r *http.Request) {
             filters.id = '';
             filters.ip = '';
             filters.interface = '';
+            filters.deviceType = '';
             filters.ports = '';
             filters.status = '';
             
             elements.filterDeviceId.value = '';
             elements.filterIp.value = '';
             elements.filterInterface.value = '';
+            elements.filterDeviceType.value = '';
             elements.filterPorts.value = '';
             elements.filterStatus.value = '';
             
@@ -797,6 +852,7 @@ func webUIHandler(w http.ResponseWriter, r *http.Request) {
                 '<th>Device ID</th>' +
                 '<th>IP Address</th>' +
                 '<th>Interface</th>' +
+                '<th>Device Type</th>' +
                 '<th>Ports</th>' +
                 '<th>Status</th>' +
                 '<th>Actions</th>' +
@@ -808,6 +864,7 @@ func webUIHandler(w http.ResponseWriter, r *http.Request) {
                     '<td><span class="device-id">' + device.id + '</span></td>' +
                     '<td><span class="device-ip">' + device.ip + '</span></td>' +
                     '<td><span class="device-interface">' + (device.interface || 'N/A') + '</span></td>' +
+                    '<td><span class="device-type">' + (device.device_type || 'Unknown') + '</span></td>' +
                     '<td><span class="device-ports">SNMP:' + device.snmp_port + ' SSH:' + device.ssh_port + '</span></td>' +
                     '<td><span class="device-status ' + (device.running ? 'status-running' : 'status-stopped') + '">' +
                     (device.running ? '● RUNNING' : '● STOPPED') + '</span></td>' +
@@ -874,14 +931,16 @@ func webUIHandler(w http.ResponseWriter, r *http.Request) {
             const startIp = document.getElementById('startIp').value;
             const deviceCount = document.getElementById('deviceCount').value;
             const netmask = document.getElementById('netmask').value;
+            const resourceFile = document.getElementById('resourceFile').value;
             if (!startIp || !deviceCount) {
                 showAlert('Please fill in all required fields', 'error');
                 return;
             }
-            await createDevices(startIp, deviceCount, netmask);
+            await createDevices(startIp, deviceCount, netmask, resourceFile);
             elements.createForm.reset();
             document.getElementById('deviceCount').value = '1';
             document.getElementById('netmask').value = '24';
+            document.getElementById('resourceFile').value = '';
         });
 
         elements.exportBtn.addEventListener('click', exportDevicesCSV);
@@ -897,6 +956,7 @@ func webUIHandler(w http.ResponseWriter, r *http.Request) {
         elements.filterDeviceId.addEventListener('input', applyFilters);
         elements.filterIp.addEventListener('input', applyFilters);
         elements.filterInterface.addEventListener('input', applyFilters);
+        elements.filterDeviceType.addEventListener('input', applyFilters);
         elements.filterPorts.addEventListener('input', applyFilters);
         elements.filterStatus.addEventListener('change', applyFilters);
         elements.clearFiltersBtn.addEventListener('click', clearAllFilters);
@@ -905,6 +965,7 @@ func webUIHandler(w http.ResponseWriter, r *http.Request) {
         
         document.addEventListener('DOMContentLoaded', () => {
             loadDevices();
+            loadResources();
             showAlert('Network Device Simulator Web UI loaded successfully!', 'success');
         });
     </script>
@@ -931,6 +992,13 @@ func setupRoutes() *mux.Router {
 	api.HandleFunc("/devices/routes", generateRouteScriptHandler).Methods("GET")
 	api.HandleFunc("/devices/{id}", deleteDeviceHandler).Methods("DELETE")
 	api.HandleFunc("/devices", deleteAllDevicesHandler).Methods("DELETE")
+	api.HandleFunc("/resources", listResourcesHandler).Methods("GET")
+
+	// Static file for logo
+	router.HandleFunc("/cr.gif", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "image/gif")
+		http.ServeFile(w, r, "cr.gif")
+	}).Methods("GET", "HEAD")
 
 	// Health check
 	router.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {

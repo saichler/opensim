@@ -119,8 +119,9 @@ func (tun *TunInterface) destroy() error {
 // SimulatorManager implementation
 func NewSimulatorManager() *SimulatorManager {
 	return &SimulatorManager{
-		devices:      make(map[string]*DeviceSimulator),
-		nextTunIndex: 0,
+		devices:        make(map[string]*DeviceSimulator),
+		nextTunIndex:   0,
+		resourcesCache: make(map[string]*DeviceResources),
 	}
 }
 
@@ -216,7 +217,109 @@ func (sm *SimulatorManager) createDefaultResources(filename string) error {
 	return nil
 }
 
-func (sm *SimulatorManager) CreateDevices(startIP string, count int, netmask string, v3Config *SNMPv3Config) error {
+// LoadSpecificResources loads a resource file from the resources directory
+func (sm *SimulatorManager) LoadSpecificResources(filename string) (*DeviceResources, error) {
+	// Check cache first
+	if cached, exists := sm.resourcesCache[filename]; exists {
+		return cached, nil
+	}
+
+	// Construct full path - look in resources directory
+	resourcePath := fmt.Sprintf("resources/%s", filename)
+	
+	// Check if file exists
+	if _, err := os.Stat(resourcePath); os.IsNotExist(err) {
+		return nil, fmt.Errorf("resource file %s not found in resources directory", filename)
+	}
+
+	file, err := os.Open(resourcePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open resource file %s: %v", resourcePath, err)
+	}
+	defer file.Close()
+
+	var resources DeviceResources
+	if err := json.NewDecoder(file).Decode(&resources); err != nil {
+		return nil, fmt.Errorf("failed to parse resource file %s: %v", resourcePath, err)
+	}
+
+	// Cache the loaded resources
+	sm.resourcesCache[filename] = &resources
+
+	log.Printf("Loaded resource file %s: %d SNMP, %d SSH resources", 
+		filename, len(resources.SNMP), len(resources.SSH))
+	return &resources, nil
+}
+
+// ListAvailableResources lists all available resource files in the resources directory
+func (sm *SimulatorManager) ListAvailableResources() []ResourceInfo {
+	var resources []ResourceInfo
+	
+	resourceDir := "resources"
+	entries, err := os.ReadDir(resourceDir)
+	if err != nil {
+		log.Printf("Failed to read resources directory: %v", err)
+		return resources
+	}
+
+	for _, entry := range entries {
+		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".json") {
+			// Try to determine device type from filename
+			name := strings.TrimSuffix(entry.Name(), ".json")
+			deviceType := "Unknown"
+			
+			if strings.Contains(strings.ToLower(name), "cisco") {
+				deviceType = "Cisco Router/Switch"
+			} else if strings.Contains(strings.ToLower(name), "asr9k") {
+				deviceType = "Cisco ASR9K"
+			} else if strings.Contains(strings.ToLower(name), "ios") {
+				deviceType = "Cisco IOS"
+			} else if strings.Contains(strings.ToLower(name), "juniper") {
+				deviceType = "Juniper"
+			} else if strings.Contains(strings.ToLower(name), "nexus") {
+				deviceType = "Cisco Nexus"
+			}
+
+			resources = append(resources, ResourceInfo{
+				Filename: entry.Name(),
+				Name:     name,
+				Type:     deviceType,
+			})
+		}
+	}
+
+	return resources
+}
+
+// getDeviceTypeFromResourceFile determines the device type from a resource filename
+func getDeviceTypeFromResourceFile(filename string) string {
+	if filename == "" {
+		return "Default"
+	}
+	
+	name := strings.TrimSuffix(filename, ".json")
+	name = strings.ToLower(name)
+	
+	if strings.Contains(name, "asr9k") {
+		return "Cisco ASR9K"
+	} else if strings.Contains(name, "cisco") && strings.Contains(name, "ios") {
+		return "Cisco IOS"
+	} else if strings.Contains(name, "cisco") {
+		return "Cisco Router/Switch"
+	} else if strings.Contains(name, "juniper") {
+		return "Juniper"
+	} else if strings.Contains(name, "nexus") {
+		return "Cisco Nexus"
+	} else {
+		// Capitalize first letter of filename
+		if len(name) > 0 {
+			return strings.ToUpper(name[:1]) + name[1:]
+		}
+		return "Unknown"
+	}
+}
+
+func (sm *SimulatorManager) CreateDevices(startIP string, count int, netmask string, resourceFile string, v3Config *SNMPv3Config) error {
 	sm.mu.Lock()
 	defer sm.mu.Unlock()
 
@@ -232,6 +335,21 @@ func (sm *SimulatorManager) CreateDevices(startIP string, count int, netmask str
 
 	sm.currentIP = ip
 	successCount := 0
+
+	// Load the specified resource file if provided
+	var resources *DeviceResources
+	if resourceFile != "" {
+		var err error
+		resources, err = sm.LoadSpecificResources(resourceFile)
+		if err != nil {
+			return fmt.Errorf("failed to load resource file %s: %v", resourceFile, err)
+		}
+		log.Printf("Using resource file: %s", resourceFile)
+	} else {
+		// Use default resources
+		resources = sm.deviceResources
+		log.Printf("Using default resources")
+	}
 
 	for i := 0; i < count; i++ {
 		deviceID := fmt.Sprintf("device-%s", sm.currentIP.String())
@@ -260,12 +378,13 @@ func (sm *SimulatorManager) CreateDevices(startIP string, count int, netmask str
 		copy(deviceIP, sm.currentIP)
 		
 		device := &DeviceSimulator{
-			ID:        deviceID,
-			IP:        deviceIP,
-			SNMPPort:  DEFAULT_SNMP_PORT,
-			SSHPort:   DEFAULT_SSH_PORT,
-			tunIface:  tunIface,
-			resources: sm.deviceResources,
+			ID:           deviceID,
+			IP:           deviceIP,
+			SNMPPort:     DEFAULT_SNMP_PORT,
+			SSHPort:      DEFAULT_SSH_PORT,
+			tunIface:     tunIface,
+			resources:    resources,
+			resourceFile: resourceFile,
 		}
 
 		// Create servers with SNMPv3 configuration
@@ -324,11 +443,12 @@ func (sm *SimulatorManager) ListDevices() []DeviceInfo {
 	var devices []DeviceInfo
 	for _, device := range sm.devices {
 		info := DeviceInfo{
-			ID:       device.ID,
-			IP:       device.IP.String(),
-			SNMPPort: device.SNMPPort,
-			SSHPort:  device.SSHPort,
-			Running:  device.running,
+			ID:         device.ID,
+			IP:         device.IP.String(),
+			SNMPPort:   device.SNMPPort,
+			SSHPort:    device.SSHPort,
+			Running:    device.running,
+			DeviceType: getDeviceTypeFromResourceFile(device.resourceFile),
 		}
 		if device.tunIface != nil {
 			info.Interface = device.tunIface.Name
@@ -536,10 +656,15 @@ func main() {
 	// Initialize manager
 	manager = NewSimulatorManager()
 
-	// Load resources
-	err := manager.LoadResources("resources_asr9k.json")
+	// Load default resources - look for asr9k first, then fallback to cisco_ios
+	err := manager.LoadResources("resources/asr9k.json")
 	if err != nil {
-		log.Fatalf("Failed to load resources: %v", err)
+		log.Printf("Failed to load ASR9K resources: %v", err)
+		log.Println("Trying to load default Cisco IOS resources...")
+		err = manager.LoadResources("resources/cisco_ios.json")
+		if err != nil {
+			log.Fatalf("Failed to load any resources: %v", err)
+		}
 	}
 
 	// Validate auto-creation parameters
@@ -572,7 +697,7 @@ func main() {
 				*snmpv3EngineID, *snmpv3AuthProto, *snmpv3PrivProto)
 		}
 		
-		err := manager.CreateDevices(*autoStartIP, *autoCount, *autoNetmask, v3Config)
+		err := manager.CreateDevices(*autoStartIP, *autoCount, *autoNetmask, "", v3Config)
 		if err != nil {
 			log.Printf("Failed to auto-create devices: %v", err)
 		} else {

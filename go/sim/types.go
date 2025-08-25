@@ -31,16 +31,17 @@ type DeviceResources struct {
 
 // Device simulator represents a single simulated device
 type DeviceSimulator struct {
-	ID         string
-	IP         net.IP
-	SNMPPort   int
-	SSHPort    int
-	tunIface   *TunInterface
-	snmpServer *SNMPServer
-	sshServer  *SSHServer
-	resources  *DeviceResources
-	running    bool
-	mu         sync.RWMutex
+	ID           string
+	IP           net.IP
+	SNMPPort     int
+	SSHPort      int
+	tunIface     *TunInterface
+	snmpServer   *SNMPServer
+	sshServer    *SSHServer
+	resources    *DeviceResources
+	resourceFile string // Track which resource file was used
+	running      bool
+	mu           sync.RWMutex
 }
 
 // SNMPv3 USM (User-based Security Model) configuration
@@ -98,24 +99,34 @@ type SimulatorManager struct {
 	currentIP       net.IP
 	nextTunIndex    int
 	deviceResources *DeviceResources
+	resourcesCache  map[string]*DeviceResources // Cache for loaded resource files
 	mu              sync.RWMutex
+}
+
+// Resource file info for API
+type ResourceInfo struct {
+	Filename string `json:"filename"`
+	Name     string `json:"name"`
+	Type     string `json:"type"`
 }
 
 // API request/response structures
 type CreateDevicesRequest struct {
-	StartIP     string         `json:"start_ip"`
-	DeviceCount int            `json:"device_count"`
-	Netmask     string         `json:"netmask"`
-	SNMPv3      *SNMPv3Config  `json:"snmpv3,omitempty"`
+	StartIP      string         `json:"start_ip"`
+	DeviceCount  int            `json:"device_count"`
+	Netmask      string         `json:"netmask"`
+	ResourceFile string         `json:"resource_file,omitempty"` // Optional resource file selection
+	SNMPv3       *SNMPv3Config  `json:"snmpv3,omitempty"`
 }
 
 type DeviceInfo struct {
-	ID        string `json:"id"`
-	IP        string `json:"ip"`
-	Interface string `json:"interface,omitempty"`
-	SNMPPort  int    `json:"snmp_port"`
-	SSHPort   int    `json:"ssh_port"`
-	Running   bool   `json:"running"`
+	ID         string `json:"id"`
+	IP         string `json:"ip"`
+	Interface  string `json:"interface,omitempty"`
+	SNMPPort   int    `json:"snmp_port"`
+	SSHPort    int    `json:"ssh_port"`
+	Running    bool   `json:"running"`
+	DeviceType string `json:"device_type,omitempty"`
 }
 
 type APIResponse struct {
