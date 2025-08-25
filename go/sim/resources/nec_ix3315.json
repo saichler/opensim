@@ -1,0 +1,70 @@
+{
+  "snmp": [
+    {
+      "oid": "1.3.6.1.2.1.1.1.0",
+      "response": "NEC UNIVERGE IX Series IX3315 router, IX Series Software Version 10.7.22"
+    },
+    {
+      "oid": "1.3.6.1.2.1.1.2.0",
+      "response": "1.3.6.1.4.1.119.2.3.84.1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.1.3.0",
+      "response": "1253724700"
+    },
+    {
+      "oid": "1.3.6.1.2.1.1.4.0",
+      "response": "Network Operations Center"
+    },
+    {
+      "oid": "1.3.6.1.2.1.1.5.0",
+      "response": "TYO-CORE-01"
+    },
+    {
+      "oid": "1.3.6.1.2.1.1.6.0",
+      "response": "Tokyo, Japan"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.1.0",
+      "response": "48"
+    },
+    {
+      "oid": "1.3.6.1.4.1.119.2.3.84.1.1.1.1.6.0",
+      "response": "52"
+    },
+    {
+      "oid": "1.3.6.1.4.1.119.2.3.84.1.1.1.1.7.0",
+      "response": "74"
+    },
+    {
+      "oid": "1.3.6.1.4.1.119.2.3.84.1.1.1.1.2.0",
+      "response": "IX3315-001"
+    },
+    {
+      "oid": "1.3.6.1.4.1.119.2.3.84.1.1.1.1.11.0",
+      "response": "46"
+    }
+  ],
+  "ssh": [
+    {
+      "command": "show version",
+      "response": "NEC UNIVERGE IX Series\nIX3315 router, IX Series Software Version 10.7.22\nCopyright (c) NEC Corporation 2001-2023. All rights reserved.\n\nCompiled Oct 10 2023 09:15:32 by support\nSystem uptime is 145 days, 9 hours, 27 minutes\nSystem image file is \"IX3315-10.7.22.ldc\", booted via NOR-FLASH\n\nProcessor board ID IX3315-001\n64 GigabitEthernet/IEEE 802.3 interface(s)\n512 Mbytes of main memory\n128 Mbytes of boot memory\nConfiguration register is 0x2102"
+    },
+    {
+      "command": "show interface",
+      "response": "GigabitEthernet1.0 is up, line protocol is up\n  Hardware is GigabitEthernet, address is 00a0.de12.3456 (bia 00a0.de12.3456)\n  Description: WAN Interface\n  Internet address is 192.168.200.1/24\n  MTU 1500 bytes, BW 1000000 Kbit/sec, DLY 100 usec, reliability 255/255, txload 5/255, rxload 3/255\n  Encapsulation ETHER, loopback not set\n  ARP type: ARPA, ARP Timeout 04:00:00\n  Last input 00:00:01, output 00:00:01, output hang never\n  Last clearing of \"show interface\" counters never\n  Queueing strategy: fifo\n  5 minute input rate 234000 bits/sec, 145 packets/sec\n  5 minute output rate 345000 bits/sec, 187 packets/sec\n     12345678 packets input, 1234567890 bytes, 0 no buffer\n     Received 456789 broadcasts, 0 runts, 0 giants\n     0 input errors, 0 CRC, 0 frame, 0 overrun, 0 ignored\n     9876543 packets output, 987654321 bytes, 0 underruns\n     0 output errors, 0 collisions, 0 interface resets\n     0 babbles, 0 late collision, 0 deferred\n     0 lost carrier, 0 no carrier\n     0 output buffer failures, 0 output buffers swapped out"
+    },
+    {
+      "command": "show ip route",
+      "response": "IP Routing Table - 12 entries\nCodes: C - connected, S - static, R - RIP, O - OSPF, IA - OSPF inter area\n       N1 - OSPF NSSA external type 1, N2 - OSPF NSSA external type 2\n       E1 - OSPF external type 1, E2 - OSPF external type 2, i - IS-IS\n       L1 - IS-IS level-1, L2 - IS-IS level-2, * - candidate default\n       U - per-user static route, o - ODR\n\nGateway of last resort is 192.168.200.254 to network 0.0.0.0\n\nS*   0.0.0.0/0 [1/0] via 192.168.200.254\nC    192.168.200.0/24 is directly connected, GigabitEthernet1.0\nC    192.168.201.0/24 is directly connected, GigabitEthernet2.0"
+    },
+    {
+      "command": "show running-config",
+      "response": "!\nversion 10.7\nhostname TYO-CORE-01\n!\ninterface GigabitEthernet1.0\n ip address 192.168.200.1 255.255.255.0\n no shutdown\n!\ninterface GigabitEthernet2.0\n ip address 192.168.201.1 255.255.255.0\n no shutdown\n!\nip route 0.0.0.0 0.0.0.0 192.168.200.254\n!\nend"
+    },
+    {
+      "command": "show system",
+      "response": "System Information:\nHostname: TYO-CORE-01\nModel: IX3315\nSerial Number: IX3315-001\nSoftware Version: 10.7.22\nUptime: 145 days, 9 hours, 27 minutes\n\nHardware Information:\nCPU: ARM Cortex-A15 quad core 1.4GHz\nMemory: 512MB\nFlash: 512MB\nTemperature: 46°C\n\nInterface Status:\nTotal Interfaces: 48\nActive Interfaces: 12\nCPU Utilization: 52%\nMemory Utilization: 74%"
+    }
+  ]
+}

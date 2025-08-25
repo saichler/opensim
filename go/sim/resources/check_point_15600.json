@@ -1,0 +1,70 @@
+{
+  "snmp": [
+    {
+      "oid": "1.3.6.1.2.1.1.1.0",
+      "response": "Check Point 15600 Security Gateway, Version R81.20"
+    },
+    {
+      "oid": "1.3.6.1.2.1.1.2.0",
+      "response": "1.3.6.1.4.1.2620.1.1.15600"
+    },
+    {
+      "oid": "1.3.6.1.2.1.1.3.0",
+      "response": "0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.1.4.0",
+      "response": "Security Administrator"
+    },
+    {
+      "oid": "1.3.6.1.2.1.1.5.0",
+      "response": "MUM-FW-01"
+    },
+    {
+      "oid": "1.3.6.1.2.1.1.6.0",
+      "response": "Mumbai, India"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.1.0",
+      "response": "24"
+    },
+    {
+      "oid": "1.3.6.1.4.1.2620.1.6.7.4.1.0",
+      "response": "0"
+    },
+    {
+      "oid": "1.3.6.1.4.1.2620.1.6.7.4.2.0",
+      "response": "0"
+    },
+    {
+      "oid": "1.3.6.1.4.1.2620.1.1.21.0",
+      "response": "CP-15600-001"
+    },
+    {
+      "oid": "1.3.6.1.4.1.2620.1.6.7.8.1.0",
+      "response": "0"
+    }
+  ],
+  "ssh": [
+    {
+      "command": "cpstat os -f all",
+      "response": "Check Point 15600, Check Point Security Gateway\n\nProduct version Check Point R81.20\nOS build 14\nKernel version 3.10.0\nInstallation package name Check Point Security Gateway R81.20\nInstallation package path /opt/CPsuite-R81.20\n\nThis is a 64-bit machine\nDevice is currently offline\n\nCPU: 0% user, 0% system, 100% idle\nRAM: 0 KB total, 0 KB used, 0 KB free\nSwap: 0 KB total, 0 KB used, 0 KB free\n\nUptime: 0 minutes\nLast reboot reason: Power on"
+    },
+    {
+      "command": "ifconfig -a",
+      "response": "eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500\n        inet 192.168.202.1  netmask 255.255.255.0  broadcast 192.168.202.255\n        ether 00:1c:7f:12:34:56  txqueuelen 1000  (Ethernet)\n        RX packets 0  bytes 0 (0.0 B)\n        RX errors 0  dropped 0  overruns 0  frame 0\n        TX packets 0  bytes 0 (0.0 B)\n        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0\n\nlo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536\n        inet 127.0.0.1  netmask 255.0.0.0\n        loop  txqueuelen 1000  (Local Loopback)\n        RX packets 0  bytes 0 (0.0 B)\n        RX errors 0  dropped 0  overruns 0  frame 0\n        TX packets 0  bytes 0 (0.0 B)\n        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0\n\nDevice is currently offline"
+    },
+    {
+      "command": "netstat -rn",
+      "response": "Kernel IP routing table\nDestination     Gateway         Genmask         Flags   MSS Window  irtt Iface\n0.0.0.0         192.168.202.254 0.0.0.0         UG        0 0          0 eth0\n192.168.202.0   0.0.0.0         255.255.255.0   U         0 0          0 eth0\n\nDevice is currently offline"
+    },
+    {
+      "command": "cpconfig",
+      "response": "This system is configured as:\n        (1) Security Gateway\n        (2) Security Management Server\n        (3) Log Server\n\nInstalled products:\n        Check Point R81.20\n        \nDevice is currently offline - no configuration available\nSerial Number: CP-15600-001\nProduct: Check Point 15600\nModel: 15600\nVersion: R81.20\nStatus: Offline"
+    },
+    {
+      "command": "fw stat",
+      "response": "Device is currently offline\nNo firewall statistics available\nLast connection: 2025-08-03 11:15:22\nReason: Power failure\nStatus: Offline"
+    }
+  ]
+}

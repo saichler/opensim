@@ -1,0 +1,78 @@
+{
+  "snmp": [
+    {
+      "oid": "1.3.6.1.2.1.1.1.0",
+      "response": "FortiGate-600E v7.2.4,build1396,220624 (GA.F)"
+    },
+    {
+      "oid": "1.3.6.1.2.1.1.2.0",
+      "response": "1.3.6.1.4.1.12356.101.1.60002"
+    },
+    {
+      "oid": "1.3.6.1.2.1.1.3.0",
+      "response": "394825200"
+    },
+    {
+      "oid": "1.3.6.1.2.1.1.4.0",
+      "response": "Network Security Team"
+    },
+    {
+      "oid": "1.3.6.1.2.1.1.5.0",
+      "response": "TOR-FW-01"
+    },
+    {
+      "oid": "1.3.6.1.2.1.1.6.0",
+      "response": "Toronto, Canada"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.1.0",
+      "response": "20"
+    },
+    {
+      "oid": "1.3.6.1.4.1.12356.101.4.1.3.0",
+      "response": "76"
+    },
+    {
+      "oid": "1.3.6.1.4.1.12356.101.4.1.4.0",
+      "response": "83"
+    },
+    {
+      "oid": "1.3.6.1.4.1.12356.101.4.1.1.0",
+      "response": "FGT600E-001"
+    },
+    {
+      "oid": "1.3.6.1.4.1.12356.101.4.1.8.0",
+      "response": "48"
+    }
+  ],
+  "ssh": [
+    {
+      "command": "get system status",
+      "response": "Version: FortiOS v7.2.4 build1396 220624 (GA.F)\nVirus-DB: 1.00000(2022-06-24 18:42)\nExtended DB: 1.00000(2022-06-24 18:42)\nExtreme DB: 1.00000(2022-06-24 18:42)\nAV AI/ML Model: 0.00000(2001-01-01 00:00)\nIPS-DB: 6.00741(2015-12-01 02:30)\nIPS-ETDB: 6.00741(2015-12-01 02:30)\nApp Ctrl DB: 6.00741(2015-12-01 02:30)\nIndustrial DB: 6.00741(2015-12-01 02:30)\nBotnet DB: 1.00000(2017-09-01 01:00)\nSerial-Number: FGT600E-001\nIPS Malicious URL Database: 1.00001(2015-01-01 01:01)\nSystem time: Wed Aug  7 14:25:30 2025"
+    },
+    {
+      "command": "get system interface physical",
+      "response": "== [ port1 ]\nname: port1   mode: interface   ip: 192.168.2.1 255.255.255.0   status: up   netbios-forward: disable\nexplicit-web-proxy: disable   explicit-ftp-proxy: disable   mtu-override: disable   mtu: 1500\n\n== [ port2 ]\nname: port2   mode: interface   ip: 0.0.0.0 0.0.0.0   status: down   netbios-forward: disable\nexplicit-web-proxy: disable   explicit-ftp-proxy: disable   mtu-override: disable   mtu: 1500"
+    },
+    {
+      "command": "get router info routing-table all",
+      "response": "Codes: K - kernel, C - connected, S - static, R - RIP, B - BGP\n       O - OSPF, IA - OSPF inter area\n       N1 - OSPF NSSA external type 1, N2 - OSPF NSSA external type 2\n       E1 - OSPF external type 1, E2 - OSPF external type 2\n       i - IS-IS, L1 - IS-IS level-1, L2 - IS-IS level-2, ia - IS-IS inter area\n       * - candidate default\n\nS*      0.0.0.0/0 [10/0] via 192.168.2.254, port1\nC       192.168.2.0/24 is directly connected, port1"
+    },
+    {
+      "command": "show",
+      "response": "config system global\n    set hostname \"TOR-FW-01\"\n    set admin-sport 443\n    set admin-ssh-port 22\n    set gui-theme mariner\nend\nconfig system interface\n    edit \"port1\"\n        set ip 192.168.2.1 255.255.255.0\n        set allowaccess ping https ssh http fgfm\n        set type physical\n    next\nend"
+    },
+    {
+      "command": "get system performance status",
+      "response": "CPU states: 76% user, 7% system, 17% idle (WARNING: High CPU usage)\nMemory states: 83% used (WARNING: High memory usage)\nTemperature: 48°C\nAverage network usage: 145 kbps / 2345 kbps\nAverage sessions: 1543 sessions\nAverage session setup rate: 12/s\nAverage CPU usage: 76%\nAverage memory usage: 83%\nUptime: 45 days, 18 hours, 12 minutes\n\nSystem Status: WARNING\nAlerts:\n- CPU utilization sustained above 75% threshold\n- Memory usage above 80% threshold\n- Performance monitoring recommended"
+    },
+    {
+      "command": "get log memory",
+      "response": "2025-08-03 14:25:30 - WARNING: Memory usage at 83%, monitor closely\n2025-08-03 14:20:15 - WARNING: CPU utilization at 76% for sustained period\n2025-08-03 14:15:00 - INFO: High resource utilization detected\n2025-08-03 14:10:00 - WARNING: System performance may be impacted\n2025-08-03 14:05:00 - INFO: Total sessions: 1543, approaching capacity limits"
+    },
+    {
+      "command": "diagnose hardware deviceinfo nic port1",
+      "response": "port1:\n    Status: up\n    Link: yes\n    Speed: 1000Mbps\n    Duplex: full\n    Autoneg: yes\n    Flowctrl: rx tx\n    Temperature: 48°C\n\nTotal interfaces: 20 (12 up, 8 down)\nWarning: Resource utilization elevated"
+    }
+  ]
+}

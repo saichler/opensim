@@ -1,0 +1,70 @@
+{
+  "snmp": [
+    {
+      "oid": "1.3.6.1.2.1.1.1.0",
+      "response": "Juniper Networks, Inc. mx960 internet router, kernel JUNOS 21.4R1.12, Build date: 2021-11-18"
+    },
+    {
+      "oid": "1.3.6.1.2.1.1.2.0",
+      "response": "1.3.6.1.4.1.2636.1.1.1.2.25"
+    },
+    {
+      "oid": "1.3.6.1.2.1.1.3.0",
+      "response": "1348753300"
+    },
+    {
+      "oid": "1.3.6.1.2.1.1.4.0",
+      "response": "Network Operations <noc@company.com>"
+    },
+    {
+      "oid": "1.3.6.1.2.1.1.5.0",
+      "response": "LON-CORE-01"
+    },
+    {
+      "oid": "1.3.6.1.2.1.1.6.0",
+      "response": "London, UK"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.1.0",
+      "response": "80"
+    },
+    {
+      "oid": "1.3.6.1.4.1.2636.3.1.13.1.5.5.0.0",
+      "response": "34"
+    },
+    {
+      "oid": "1.3.6.1.4.1.2636.3.1.13.1.11.5.0.0",
+      "response": "56"
+    },
+    {
+      "oid": "1.3.6.1.4.1.2636.3.1.2.0",
+      "response": "JNP-MX960-001"
+    },
+    {
+      "oid": "1.3.6.1.4.1.2636.3.1.8.0",
+      "response": "41"
+    }
+  ],
+  "ssh": [
+    {
+      "command": "show version",
+      "response": "Hostname: LON-CORE-01\nModel: mx960\nJunos: 21.4R1.12\nJUNOS OS Kernel 64-bit [20211118.0000_builder_stable_11]"
+    },
+    {
+      "command": "show interfaces terse",
+      "response": "Interface               Admin Link Proto    Local                 Remote\nge-0/0/0                up    up\nge-0/0/0.0              up    up   inet     192.168.100.1/24\nxe-0/1/0                up    up\nxe-0/1/0.0              up    up   inet     10.0.1.1/30"
+    },
+    {
+      "command": "show route",
+      "response": "inet.0: 45 destinations, 45 routes (45 active, 0 holddown, 0 hidden)\n+ = Active Route, - = Last Active, * = Both\n0.0.0.0/0          *[BGP/170] 156d 07:33:12, localpref 100\n                    > to 10.0.1.2 via xe-0/1/0.0"
+    },
+    {
+      "command": "show configuration",
+      "response": "system {\n    host-name LON-CORE-01;\n    root-authentication {\n        encrypted-password \"$6$def456\";\n    }\n}\ninterfaces {\n    xe-0/1/0 {\n        unit 0 {\n            family inet {\n                address 10.0.1.1/30;\n            }\n        }\n    }\n}"
+    },
+    {
+      "command": "show chassis environment",
+      "response": "Class Item                           Status     Measurement\nTemp  Routing Engine 0               OK         41 degrees C / 106 degrees F\nTemp  Routing Engine 1               OK         39 degrees C / 102 degrees F\nFans  Fan Tray 0                     Running at normal speed\nFans  Fan Tray 1                     Running at normal speed"
+    }
+  ]
+}

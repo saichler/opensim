@@ -1,0 +1,70 @@
+{
+  "snmp": [
+    {
+      "oid": "1.3.6.1.2.1.1.1.0",
+      "response": "Cisco NX-OS(tm) n9000, Software (n9000-dk9), Version 9.3(8), RELEASE SOFTWARE Copyright (c) 2002-2020"
+    },
+    {
+      "oid": "1.3.6.1.2.1.1.2.0",
+      "response": "1.3.6.1.4.1.9.12.3.1.3.1437"
+    },
+    {
+      "oid": "1.3.6.1.2.1.1.3.0",
+      "response": "854932500"
+    },
+    {
+      "oid": "1.3.6.1.2.1.1.4.0",
+      "response": "Data Center Team"
+    },
+    {
+      "oid": "1.3.6.1.2.1.1.5.0",
+      "response": "PAR-SW-01"
+    },
+    {
+      "oid": "1.3.6.1.2.1.1.6.0",
+      "response": "Paris, France"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.1.0",
+      "response": "64"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.9.305.1.1.1.0",
+      "response": "28"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.9.48.1.1.1.5.1",
+      "response": "44"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.3.6.1.1.4.1.2.1",
+      "response": "N9K-9500-001"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.9.13.1.3.1.3.1",
+      "response": "39"
+    }
+  ],
+  "ssh": [
+    {
+      "command": "show version",
+      "response": "Cisco Nexus Operating System (NX-OS) Software\nTAC support: http://www.cisco.com/tac\nDocuments: http://www.cisco.com/go/documentation\nCopyright (c) 2002-2020, Cisco Systems, Inc. All rights reserved.\nThe copyrights to certain works contained herein are owned by\nother third parties and are used and distributed under license.\nSome parts of this software are covered under the GNU Public\nLicense. A copy of the license is available at\nhttp://www.gnu.org/licenses/gpl.html.\n\nNexus 9000v is a demo version of the Nexus Operating System\n\nSoftware\n  BIOS: version \n  NXOS: version 9.3(8)\n  BIOS compile time:  \n  NXOS image file is: bootflash:///nxos.9.3.8.bin\n  NXOS compile time:  8/19/2020 14:00:00 [08/20/2020 01:48:50]\n\nHardware\n  cisco Nexus9000 C9508 (8 Slot) Chassis \n  Intel(R) Xeon(R) CPU E5-2609 0 @ 2.40GHz with 16401408 kB of memory.\n  Processor Board ID N9K-9500-001\n\n  Device name: PAR-SW-01\n  bootflash:   53298176 kB\nKernel uptime is 98 day(s), 23 hour(s), 45 minute(s), 12 second(s)"
+    },
+    {
+      "command": "show interface status",
+      "response": "Port          Name               Status    Vlan      Duplex  Speed   Type\nEth1/1        --                 connected 1         full    10G     10Gbase-SR\nEth1/2        --                 connected 1         full    10G     10Gbase-SR\nEth1/3        --                 notconnec 1         auto    auto    10Gbase-SR\nEth1/4        --                 notconnec 1         auto    auto    10Gbase-SR"
+    },
+    {
+      "command": "show ip route",
+      "response": "IP Route Table for VRF \"default\"\n'*' denotes best ucast next-hop\n'**' denotes best mcast next-hop\n'[x/y]' denotes [preference/metric]\n'%<string>' in via output denotes VRF <string>\n\n0.0.0.0/0, ubest/mbest: 1/0\n    *via 192.168.101.254, [1/0], 98d23h, static\n192.168.101.0/24, ubest/mbest: 1/0, attached\n    *via 192.168.101.1, Vlan1, [0/0], 98d23h, direct"
+    },
+    {
+      "command": "show running-config",
+      "response": "version 9.3(8)\nhostname PAR-SW-01\n\ninterface Vlan1\n  ip address 192.168.101.1/24\n  no shutdown\n\ninterface Ethernet1/1\n  switchport mode access\n  switchport access vlan 1\n  no shutdown\n\nip route 0.0.0.0/0 192.168.101.254"
+    },
+    {
+      "command": "show environment",
+      "response": "Fan:\n----------------------------------------------\nFan             Model                Status\nfan1(sys_fan1)  N9K-C9300-FAN2      Ok\nfan2(sys_fan2)  N9K-C9300-FAN2      Ok\nfan3(sys_fan3)  N9K-C9300-FAN2      Ok\n\nPower Supply:\n----------------------------------------------\nPS  Model                Power       Power     Status\n                         (Watts)     (Amp @12V)\n--- ---                  ----------  ---------- ----------\n1   N9K-PAC-3000W        3000        250        Ok\n2   N9K-PAC-3000W        3000        250        Ok \n\nTemperature:\n----------------------------------------------\nModule   Sensor     MajorThresh   MinorThres   CurTemp     Status\n                    (Celsius)     (Celsius)    (Celsius)          \n-------- -------    -----------   ----------   -------     ------\n1        CPU Die       105           95          39        Ok\n1        Board Amb     75            65          32        Ok\n1        Outlet        65            55          31        Ok\n1        Inlet         55            45          28        Ok"
+    }
+  ]
+}
