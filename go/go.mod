@@ -4,7 +4,7 @@ go 1.23.8
 
 require (
 	github.com/gorilla/mux v1.8.1
-	github.com/saichler/l8parser v0.0.0-20250826200408-ce6c2aaff4b5
+	github.com/saichler/l8parser v0.0.0-20250826231724-1b4aa50ef831
 	github.com/saichler/l8pollaris v0.0.0-20250824030953-4b61b6ba29bd
 	github.com/saichler/probler v0.0.0-20250826010845-aa13553a13a6
 	golang.org/x/crypto v0.41.0
