@@ -244,62 +244,63 @@ func webUIHandler(w http.ResponseWriter, r *http.Request) {
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #2d5016 0%, #4a7c59 35%, #8fbc8f 70%, #b8dab8 100%);
             min-height: 100vh; padding: 20px;
         }
         .container { max-width: 1400px; margin: 0 auto; }
         .header {
-            background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px);
+            background: rgba(245, 245, 220, 0.18); backdrop-filter: blur(10px);
             border-radius: 20px; padding: 30px; margin-bottom: 30px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(139, 188, 139, 0.25);
+            box-shadow: 0 8px 32px rgba(45, 80, 22, 0.15);
         }
-        .header h1 { color: white; font-size: 2.5em; font-weight: 300; margin-bottom: 10px; text-align: center; }
-        .header p { color: rgba(255, 255, 255, 0.8); text-align: center; font-size: 1.1em; }
+        .header h1 { color: #f5f5dc; font-size: 2.5em; font-weight: 300; margin-bottom: 10px; text-align: center; text-shadow: 0 2px 4px rgba(45, 80, 22, 0.3); }
+        .header p { color: rgba(245, 245, 220, 0.9); text-align: center; font-size: 1.1em; }
         .controls, .status, .devices {
-            background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);
+            background: rgba(250, 250, 235, 0.95); backdrop-filter: blur(10px);
             border-radius: 20px; padding: 30px; margin-bottom: 30px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(45, 80, 22, 0.1);
+            border: 1px solid rgba(139, 188, 139, 0.2);
         }
-        .controls h2, .devices h2 { color: #333; margin-bottom: 20px; font-weight: 600; }
+        .controls h2, .devices h2 { color: #2d5016; margin-bottom: 20px; font-weight: 600; }
         .form-row { display: flex; gap: 20px; align-items: end; }
         .form-row .form-group { flex: 1; margin-bottom: 0; }
         .form-group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 8px; color: #555; font-weight: 500; }
+        label { display: block; margin-bottom: 8px; color: #4a7c59; font-weight: 500; }
         input, select {
-            width: 100%; padding: 12px 16px; border: 2px solid #e1e5e9;
-            border-radius: 12px; font-size: 16px; transition: all 0.3s ease; background: white;
+            width: 100%; padding: 12px 16px; border: 2px solid rgba(107, 142, 35, 0.15);
+            border-radius: 12px; font-size: 16px; transition: all 0.3s ease; 
+            background: rgba(250, 250, 235, 0.9); color: #2d5016;
         }
         input:focus, select:focus {
-            outline: none; border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            outline: none; border-color: #8fbc8f;
+            box-shadow: 0 0 0 3px rgba(139, 188, 139, 0.2);
         }
         .btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #2d5016 0%, #4a7c59 35%, #8fbc8f 70%, #b8dab8 100%);
             color: white; border: none; padding: 12px 24px; border-radius: 12px;
             cursor: pointer; font-size: 16px; font-weight: 600;
             transition: all 0.3s ease; min-width: 120px;
         }
-        .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3); }
-        .btn-danger { background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%); }
-        .btn-danger:hover { box-shadow: 0 8px 25px rgba(255, 107, 107, 0.3); }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(107, 142, 35, 0.35); }
+        .btn-danger { background: linear-gradient(135deg, #cd853f 0%, #a0522d 50%, #8b4513 100%); }
+        .btn-danger:hover { box-shadow: 0 8px 25px rgba(205, 133, 63, 0.35); }
         .btn-small { padding: 8px 16px; font-size: 14px; min-width: auto; }
         .status-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
         .status-card {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            background: linear-gradient(135deg, #8fbc8f 0%, #6b8e23 50%, #556b2f 100%);
             color: white; padding: 20px; border-radius: 16px; text-align: center;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 15px rgba(45, 80, 22, 0.15);
         }
         .status-card h3 { font-size: 2em; margin-bottom: 5px; font-weight: 300; }
         .status-card p { opacity: 0.9; }
         .device-table {
-            width: 100%; background: white; border-radius: 16px; overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); border: 2px solid #e1e5e9;
+            width: 100%; background: rgba(250, 250, 235, 0.95); border-radius: 16px; overflow: hidden;
+            box-shadow: 0 4px 15px rgba(45, 80, 22, 0.1); border: 2px solid rgba(139, 188, 139, 0.2);
         }
         .device-table table { width: 100%; border-collapse: collapse; }
         .device-table thead {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #2d5016 0%, #4a7c59 35%, #8fbc8f 70%, #b8dab8 100%);
             color: white;
         }
         .device-table thead th {
@@ -307,21 +308,21 @@ func webUIHandler(w http.ResponseWriter, r *http.Request) {
             border-bottom: 2px solid rgba(255, 255, 255, 0.2);
         }
         .device-table tbody tr {
-            transition: all 0.2s ease; border-bottom: 1px solid #e1e5e9;
+            transition: all 0.2s ease; border-bottom: 1px solid rgba(139, 188, 139, 0.15);
         }
-        .device-table tbody tr:hover { background: rgba(102, 126, 234, 0.05); }
+        .device-table tbody tr:hover { background: rgba(139, 188, 139, 0.08); }
         .device-table tbody tr:last-child { border-bottom: none; }
         .device-table tbody td {
             padding: 16px 12px; vertical-align: middle; font-size: 14px;
         }
-        .device-id { font-weight: 600; color: #333; font-family: Monaco, monospace; }
-        .device-ip { font-family: Monaco, monospace; color: #333; }
-        .device-interface { font-family: Monaco, monospace; color: #666; }
-        .device-type { font-weight: 500; color: #4a5568; font-size: 13px; }
-        .device-ports { font-family: Monaco, monospace; color: #666; font-size: 13px; }
+        .device-id { font-weight: 600; color: #2d5016; font-family: Monaco, monospace; }
+        .device-ip { font-family: Monaco, monospace; color: #2d5016; }
+        .device-interface { font-family: Monaco, monospace; color: #6b8e23; }
+        .device-type { font-weight: 500; color: #4a7c59; font-size: 13px; }
+        .device-ports { font-family: Monaco, monospace; color: #6b8e23; font-size: 13px; }
         .device-status { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; display: inline-block; }
-        .status-running { background: #d4edda; color: #155724; }
-        .status-stopped { background: #f8d7da; color: #721c24; }
+        .status-running { background: linear-gradient(45deg, #8fbc8f, #6b8e23); color: white; box-shadow: 0 2px 8px rgba(107, 142, 35, 0.3); }
+        .status-stopped { background: linear-gradient(45deg, #cd853f, #a0522d); color: white; box-shadow: 0 2px 8px rgba(205, 133, 63, 0.3); }
         .device-actions { display: flex; gap: 8px; flex-wrap: wrap; }
         .device-actions .btn { padding: 6px 12px; font-size: 12px; min-width: auto; }
         .pagination-controls {
