@@ -67,6 +67,82 @@
     {
       "oid": "1.3.6.1.4.1.25461.2.1.2.5.1.0",
       "response": "500"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.2.1",
+      "response": "FastEthernet0/1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.2.2",
+      "response": "FastEthernet0/2"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.4.1",
+      "response": "1500"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.4.2",
+      "response": "1500"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.5.1",
+      "response": "100000000"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.5.2",
+      "response": "100000000"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.8.1",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.8.2",
+      "response": "2"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.1",
+      "response": "MODEL123"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.2.1",
+      "response": "Main Chassis"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.2.2",
+      "response": "Line Card 1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.3.1",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.3.2",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.4.1",
+      "response": "55"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.5.1",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.6.1",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.9.1",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.4.1.25461.2.1.2.2.1.0",
+      "response": "127"
+    },
+    {
+      "oid": "1.3.6.1.4.1.25461.2.1.2.4.1.3.1",
+      "response": "1"
     }
   ],
   "ssh": [
@@ -88,27 +164,27 @@
     },
     {
       "command": "show system resources",
-      "response": "CPU: 89% (WARNING: High utilization)\nMemory: 92% (CRITICAL: Memory usage critical)\nDisk Usage: /: 67%\nTemperature: 55°C (WARNING: High temperature)\n\nAlerts:\n- Memory utilization has exceeded 90% threshold\n- CPU utilization has exceeded 85% threshold\n- System temperature elevated above normal range"
+      "response": "CPU: 89% (WARNING: High utilization)\nMemory: 92% (CRITICAL: Memory usage critical)\nDisk Usage: /: 67%\nTemperature: 55\u00b0C (WARNING: High temperature)\n\nAlerts:\n- Memory utilization has exceeded 90% threshold\n- CPU utilization has exceeded 85% threshold\n- System temperature elevated above normal range"
     },
     {
       "command": "show log system",
-      "response": "2025-08-03 14:30:00 - CRITICAL: Memory usage at 92%, immediate attention required\n2025-08-03 14:25:15 - WARNING: CPU usage sustained above 85% for 15 minutes\n2025-08-03 14:20:30 - WARNING: System temperature at 55°C, cooling may be inadequate\n2025-08-03 14:15:00 - INFO: High resource utilization detected across multiple subsystems\n2025-08-03 14:10:00 - WARNING: Performance degradation possible due to resource constraints"
+      "response": "2025-08-03 14:30:00 - CRITICAL: Memory usage at 92%, immediate attention required\n2025-08-03 14:25:15 - WARNING: CPU usage sustained above 85% for 15 minutes\n2025-08-03 14:20:30 - WARNING: System temperature at 55\u00b0C, cooling may be inadequate\n2025-08-03 14:15:00 - INFO: High resource utilization detected across multiple subsystems\n2025-08-03 14:10:00 - WARNING: Performance degradation possible due to resource constraints"
     },
     {
       "command": "show system state",
-      "response": "System State: Online (Performance Degraded)\nUptime: 127 days, 3 hours, 45 minutes\nTotal Interfaces: 16\nActive Interfaces: 8\nActive Sessions: 45,872\nThreat Detection: Active\nLast Config Change: 2025-07-15 09:30:00\n\nResource Status:\n  CPU: CRITICAL (89%)\n  Memory: CRITICAL (92%)\n  Temperature: WARNING (55°C)\n  Disk: OK (67%)\n\nRecommendations:\n  - Immediate memory optimization required\n  - Review active sessions for cleanup\n  - Check cooling system operation"
+      "response": "System State: Online (Performance Degraded)\nUptime: 127 days, 3 hours, 45 minutes\nTotal Interfaces: 16\nActive Interfaces: 8\nActive Sessions: 45,872\nThreat Detection: Active\nLast Config Change: 2025-07-15 09:30:00\n\nResource Status:\n  CPU: CRITICAL (89%)\n  Memory: CRITICAL (92%)\n  Temperature: WARNING (55\u00b0C)\n  Disk: OK (67%)\n\nRecommendations:\n  - Immediate memory optimization required\n  - Review active sessions for cleanup\n  - Check cooling system operation"
     },
     {
       "command": "show system hardware",
-      "response": "Hardware Information:\n\nChassis:\n  Model: PA-3220\n  Serial: PA3220-001\n  Description: Next-Generation Firewall\n\nProcessor:\n  Type: ARM Cortex-A72\n  Architecture: arm64\n  Cores: 4\n  Frequency: 1800 MHz\n  Temperature: 55°C\n  Utilization: 89% (CRITICAL)\n\nMemory:\n  Type: DDR4\n  Size: 4 GB\n  Frequency: 2400 MHz\n  Utilization: 92% (CRITICAL)\n  Available: 340 MB\n\nStorage:\n  Type: eMMC\n  Size: 32 GB\n  Used: 21.4 GB (67%)\n  Available: 10.6 GB\n\nPower Supply:\n  Type: External AC Adapter\n  Input: AC 100-240V\n  Output: DC 12V, 8.33A\n  Power: 100W\n  Status: OK\n  Load: 85% (85W)\n\nCooling:\n  Fan 1: 4200 RPM (84% of max 5000 RPM)\n  Status: WARNING - High speed due to temperature"
+      "response": "Hardware Information:\n\nChassis:\n  Model: PA-3220\n  Serial: PA3220-001\n  Description: Next-Generation Firewall\n\nProcessor:\n  Type: ARM Cortex-A72\n  Architecture: arm64\n  Cores: 4\n  Frequency: 1800 MHz\n  Temperature: 55\u00b0C\n  Utilization: 89% (CRITICAL)\n\nMemory:\n  Type: DDR4\n  Size: 4 GB\n  Frequency: 2400 MHz\n  Utilization: 92% (CRITICAL)\n  Available: 340 MB\n\nStorage:\n  Type: eMMC\n  Size: 32 GB\n  Used: 21.4 GB (67%)\n  Available: 10.6 GB\n\nPower Supply:\n  Type: External AC Adapter\n  Input: AC 100-240V\n  Output: DC 12V, 8.33A\n  Power: 100W\n  Status: OK\n  Load: 85% (85W)\n\nCooling:\n  Fan 1: 4200 RPM (84% of max 5000 RPM)\n  Status: WARNING - High speed due to temperature"
     },
     {
       "command": "show system environmentals",
-      "response": "Environmental Status:\n\nTemperature Sensors:\n  CPU: 55°C (WARNING - Above 50°C threshold)\n  Chassis: 48°C (Normal)\n  Memory: 52°C (Warning)\n\nFan Status:\n  System Fan: 4200 RPM\n  Status: OK (Running at high speed)\n  Warning: Fan speed increased due to high temperature\n\nPower Consumption:\n  Current: 85W\n  Maximum: 100W\n  Efficiency: 85%\n  Status: Normal\n\nOverall Environmental Status: WARNING\n  - High CPU temperature\n  - Elevated memory temperature\n  - Fan running at elevated speed\n\nRecommendations:\n  - Check ambient temperature\n  - Verify airflow clearance\n  - Consider workload optimization"
+      "response": "Environmental Status:\n\nTemperature Sensors:\n  CPU: 55\u00b0C (WARNING - Above 50\u00b0C threshold)\n  Chassis: 48\u00b0C (Normal)\n  Memory: 52\u00b0C (Warning)\n\nFan Status:\n  System Fan: 4200 RPM\n  Status: OK (Running at high speed)\n  Warning: Fan speed increased due to high temperature\n\nPower Consumption:\n  Current: 85W\n  Maximum: 100W\n  Efficiency: 85%\n  Status: Normal\n\nOverall Environmental Status: WARNING\n  - High CPU temperature\n  - Elevated memory temperature\n  - Fan running at elevated speed\n\nRecommendations:\n  - Check ambient temperature\n  - Verify airflow clearance\n  - Consider workload optimization"
     },
     {
       "command": "show interface hardware",
-      "response": "Interface Hardware Information:\n\nManagement Interface:\n  Port: MGT\n  Type: 10/100/1000 Ethernet\n  Speed: 1000 Mbps\n  Duplex: Full\n  MAC: 00:1b:17:00:01:00\n  Status: Up\n\nData Interfaces:\n  ethernet1/1:\n    Type: 10/100/1000 Ethernet\n    Speed: 1000 Mbps\n    Duplex: Full\n    MAC: 00:1b:17:00:01:01\n    Status: Up\n    Link: Active\n\n  ethernet1/2:\n    Type: 10/100/1000 Ethernet\n    Speed: Auto\n    Duplex: Auto\n    MAC: 00:1b:17:00:01:02\n    Status: Down\n    Link: Inactive\n\nTotal Physical Interfaces: 16\n  - Management: 1\n  - Data: 15\n  - Active: 8\n  - Inactive: 8\n\nInterface Module:\n  Type: Integrated Ethernet\n  Ports: 16x GE\n  Status: Online\n  Temperature: 48°C"
+      "response": "Interface Hardware Information:\n\nManagement Interface:\n  Port: MGT\n  Type: 10/100/1000 Ethernet\n  Speed: 1000 Mbps\n  Duplex: Full\n  MAC: 00:1b:17:00:01:00\n  Status: Up\n\nData Interfaces:\n  ethernet1/1:\n    Type: 10/100/1000 Ethernet\n    Speed: 1000 Mbps\n    Duplex: Full\n    MAC: 00:1b:17:00:01:01\n    Status: Up\n    Link: Active\n\n  ethernet1/2:\n    Type: 10/100/1000 Ethernet\n    Speed: Auto\n    Duplex: Auto\n    MAC: 00:1b:17:00:01:02\n    Status: Down\n    Link: Inactive\n\nTotal Physical Interfaces: 16\n  - Management: 1\n  - Data: 15\n  - Active: 8\n  - Inactive: 8\n\nInterface Module:\n  Type: Integrated Ethernet\n  Ports: 16x GE\n  Status: Online\n  Temperature: 48\u00b0C"
     }
   ]
 }

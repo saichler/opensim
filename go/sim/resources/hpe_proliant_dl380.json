@@ -43,6 +43,78 @@
     {
       "oid": "1.3.6.1.4.1.232.6.2.6.8.1.3.1.3",
       "response": "51"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.2.1",
+      "response": "FastEthernet0/1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.2.2",
+      "response": "FastEthernet0/2"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.4.1",
+      "response": "1500"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.4.2",
+      "response": "1500"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.5.1",
+      "response": "100000000"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.5.2",
+      "response": "100000000"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.8.1",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.8.2",
+      "response": "2"
+    },
+    {
+      "oid": "1.3.6.1.2.1.25.2.3.1.4.1",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.1",
+      "response": "MODEL123"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.2.1",
+      "response": "Main Chassis"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.2.2",
+      "response": "Line Card 1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.3.1",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.3.2",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.4.1",
+      "response": "51"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.5.1",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.6.1",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.9.1",
+      "response": "1"
     }
   ],
   "ssh": [
@@ -76,7 +148,7 @@
     },
     {
       "command": "sensors",
-      "response": "hpilo-isa-0000\\nAdapter: ISA adapter\\nFan 1:       3240 RPM  (min = 1800 RPM)\\nFan 2:       3180 RPM  (min = 1800 RPM)\\nFan 3:       3280 RPM  (min = 1800 RPM)\\nFan 4:       3200 RPM  (min = 1800 RPM)\\nTemp 1:      +51.0°C  (high = +80.0°C, crit = +90.0°C)\\nTemp 2:      +48.0°C  (high = +80.0°C, crit = +90.0°C)\\nTemp 3:      +53.0°C  (high = +80.0°C, crit = +90.0°C)\\n\\nWarning: System temperature elevated"
+      "response": "hpilo-isa-0000\\nAdapter: ISA adapter\\nFan 1:       3240 RPM  (min = 1800 RPM)\\nFan 2:       3180 RPM  (min = 1800 RPM)\\nFan 3:       3280 RPM  (min = 1800 RPM)\\nFan 4:       3200 RPM  (min = 1800 RPM)\\nTemp 1:      +51.0\u00b0C  (high = +80.0\u00b0C, crit = +90.0\u00b0C)\\nTemp 2:      +48.0\u00b0C  (high = +80.0\u00b0C, crit = +90.0\u00b0C)\\nTemp 3:      +53.0\u00b0C  (high = +80.0\u00b0C, crit = +90.0\u00b0C)\\n\\nWarning: System temperature elevated"
     },
     {
       "command": "ip addr show",

@@ -95,6 +95,94 @@
     {
       "oid": "1.3.6.1.4.1.9.9.48.1.1.1.3.2",
       "response": "PWR-C1-1100WAC"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.2.1",
+      "response": "FastEthernet0/1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.2.2",
+      "response": "FastEthernet0/2"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.4.1",
+      "response": "1500"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.4.2",
+      "response": "1500"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.5.1",
+      "response": "100000000"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.5.2",
+      "response": "100000000"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.8.1",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.8.2",
+      "response": "2"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.1",
+      "response": "MODEL123"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.2.1",
+      "response": "Main Chassis"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.2.2",
+      "response": "Line Card 1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.3.1",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.3.2",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.4.1",
+      "response": "42"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.5.1",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.6.1",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.9.1",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.3.6.3.0",
+      "response": "CAT9500-001"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.9.109.1.1.1.1.5.1",
+      "response": "25"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.9.13.1.5.1.2.1",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.9.25.1.1.1.2.2.1",
+      "response": "15.1(04)S"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.9.48.1.1.1.6.1",
+      "response": "45"
     }
   ],
   "ssh": [
@@ -140,15 +228,15 @@
     },
     {
       "command": "show power",
-      "response": "                      Power Supply Status\nPS   Model            Input  Output     Status     \n---- ---------------- ------ --------- -----------\n1    PWR-C1-1100WAC   AC     Good       Active     \n2    PWR-C1-1100WAC   AC     Good       Active     \n\nPower Supply Detailed Information:\n\nPS 1: PWR-C1-1100WAC\n  Serial Number: DCB2134L5GT\n  Input: 1100W AC (230V)\n  Output: Good\n  Status: Active\n  Temperature: 45°C\n  Load: 36% (394W of 1100W)\n\nPS 2: PWR-C1-1100WAC\n  Serial Number: DCB2134L5GU\n  Input: 1100W AC (230V)\n  Output: Good\n  Status: Active\n  Temperature: 44°C\n  Load: 32% (352W of 1100W)"
+      "response": "                      Power Supply Status\nPS   Model            Input  Output     Status     \n---- ---------------- ------ --------- -----------\n1    PWR-C1-1100WAC   AC     Good       Active     \n2    PWR-C1-1100WAC   AC     Good       Active     \n\nPower Supply Detailed Information:\n\nPS 1: PWR-C1-1100WAC\n  Serial Number: DCB2134L5GT\n  Input: 1100W AC (230V)\n  Output: Good\n  Status: Active\n  Temperature: 45\u00b0C\n  Load: 36% (394W of 1100W)\n\nPS 2: PWR-C1-1100WAC\n  Serial Number: DCB2134L5GU\n  Input: 1100W AC (230V)\n  Output: Good\n  Status: Active\n  Temperature: 44\u00b0C\n  Load: 32% (352W of 1100W)"
     },
     {
       "command": "show platform hardware chassis fantray detail",
-      "response": "Fan Tray Information:\n\nFan Tray 1:\n  Status: OK\n  Serial Number: FAN0012345\n  Fans:\n    Fan 1: 3520 RPM (70% of max 5000 RPM)\n    Fan 2: 3480 RPM (69% of max 5000 RPM)\n\nFan Tray 2:\n  Status: OK\n  Serial Number: FAN0012346\n  Fans:\n    Fan 3: 3550 RPM (71% of max 5000 RPM)\n    Fan 4: 3500 RPM (70% of max 5000 RPM)\n\nOverall Cooling Status: OK\nSystem Temperature: 42°C (Normal)"
+      "response": "Fan Tray Information:\n\nFan Tray 1:\n  Status: OK\n  Serial Number: FAN0012345\n  Fans:\n    Fan 1: 3520 RPM (70% of max 5000 RPM)\n    Fan 2: 3480 RPM (69% of max 5000 RPM)\n\nFan Tray 2:\n  Status: OK\n  Serial Number: FAN0012346\n  Fans:\n    Fan 3: 3550 RPM (71% of max 5000 RPM)\n    Fan 4: 3500 RPM (70% of max 5000 RPM)\n\nOverall Cooling Status: OK\nSystem Temperature: 42\u00b0C (Normal)"
     },
     {
       "command": "show platform hardware cpu brief",
-      "response": "CPU Information:\n\nSupervisor CPU:\n  Type: Intel Xeon E5-2690\n  Architecture: x86_64\n  Cores: 8\n  Frequency: 2900 MHz\n  Temperature: 55.3°C\n  Utilization: 25%\n  Status: OK\n\nLine Card CPU:\n  Type: ARM Cortex-A15\n  Architecture: arm64\n  Cores: 4\n  Frequency: 1400 MHz\n  Temperature: 38.7°C\n  Utilization: 8%\n  Status: OK"
+      "response": "CPU Information:\n\nSupervisor CPU:\n  Type: Intel Xeon E5-2690\n  Architecture: x86_64\n  Cores: 8\n  Frequency: 2900 MHz\n  Temperature: 55.3\u00b0C\n  Utilization: 25%\n  Status: OK\n\nLine Card CPU:\n  Type: ARM Cortex-A15\n  Architecture: arm64\n  Cores: 4\n  Frequency: 1400 MHz\n  Temperature: 38.7\u00b0C\n  Utilization: 8%\n  Status: OK"
     },
     {
       "command": "show platform hardware memory brief",

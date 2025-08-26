@@ -793,6 +793,46 @@
       "oid": "1.3.6.1.2.1.47.1.1.1.1.13.4",
       "response": "A9K-20HG-FLEX",
       "description": "entPhysicalModelName - LineCard 0/1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.4.1",
+      "response": "1500"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.4.2",
+      "response": "1500"
+    },
+    {
+      "oid": "1.3.6.1.2.1.4.21.1.1.0.0.0.0",
+      "response": "0.0.0.0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.4.21.1.1.192.168.1.0",
+      "response": "192.168.1.0"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.3.6.3.0",
+      "response": "ASR9000-001"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.9.109.1.1.1.1.5.1",
+      "response": "15"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.9.13.1.4.1.2.1",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.9.13.1.5.1.2.1",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.9.25.1.1.1.2.2.1",
+      "response": "15.1(04)S"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.9.48.1.1.1.6.1",
+      "response": "32"
     }
   ],
   "ssh": [
@@ -838,7 +878,7 @@
     },
     {
       "command": "show environment",
-      "response": "Rack 0 - ASR 9010 Environment Monitoring\n\nPower Supplies:\n  Power Module 0/PM0/SP:  3000W AC Power Supply - GOOD\n  Power Module 0/PM1/SP:  3000W AC Power Supply - GOOD\n  Total Power Output:     4200W\n  Total Power Capacity:   6000W\n\nFan Status:\n  Fan Module 0/FT0/SP:    A9K-FAN-V2 - GOOD\n  Fan Module 0/FT1/SP:    A9K-FAN-V2 - GOOD  \n  Fan Module 0/FT2/SP:    A9K-FAN-V2 - GOOD\n\nTemperature Sensors:\n  Location                Current    Warning    Critical\n  Chassis Intake          28°C       45°C       55°C\n  Chassis Exhaust         35°C       65°C       75°C\n  CPU Die                 42°C       85°C       95°C\n  Line Card 0/0           31°C       70°C       80°C\n  Line Card 0/1           29°C       70°C       80°C"
+      "response": "Rack 0 - ASR 9010 Environment Monitoring\n\nPower Supplies:\n  Power Module 0/PM0/SP:  3000W AC Power Supply - GOOD\n  Power Module 0/PM1/SP:  3000W AC Power Supply - GOOD\n  Total Power Output:     4200W\n  Total Power Capacity:   6000W\n\nFan Status:\n  Fan Module 0/FT0/SP:    A9K-FAN-V2 - GOOD\n  Fan Module 0/FT1/SP:    A9K-FAN-V2 - GOOD  \n  Fan Module 0/FT2/SP:    A9K-FAN-V2 - GOOD\n\nTemperature Sensors:\n  Location                Current    Warning    Critical\n  Chassis Intake          28\u00b0C       45\u00b0C       55\u00b0C\n  Chassis Exhaust         35\u00b0C       65\u00b0C       75\u00b0C\n  CPU Die                 42\u00b0C       85\u00b0C       95\u00b0C\n  Line Card 0/0           31\u00b0C       70\u00b0C       80\u00b0C\n  Line Card 0/1           29\u00b0C       70\u00b0C       80\u00b0C"
     },
     {
       "command": "show redundancy",
