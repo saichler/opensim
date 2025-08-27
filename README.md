@@ -15,6 +15,8 @@ A powerful, scalable network device simulator that provides realistic SNMP and S
 - **High Performance**: Optimized for minimal resource usage
 - **Device Export**: Export device configurations to CSV and routing scripts
 - **Customizable Resources**: JSON-based configuration for SNMP and SSH responses
+- **Enhanced Polling System**: Comprehensive OID coverage for network monitoring applications
+- **Robust SNMP Engine**: Improved stability with proper ASN.1 encoding and error handling
 
 ## 🚀 Quick Start
 
@@ -162,11 +164,23 @@ snmpwalk -v2c -c public 192.168.100.1 1.3.6.1.2.1.2.2.1
 
 ### Device Resources
 
-The simulator uses JSON files to define SNMP OIDs and SSH command responses:
+The simulator uses JSON files to define SNMP OIDs and SSH command responses with comprehensive coverage:
 
-- `resources_asr9k.json` - Default ASR9K router simulation
-- `asr9k_resources.json` - Alternative ASR9K configuration
-- `asr9k_ssh_commands.json` - SSH command definitions
+**Available Device Types:**
+- Cisco: ASR9K, Catalyst 9500, ISR 4331, Nexus 9000
+- Juniper: MX240, SRX300, EX4300
+- Palo Alto: PA-3220
+- F5: BIG-IP i4800  
+- HPE: ProLiant servers
+- Arista: 7050X switches
+- Fortinet: FortiGate firewalls
+- And more...
+
+**Enhanced Features:**
+- Complete physical inventory monitoring (chassis, power supplies, fans, temperatures)
+- Interface statistics and operational status
+- System information and hardware details
+- Vendor-specific OID implementations
 
 ### Example SNMP Resource
 ```json
@@ -213,6 +227,7 @@ opensim/
 2. **Port Conflicts**: Use `-port` flag to specify alternative port
 3. **TUN Module Missing**: Run `sudo modprobe tun`
 4. **High Resource Usage**: See [SCALING_GUIDE.md](SCALING_GUIDE.md) for optimization
+5. **SNMP Integer Encoding**: Fixed panic issues with negative integer values in ASN.1 encoding
 
 ### Debug Commands
 
@@ -275,6 +290,8 @@ go test ./sim
 - [Port Binding Solutions](PORT_BINDING_SOLUTIONS.md) - Network configuration
 - [TUN Troubleshooting](TUN_TROUBLESHOOTING.md) - TUN/TAP interface issues
 - [Individual Interfaces Guide](INDIVIDUAL_INTERFACES_GUIDE.md) - Advanced networking
+- [Device Mock Data Requirements](go/sim/DEVICE_MOCK_DATA_REQUIREMENTS.md) - Device simulation coverage
+- [Physical Inventory Coverage](go/sim/PHYSICAL_INVENTORY_COVERAGE.md) - Hardware monitoring OIDs
 
 ## 🤝 Use Cases
 
