@@ -545,6 +545,40 @@
             overflow: hidden;
         }
 
+        .hero-screenshot {
+            max-width: 100%;
+            height: auto;
+            border-radius: var(--border-radius-lg);
+            box-shadow: 0 20px 60px var(--shadow-medium);
+            margin-top: 3rem;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            transition: var(--transition);
+        }
+
+        .hero-screenshot:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 30px 80px var(--shadow-medium);
+        }
+
+        .screenshot-container {
+            text-align: center;
+            margin: 3rem 0;
+        }
+
+        .screenshot-container img {
+            max-width: 100%;
+            height: auto;
+            border-radius: var(--border-radius-lg);
+            box-shadow: 0 15px 40px var(--shadow-light);
+            border: 1px solid var(--border-light);
+            transition: var(--transition);
+        }
+
+        .screenshot-container img:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 20px 50px var(--shadow-medium);
+        }
+
         .mockup-content::before {
             content: '';
             position: absolute;
@@ -667,6 +701,10 @@
                 grid-template-columns: repeat(2, 1fr);
             }
 
+            .hero-screenshot {
+                margin-top: 2rem;
+            }
+
             .demo-container {
                 grid-template-columns: 1fr;
                 gap: 2rem;
@@ -736,8 +774,8 @@
         <div class="hero-container">
             <h1 class="floating">OpenSim</h1>
             <p class="hero-subtitle">
-                A powerful, scalable network device simulator providing realistic SNMP and SSH interfaces 
-                for testing network management applications, monitoring systems, and automation tools.
+                A powerful, scalable network device simulator with enhanced polling system support, robust SNMP/SSH interfaces, 
+                and comprehensive device simulation for testing network management applications, monitoring systems, and automation tools.
             </p>
             
             <div class="hero-cta">
@@ -755,13 +793,17 @@
                     <div class="stat-label">Concurrent Devices</div>
                 </div>
                 <div class="stat-card fade-in-up">
-                    <div class="stat-number">2</div>
-                    <div class="stat-label">Protocol Support</div>
+                    <div class="stat-number">14+</div>
+                    <div class="stat-label">Device Types</div>
                 </div>
                 <div class="stat-card fade-in-up">
                     <div class="stat-number">100%</div>
                     <div class="stat-label">Open Source</div>
                 </div>
+            </div>
+
+            <div class="screenshot-container">
+                <img src="opensim.png" alt="OpenSim Network Device Simulator Interface" class="hero-screenshot">
             </div>
         </div>
     </section>
@@ -779,9 +821,9 @@
             <div class="features-grid">
                 <div class="feature-card">
                     <div class="feature-icon">🌐</div>
-                    <h3 class="feature-title">Multi-Protocol Support</h3>
+                    <h3 class="feature-title">Enhanced Protocol Support</h3>
                     <p class="feature-description">
-                        Full SNMP v2c and SSH protocol simulation with configurable responses and realistic device behavior.
+                        Full SNMP v2c and SSH protocol simulation with improved ASN.1 encoding, comprehensive OID coverage, and realistic device behavior.
                     </p>
                 </div>
 
@@ -819,9 +861,25 @@
 
                 <div class="feature-card">
                     <div class="feature-icon">⚡</div>
-                    <h3 class="feature-title">High Performance</h3>
+                    <h3 class="feature-title">High Performance & Reliability</h3>
                     <p class="feature-description">
-                        Optimized for minimal resource usage with ~50MB base memory and ~1KB per simulated device.
+                        Optimized for minimal resource usage with ~50MB base memory, ~1KB per device, and enhanced stability with bug fixes for critical SNMP operations.
+                    </p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3 class="feature-title">Comprehensive Device Coverage</h3>
+                    <p class="feature-description">
+                        Support for 14+ device types including Cisco, Juniper, Palo Alto, F5, HPE, Arista, and Fortinet with complete polling system compatibility.
+                    </p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🔍</div>
+                    <h3 class="feature-title">Enhanced Monitoring</h3>
+                    <p class="feature-description">
+                        Complete physical inventory monitoring with chassis, power supply, fan, and temperature sensor simulation for realistic network testing.
                     </p>
                 </div>
             </div>
@@ -933,10 +991,11 @@ curl -X POST http://localhost:8080/api/v1/devices \
                     
                     <ul class="demo-features">
                         <li>Real-time device status monitoring</li>
-                        <li>Interactive device creation and management</li>
+                        <li>Interactive device creation with 14+ device types</li>
                         <li>CSV export and routing script generation</li>
                         <li>Advanced filtering and pagination</li>
-                        <li>SSH and SNMP testing tools</li>
+                        <li>SSH and SNMP testing tools with enhanced reliability</li>
+                        <li>Comprehensive polling system compatibility</li>
                     </ul>
 
                     <a href="/ui" class="btn btn-primary" target="_blank">🎮 Launch Web UI</a>
@@ -950,7 +1009,7 @@ curl -X POST http://localhost:8080/api/v1/devices \
                         <div class="mockup-url">localhost:8080/ui</div>
                     </div>
                     <div class="mockup-content">
-                        🌐
+                        <img src="opensim.png" alt="OpenSim Web Interface" style="width: 100%; height: 100%; object-fit: cover; border-radius: var(--border-radius);">
                     </div>
                 </div>
             </div>
@@ -998,10 +1057,22 @@ curl -X POST http://localhost:8080/api/v1/devices \
                     <p class="doc-description">Port binding solutions and network configuration tips.</p>
                 </a>
 
+                <a href="go/sim/DEVICE_MOCK_DATA_REQUIREMENTS.md" class="doc-card">
+                    <div class="doc-icon">📋</div>
+                    <h4 class="doc-title">Device Mock Data</h4>
+                    <p class="doc-description">Device simulation coverage and mock data requirements.</p>
+                </a>
+
+                <a href="go/sim/PHYSICAL_INVENTORY_COVERAGE.md" class="doc-card">
+                    <div class="doc-icon">🏗️</div>
+                    <h4 class="doc-title">Hardware Monitoring</h4>
+                    <p class="doc-description">Physical inventory coverage and hardware monitoring OIDs.</p>
+                </a>
+
                 <a href="#api-reference" class="doc-card">
                     <div class="doc-icon">🔌</div>
                     <h4 class="doc-title">API Reference</h4>
-                    <p class="doc-description">Complete REST API documentation with examples.</p>
+                    <p class="doc-description">Complete REST API documentation with enhanced SNMP stability.</p>
                 </a>
             </div>
         </div>
