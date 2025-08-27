@@ -863,15 +863,36 @@ func encodeInteger(value int) []byte {
 	var bytes []byte
 	if value == 0 {
 		bytes = []byte{0x00}
-	} else {
+	} else if value > 0 {
+		// Positive integer
 		temp := value
 		for temp > 0 {
 			bytes = append([]byte{byte(temp & 0xff)}, bytes...)
 			temp >>= 8
 		}
 		// Add leading zero if high bit is set (to keep it positive)
-		if bytes[0]&0x80 != 0 {
+		if len(bytes) > 0 && bytes[0]&0x80 != 0 {
 			bytes = append([]byte{0x00}, bytes...)
+		}
+	} else {
+		// Negative integer - use two's complement representation
+		temp := uint64(value) // Convert to unsigned for bit manipulation
+		// For negative numbers, we need to ensure proper two's complement encoding
+		if value >= -128 && value < 0 {
+			bytes = []byte{byte(temp)}
+		} else if value >= -32768 && value < 0 {
+			bytes = []byte{byte(temp >> 8), byte(temp)}
+		} else if value >= -8388608 && value < 0 {
+			bytes = []byte{byte(temp >> 16), byte(temp >> 8), byte(temp)}
+		} else {
+			// For larger negative numbers, use full 32-bit representation
+			bytes = []byte{byte(temp >> 24), byte(temp >> 16), byte(temp >> 8), byte(temp)}
+		}
+		
+		// Ensure we have the minimum number of bytes for negative representation
+		// If the high bit is not set, we need to add 0xFF prefix to maintain negative value
+		if len(bytes) > 0 && bytes[0]&0x80 == 0 {
+			bytes = append([]byte{0xFF}, bytes...)
 		}
 	}
 
