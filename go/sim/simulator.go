@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"sort"
+	"strconv"
 	"strings"
 	"syscall"
 	"unsafe"
@@ -114,6 +116,43 @@ func (tun *TunInterface) destroy() error {
 		return syscall.Close(tun.fd)
 	}
 	return nil
+}
+
+// compareOIDsLexicographically compares two OID strings lexicographically
+// Returns -1 if oid1 < oid2, 0 if equal, 1 if oid1 > oid2
+func compareOIDsLexicographically(oid1, oid2 string) int {
+	parts1 := strings.Split(oid1, ".")
+	parts2 := strings.Split(oid2, ".")
+	
+	maxLen := len(parts1)
+	if len(parts2) > maxLen {
+		maxLen = len(parts2)
+	}
+	
+	for i := 0; i < maxLen; i++ {
+		var val1, val2 int
+		
+		if i < len(parts1) {
+			val1, _ = strconv.Atoi(parts1[i])
+		}
+		if i < len(parts2) {
+			val2, _ = strconv.Atoi(parts2[i])
+		}
+		
+		if val1 < val2 {
+			return -1
+		} else if val1 > val2 {
+			return 1
+		}
+	}
+	
+	if len(parts1) < len(parts2) {
+		return -1
+	} else if len(parts1) > len(parts2) {
+		return 1
+	}
+	
+	return 0
 }
 
 // SimulatorManager implementation
@@ -242,6 +281,12 @@ func (sm *SimulatorManager) LoadSpecificResources(filename string) (*DeviceResou
 	if err := json.NewDecoder(file).Decode(&resources); err != nil {
 		return nil, fmt.Errorf("failed to parse resource file %s: %v", resourcePath, err)
 	}
+
+	// Sort SNMP resources by OID to ensure correct lexicographic ordering for SNMP walks
+	sort.Slice(resources.SNMP, func(i, j int) bool {
+		return compareOIDsLexicographically(resources.SNMP[i].OID, resources.SNMP[j].OID) < 0
+	})
+	log.Printf("Sorted %d SNMP OIDs in lexicographic order for %s", len(resources.SNMP), filename)
 
 	// Cache the loaded resources
 	sm.resourcesCache[filename] = &resources

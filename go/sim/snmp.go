@@ -942,11 +942,24 @@ func encodeOIDComponent(value int) []byte {
 
 	var result []byte
 	temp := value
-	for temp > 0x7f {
-		result = append([]byte{byte((temp & 0x7f) | 0x80)}, result...)
+	
+	// First, collect all the 7-bit chunks in reverse order
+	var chunks []byte
+	for temp > 0 {
+		chunks = append(chunks, byte(temp & 0x7f))
 		temp >>= 7
 	}
-	result = append([]byte{byte(temp)}, result...)
+	
+	// Now build the result with proper bit flags
+	// All bytes except the last should have the high bit set
+	for i := len(chunks) - 1; i >= 0; i-- {
+		if i > 0 {
+			result = append(result, chunks[i] | 0x80) // Set high bit for continuation
+		} else {
+			result = append(result, chunks[i]) // Last byte, no high bit
+		}
+	}
+	
 	return result
 }
 
