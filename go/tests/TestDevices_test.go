@@ -1,4 +1,4 @@
-package testside
+package tests
 
 import (
 	"fmt"

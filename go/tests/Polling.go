@@ -1,4 +1,4 @@
-package testside
+package tests
 
 import (
 	"github.com/saichler/l8parser/go/parser/boot"
