@@ -40,6 +40,7 @@ type DeviceSimulator struct {
 	sshServer    *SSHServer
 	resources    *DeviceResources
 	resourceFile string // Track which resource file was used
+	sysLocation  string // Dynamic sysLocation for this device
 	running      bool
 	mu           sync.RWMutex
 }

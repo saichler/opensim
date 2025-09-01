@@ -503,6 +503,11 @@ func (s *SNMPServer) createDiscoveryScopedPDU(oid, value string) ([]byte, error)
 }
 
 func (s *SNMPServer) findResponse(oid string) string {
+	// Handle dynamic sysLocation OID
+	if oid == "1.3.6.1.2.1.1.6.0" {
+		return s.device.sysLocation
+	}
+	
 	for _, resource := range s.device.resources.SNMP {
 		if resource.OID == oid {
 			return resource.Response
@@ -551,8 +556,21 @@ func compareOIDs(oid1, oid2 string) int {
 func (s *SNMPServer) findNextOID(currentOID string) (string, string) {
 	var candidates []SNMPResource
 	
+	// Add dynamic sysLocation OID if it's greater than currentOID
+	sysLocationOID := "1.3.6.1.2.1.1.6.0"
+	if compareOIDs(sysLocationOID, currentOID) > 0 {
+		candidates = append(candidates, SNMPResource{
+			OID:      sysLocationOID,
+			Response: s.device.sysLocation,
+		})
+	}
+	
 	// Find all OIDs that are lexicographically greater than currentOID
 	for _, resource := range s.device.resources.SNMP {
+		// Skip the sysLocation OID from resources since we handle it dynamically
+		if resource.OID == sysLocationOID {
+			continue
+		}
 		if compareOIDs(resource.OID, currentOID) > 0 {
 			candidates = append(candidates, resource)
 		}

@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"math/rand"
 	"net"
 	"net/http"
 	"os"
@@ -14,6 +15,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 	"unsafe"
 )
 
@@ -58,6 +60,163 @@ const (
 
 // Global manager instance
 var manager *SimulatorManager
+
+// Global list of world cities for random sysLocation assignment
+var worldCities = []string{
+	"New York, NY, USA",
+	"London, England, UK", 
+	"Tokyo, Japan",
+	"Paris, France",
+	"Sydney, Australia",
+	"Toronto, Canada",
+	"Berlin, Germany",
+	"Singapore, Singapore",
+	"Hong Kong, China",
+	"Dubai, UAE",
+	"Mumbai, India",
+	"São Paulo, Brazil",
+	"Mexico City, Mexico",
+	"Moscow, Russia",
+	"Seoul, South Korea",
+	"Amsterdam, Netherlands",
+	"Stockholm, Sweden",
+	"Copenhagen, Denmark",
+	"Oslo, Norway",
+	"Helsinki, Finland",
+	"Zurich, Switzerland",
+	"Vienna, Austria",
+	"Madrid, Spain",
+	"Rome, Italy",
+	"Athens, Greece",
+	"Istanbul, Turkey",
+	"Tel Aviv, Israel",
+	"Cairo, Egypt",
+	"Cape Town, South Africa",
+	"Lagos, Nigeria",
+	"Nairobi, Kenya",
+	"Bangkok, Thailand",
+	"Jakarta, Indonesia",
+	"Manila, Philippines",
+	"Kuala Lumpur, Malaysia",
+	"Ho Chi Minh City, Vietnam",
+	"Bangalore, India",
+	"Shanghai, China",
+	"Beijing, China",
+	"Shenzhen, China",
+	"Taipei, Taiwan",
+	"Melbourne, Australia",
+	"Brisbane, Australia",
+	"Auckland, New Zealand",
+	"Wellington, New Zealand",
+	"Vancouver, Canada",
+	"Montreal, Canada",
+	"Chicago, IL, USA",
+	"Los Angeles, CA, USA",
+	"San Francisco, CA, USA",
+	"Seattle, WA, USA",
+	"Boston, MA, USA",
+	"Washington DC, USA",
+	"Miami, FL, USA",
+	"Atlanta, GA, USA",
+	"Denver, CO, USA",
+	"Phoenix, AZ, USA",
+	"Las Vegas, NV, USA",
+	"Portland, OR, USA",
+	"Austin, TX, USA",
+	"Dallas, TX, USA",
+	"Houston, TX, USA",
+	"Buenos Aires, Argentina",
+	"Rio de Janeiro, Brazil",
+	"Lima, Peru",
+	"Bogotá, Colombia",
+	"Santiago, Chile",
+	"Montevideo, Uruguay",
+	"Caracas, Venezuela",
+	"Quito, Ecuador",
+	"La Paz, Bolivia",
+	"Asunción, Paraguay",
+	"Dublin, Ireland",
+	"Edinburgh, Scotland",
+	"Cardiff, Wales",
+	"Brussels, Belgium",
+	"Luxembourg City, Luxembourg",
+	"Prague, Czech Republic",
+	"Budapest, Hungary",
+	"Warsaw, Poland",
+	"Krakow, Poland",
+	"Bucharest, Romania",
+	"Sofia, Bulgaria",
+	"Belgrade, Serbia",
+	"Zagreb, Croatia",
+	"Ljubljana, Slovenia",
+	"Bratislava, Slovakia",
+	"Tallinn, Estonia",
+	"Riga, Latvia",
+	"Vilnius, Lithuania",
+	"Kiev, Ukraine",
+	"Minsk, Belarus",
+	"St. Petersburg, Russia",
+	"Novosibirsk, Russia",
+	"Yekaterinburg, Russia",
+	"Almaty, Kazakhstan",
+	"Tashkent, Uzbekistan",
+	"Bishkek, Kyrgyzstan",
+	"Dushanbe, Tajikistan",
+	"Ashgabat, Turkmenistan",
+	"Baku, Azerbaijan",
+	"Yerevan, Armenia",
+	"Tbilisi, Georgia",
+	"Tehran, Iran",
+	"Baghdad, Iraq",
+	"Kuwait City, Kuwait",
+	"Riyadh, Saudi Arabia",
+	"Doha, Qatar",
+	"Abu Dhabi, UAE",
+	"Muscat, Oman",
+	"Manama, Bahrain",
+	"Amman, Jordan",
+	"Beirut, Lebanon",
+	"Damascus, Syria",
+	"Ankara, Turkey",
+	"Nicosia, Cyprus",
+	"Valletta, Malta",
+	"Rabat, Morocco",
+	"Tunis, Tunisia",
+	"Algiers, Algeria",
+	"Tripoli, Libya",
+	"Khartoum, Sudan",
+	"Addis Ababa, Ethiopia",
+	"Kampala, Uganda",
+	"Kigali, Rwanda",
+	"Dar es Salaam, Tanzania",
+	"Lusaka, Zambia",
+	"Harare, Zimbabwe",
+	"Gaborone, Botswana",
+	"Windhoek, Namibia",
+	"Maputo, Mozambique",
+	"Antananarivo, Madagascar",
+	"Port Louis, Mauritius",
+	"Victoria, Seychelles",
+	"Colombo, Sri Lanka",
+	"Dhaka, Bangladesh",
+	"Kathmandu, Nepal",
+	"Thimphu, Bhutan",
+	"Male, Maldives",
+	"Islamabad, Pakistan",
+	"Kabul, Afghanistan",
+	"Ulaanbaatar, Mongolia",
+	"Pyongyang, North Korea",
+	"Vientiane, Laos",
+	"Phnom Penh, Cambodia",
+	"Yangon, Myanmar",
+	"Hanoi, Vietnam",
+}
+
+// getRandomCity returns a random city from the world cities list
+func getRandomCity() string {
+	rand.Seed(time.Now().UnixNano())
+	return worldCities[rand.Intn(len(worldCities))]
+}
 
 // TUN interface management functions
 func createTunInterface(name string, ip net.IP, netmask string) (*TunInterface, error) {
@@ -430,6 +589,7 @@ func (sm *SimulatorManager) CreateDevices(startIP string, count int, netmask str
 			tunIface:     tunIface,
 			resources:    resources,
 			resourceFile: resourceFile,
+			sysLocation:  getRandomCity(), // Assign random city for sysLocation
 		}
 
 		// Create servers with SNMPv3 configuration
