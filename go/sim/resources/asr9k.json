@@ -37,276 +37,1066 @@
       "response": "1"
     },
     {
-      "oid": "1.3.6.1.2.1.2.2.1.2.1",
-      "response": "MgmtEth0/RP0/CPU0/0"
-    },
-    {
-      "oid": "1.3.6.1.2.1.2.2.1.3.1",
-      "response": "6"
-    },
-    {
-      "oid": "1.3.6.1.2.1.2.2.1.5.1",
-      "response": "1000000000"
-    },
-    {
-      "oid": "1.3.6.1.2.1.2.2.1.8.1",
-      "response": "1"
-    },
-    {
       "oid": "1.3.6.1.2.1.2.2.1.1.2",
       "response": "2"
-    },
-    {
-      "oid": "1.3.6.1.2.1.2.2.1.2.2",
-      "response": "TenGigE0/0/0/0"
-    },
-    {
-      "oid": "1.3.6.1.2.1.2.2.1.3.2",
-      "response": "6"
-    },
-    {
-      "oid": "1.3.6.1.2.1.2.2.1.5.2",
-      "response": "10000000000"
-    },
-    {
-      "oid": "1.3.6.1.2.1.2.2.1.8.2",
-      "response": "1"
     },
     {
       "oid": "1.3.6.1.2.1.2.2.1.1.3",
       "response": "3"
     },
     {
-      "oid": "1.3.6.1.2.1.2.2.1.2.3",
-      "response": "TenGigE0/0/0/1"
-    },
-    {
-      "oid": "1.3.6.1.2.1.2.2.1.3.3",
-      "response": "6"
-    },
-    {
-      "oid": "1.3.6.1.2.1.2.2.1.5.3",
-      "response": "10000000000"
-    },
-    {
-      "oid": "1.3.6.1.2.1.2.2.1.8.3",
-      "response": "1"
-    },
-    {
       "oid": "1.3.6.1.2.1.2.2.1.1.4",
       "response": "4"
-    },
-    {
-      "oid": "1.3.6.1.2.1.2.2.1.2.4",
-      "response": "HundredGigE0/1/0/0"
-    },
-    {
-      "oid": "1.3.6.1.2.1.2.2.1.3.4",
-      "response": "6"
-    },
-    {
-      "oid": "1.3.6.1.2.1.2.2.1.5.4",
-      "response": "100000000000"
-    },
-    {
-      "oid": "1.3.6.1.2.1.2.2.1.8.4",
-      "response": "1"
     },
     {
       "oid": "1.3.6.1.2.1.2.2.1.1.5",
       "response": "5"
     },
     {
-      "oid": "1.3.6.1.2.1.2.2.1.2.5",
-      "response": "HundredGigE0/1/0/1"
-    },
-    {
-      "oid": "1.3.6.1.2.1.2.2.1.3.5",
-      "response": "6"
-    },
-    {
-      "oid": "1.3.6.1.2.1.2.2.1.5.5",
-      "response": "100000000000"
-    },
-    {
-      "oid": "1.3.6.1.2.1.2.2.1.8.5",
-      "response": "2"
-    },
-    {
       "oid": "1.3.6.1.2.1.2.2.1.10.1",
       "response": "15678234567"
-    },
-    {
-      "oid": "1.3.6.1.2.1.2.2.1.11.1",
-      "response": "234567"
-    },
-    {
-      "oid": "1.3.6.1.2.1.2.2.1.16.1",
-      "response": "12345678901"
-    },
-    {
-      "oid": "1.3.6.1.2.1.2.2.1.17.1",
-      "response": "123456"
     },
     {
       "oid": "1.3.6.1.2.1.2.2.1.10.2",
       "response": "987654321098"
     },
     {
+      "oid": "1.3.6.1.2.1.2.2.1.11.1",
+      "response": "234567"
+    },
+    {
       "oid": "1.3.6.1.2.1.2.2.1.11.2",
       "response": "1234567"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.16.1",
+      "response": "12345678901"
     },
     {
       "oid": "1.3.6.1.2.1.2.2.1.16.2",
       "response": "876543210987"
     },
     {
+      "oid": "1.3.6.1.2.1.2.2.1.17.1",
+      "response": "123456"
+    },
+    {
       "oid": "1.3.6.1.2.1.2.2.1.17.2",
       "response": "987654"
     },
     {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.2.1",
-      "response": "ASR 9010 20-slot Chassis"
+      "oid": "1.3.6.1.2.1.2.2.1.2",
+      "response": "GigabitEthernet0/0/1"
     },
     {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.5.1",
+      "oid": "1.3.6.1.2.1.2.2.1.2.1",
+      "response": "MgmtEth0/RP0/CPU0/0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.2.2",
+      "response": "TenGigE0/0/0/0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.2.3",
+      "response": "TenGigE0/0/0/1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.2.4",
+      "response": "HundredGigE0/1/0/0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.2.5",
+      "response": "HundredGigE0/1/0/1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.3.1",
+      "response": "6"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.3.2",
+      "response": "6"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.3.3",
+      "response": "6"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.3.4",
+      "response": "6"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.3.5",
+      "response": "6"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.4",
+      "response": "1500"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.4.1",
+      "response": "1500"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.4.2",
+      "response": "1500"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.5",
+      "response": "1000000000"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.5.1",
+      "response": "1000000000"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.5.2",
+      "response": "10000000000"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.5.3",
+      "response": "10000000000"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.5.4",
+      "response": "100000000000"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.5.5",
+      "response": "100000000000"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.8",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.8.1",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.8.2",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.8.3",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.8.4",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.8.5",
+      "response": "2"
+    },
+    {
+      "oid": "1.3.6.1.2.1.25.2.3.1.4",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.4.21.1.1",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.4.21.1.1.0.0.0.0",
+      "response": "0.0.0.0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.4.21.1.1.192.168.1.0",
+      "response": "192.168.1.0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.1.1",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.1.1",
+      "response": "1",
+      "description": "entPhysicalIndex - Chassis"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.1.10",
+      "response": "10"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.1.11",
+      "response": "11"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.1.12",
+      "response": "12"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.1.2",
+      "response": "2"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.1.2",
+      "response": "2",
+      "description": "entPhysicalIndex - RSP"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.1.3",
       "response": "3"
     },
     {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.7.1",
-      "response": "ASR9010"
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.1.3",
+      "response": "3",
+      "description": "entPhysicalIndex - LineCard 0/0"
     },
     {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.8.1",
-      "response": "V01"
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.1.4",
+      "response": "4"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.1.4",
+      "response": "4",
+      "description": "entPhysicalIndex - LineCard 0/1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.1.5",
+      "response": "5"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.1.6",
+      "response": "6"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.1.7",
+      "response": "7"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.1.8",
+      "response": "8"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.1.9",
+      "response": "9"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.10.1",
+      "response": "Data Center Floor 3, Rack A-12"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.10.1",
+      "response": "",
+      "description": "entPhysicalSoftwareRev - Chassis"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.10.1001",
+      "response": "1.0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.10.1002",
+      "response": "1.0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.10.1003",
+      "response": "1.0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.10.1004",
+      "response": "1.0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.10.1005",
+      "response": "1.0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.10.2",
+      "response": "RP Slot 0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.10.2",
+      "response": "7.5.2",
+      "description": "entPhysicalSoftwareRev - RSP"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.10.3",
+      "response": "LC Slot 0/0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.10.4",
+      "response": "LC Slot 0/1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.10.5",
+      "response": "PS Bay 0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.10.6",
+      "response": "PS Bay 1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.10.7",
+      "response": "Fan Bay 0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.10.8",
+      "response": "Fan Bay 1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.10.9",
+      "response": "Fan Bay 2"
     },
     {
       "oid": "1.3.6.1.2.1.47.1.1.1.1.11.1",
       "response": "FOC2134L5GT"
     },
     {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.1",
-      "response": "ASR9010-CHASSIS"
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.11.1",
+      "response": "FOC2134L5GT",
+      "description": "entPhysicalSerialNum - Chassis"
     },
     {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.2.2",
-      "response": "A9K-RSP880-TR Route Switch Processor"
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.11.1001",
+      "response": "SN001001"
     },
     {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.5.2",
-      "response": "9"
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.11.1002",
+      "response": "SN001002"
     },
     {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.7.2",
-      "response": "A9K-RSP880-TR"
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.11.1003",
+      "response": "SN001003"
     },
     {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.8.2",
-      "response": "V02"
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.11.1004",
+      "response": "SN001004"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.11.1005",
+      "response": "SN001005"
     },
     {
       "oid": "1.3.6.1.2.1.47.1.1.1.1.11.2",
       "response": "FOC2145L7HG"
     },
     {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.2",
-      "response": "A9K-RSP880-TR"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.2.3",
-      "response": "A9K-8T/4-B 8-port 10GE + 4-port 100GE Line Card"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.5.3",
-      "response": "9"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.7.3",
-      "response": "A9K-8T/4-B"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.8.3",
-      "response": "V01"
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.11.2",
+      "response": "FOC2145L7HG",
+      "description": "entPhysicalSerialNum - RSP"
     },
     {
       "oid": "1.3.6.1.2.1.47.1.1.1.1.11.3",
       "response": "FOC2156L9KL"
     },
     {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.3",
-      "response": "A9K-8T/4-B"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.2.4",
-      "response": "A9K-20HG-FLEX 20-port 100GE Flexible Line Card"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.5.4",
-      "response": "9"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.7.4",
-      "response": "A9K-20HG-FLEX"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.8.4",
-      "response": "V03"
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.11.3",
+      "response": "FOC2156L9KL",
+      "description": "entPhysicalSerialNum - LineCard 0/0"
     },
     {
       "oid": "1.3.6.1.2.1.47.1.1.1.1.11.4",
       "response": "FOC2167L2MN"
     },
     {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.4",
-      "response": "A9K-20HG-FLEX"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.2.5",
-      "response": "A9K-PWR-3000W AC Power Supply"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.5.5",
-      "response": "6"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.7.5",
-      "response": "A9K-PWR-3000W"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.8.5",
-      "response": "V01"
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.11.4",
+      "response": "FOC2167L2MN",
+      "description": "entPhysicalSerialNum - LineCard 0/1"
     },
     {
       "oid": "1.3.6.1.2.1.47.1.1.1.1.11.5",
       "response": "ART2134M5BC"
     },
     {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.11.6",
+      "response": "DCB2134N7EF"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1",
+      "response": "ASR9010-CHASSIS"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1",
+      "response": "Cisco Systems, Inc.",
+      "description": "entPhysicalMfgName - Chassis"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1001",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1002",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1003",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1004",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1005",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.2",
+      "response": "A9K-RSP880-TR"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.2",
+      "response": "Cisco Systems, Inc.",
+      "description": "entPhysicalMfgName - RSP"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.3",
+      "response": "A9K-8T/4-B"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.4",
+      "response": "A9K-20HG-FLEX"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.5",
+      "response": "A9K-PWR-3000W"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.6",
+      "response": "A9K-PWR-3000W"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.7",
+      "response": "A9K-FAN-V2"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.8",
+      "response": "A9K-FAN-V2"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.9",
+      "response": "A9K-FAN-V2"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.13",
+      "response": "CiscoASR9000"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.1",
+      "response": "ASR9010-CHASSIS"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.1",
+      "response": "ASR9010-CHASSIS",
+      "description": "entPhysicalModelName - Chassis"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.1001",
+      "response": "1GE-PORT"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.1002",
+      "response": "10GE-PORT"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.1003",
+      "response": "10GE-PORT"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.1004",
+      "response": "100GE-PORT"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.1005",
+      "response": "100GE-PORT"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.2",
+      "response": "A9K-RSP880-TR"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.2",
+      "response": "A9K-RSP880-TR",
+      "description": "entPhysicalModelName - RSP"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.3",
+      "response": "A9K-8T/4-B"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.3",
+      "response": "A9K-8T/4-B",
+      "description": "entPhysicalModelName - LineCard 0/0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.4",
+      "response": "A9K-20HG-FLEX"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.4",
+      "response": "A9K-20HG-FLEX",
+      "description": "entPhysicalModelName - LineCard 0/1"
+    },
+    {
       "oid": "1.3.6.1.2.1.47.1.1.1.1.13.5",
       "response": "A9K-PWR-3000W"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.6",
+      "response": "A9K-FAN-V2"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.14.1",
+      "response": "",
+      "description": "entPhysicalAlias - Chassis"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.14.1001",
+      "response": "MgmtEth0/RP0/CPU0/0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.14.1002",
+      "response": "TenGigE0/0/0/0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.14.1003",
+      "response": "TenGigE0/0/0/1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.14.1004",
+      "response": "HundredGigE0/1/0/0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.14.1005",
+      "response": "HundredGigE0/1/0/1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.15.1",
+      "response": "",
+      "description": "entPhysicalAssetID - Chassis"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.15.1001",
+      "response": "ASSET1001"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.15.1002",
+      "response": "ASSET1002"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.15.1003",
+      "response": "ASSET1003"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.15.1004",
+      "response": "ASSET1004"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.15.1005",
+      "response": "ASSET1005"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.16.1",
+      "response": "2",
+      "description": "entPhysicalIsFRU - Chassis (true)"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.16.1001",
+      "response": "2"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.16.1002",
+      "response": "2"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.16.1003",
+      "response": "2"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.16.1004",
+      "response": "2"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.16.1005",
+      "response": "2"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.16.2",
+      "response": "2",
+      "description": "entPhysicalIsFRU - RSP (true)"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.2",
+      "response": "Main Chassis"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.2.1",
+      "response": "ASR 9010 20-slot Chassis"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.2.1",
+      "response": "ASR 9010 20-slot Chassis",
+      "description": "entPhysicalDescr - Chassis"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.2.1001",
+      "response": "MgmtEth0/RP0/CPU0/0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.2.1002",
+      "response": "TenGigE0/0/0/0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.2.1003",
+      "response": "TenGigE0/0/0/1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.2.1004",
+      "response": "HundredGigE0/1/0/0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.2.1005",
+      "response": "HundredGigE0/1/0/1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.2.2",
+      "response": "A9K-RSP880-TR Route Switch Processor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.2.2",
+      "response": "A9K-RSP880-TR Route Switch Processor",
+      "description": "entPhysicalDescr - RSP"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.2.3",
+      "response": "A9K-8T/4-B 8-port 10GE + 4-port 100GE Line Card"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.2.3",
+      "response": "A9K-8T/4-B 8-port 10GE + 4-port 100GE Line Card",
+      "description": "entPhysicalDescr - LineCard 0/0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.2.4",
+      "response": "A9K-20HG-FLEX 20-port 100GE Flexible Line Card"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.2.4",
+      "response": "A9K-20HG-FLEX 20-port 100GE Flexible Line Card",
+      "description": "entPhysicalDescr - LineCard 0/1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.2.5",
+      "response": "A9K-PWR-3000W AC Power Supply"
     },
     {
       "oid": "1.3.6.1.2.1.47.1.1.1.1.2.6",
       "response": "A9K-FAN-V2 Fan Tray"
     },
     {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.3",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.3.1",
+      "response": "1.3.6.1.4.1.9.12.3.1.3.1736",
+      "description": "entPhysicalVendorType - Chassis"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.3.1001",
+      "response": "1.3.6.1.4.1.0.0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.3.1002",
+      "response": "1.3.6.1.4.1.0.0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.3.1003",
+      "response": "1.3.6.1.4.1.0.0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.3.1004",
+      "response": "1.3.6.1.4.1.0.0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.3.1005",
+      "response": "1.3.6.1.4.1.0.0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.3.2",
+      "response": "1.3.6.1.4.1.9.12.3.1.9.16.85",
+      "description": "entPhysicalVendorType - RSP"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.4",
+      "response": "35"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.4.1",
+      "response": "Cisco Systems, Inc."
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.4.1",
+      "response": "0",
+      "description": "entPhysicalContainedIn - Chassis"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.4.1001",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.4.1002",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.4.1003",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.4.1004",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.4.1005",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.4.2",
+      "response": "Cisco Systems, Inc."
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.4.2",
+      "response": "1",
+      "description": "entPhysicalContainedIn - RSP"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.4.3",
+      "response": "Cisco Systems, Inc."
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.4.3",
+      "response": "1",
+      "description": "entPhysicalContainedIn - LineCard 0/0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.4.4",
+      "response": "Cisco Systems, Inc."
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.4.4",
+      "response": "1",
+      "description": "entPhysicalContainedIn - LineCard 0/1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.4.5",
+      "response": "Cisco Systems, Inc."
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.4.6",
+      "response": "Cisco Systems, Inc."
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.5",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.5.1",
+      "response": "3"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.5.1",
+      "response": "3",
+      "description": "entPhysicalClass - chassis(3)"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.5.1001",
+      "response": "10"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.5.1002",
+      "response": "10"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.5.1003",
+      "response": "10"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.5.1004",
+      "response": "10"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.5.1005",
+      "response": "10"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.5.2",
+      "response": "9"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.5.2",
+      "response": "9",
+      "description": "entPhysicalClass - module(9)"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.5.3",
+      "response": "9"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.5.3",
+      "response": "9",
+      "description": "entPhysicalClass - LineCard 0/0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.5.4",
+      "response": "9"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.5.4",
+      "response": "9",
+      "description": "entPhysicalClass - LineCard 0/1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.5.5",
+      "response": "6"
+    },
+    {
       "oid": "1.3.6.1.2.1.47.1.1.1.1.5.6",
       "response": "7"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.6",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.6.1",
+      "response": "-1",
+      "description": "entPhysicalParentRelPos - Chassis"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.6.1001",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.6.1002",
+      "response": "2"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.6.1003",
+      "response": "3"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.6.1004",
+      "response": "4"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.6.1005",
+      "response": "5"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.6.2",
+      "response": "0",
+      "description": "entPhysicalParentRelPos - RSP"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.6.3",
+      "response": "0",
+      "description": "entPhysicalParentRelPos - LineCard 0/0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.6.4",
+      "response": "1",
+      "description": "entPhysicalParentRelPos - LineCard 0/1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.7.1",
+      "response": "ASR9010"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.7.1",
+      "response": "ASR9010",
+      "description": "entPhysicalName - Chassis"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.7.1001",
+      "response": "MgmtEth0/RP0/CPU0/0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.7.1002",
+      "response": "TenGigE0/0/0/0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.7.1003",
+      "response": "TenGigE0/0/0/1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.7.1004",
+      "response": "HundredGigE0/1/0/0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.7.1005",
+      "response": "HundredGigE0/1/0/1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.7.2",
+      "response": "A9K-RSP880-TR"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.7.2",
+      "response": "0/RP0/CPU0",
+      "description": "entPhysicalName - RSP"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.7.3",
+      "response": "A9K-8T/4-B"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.7.3",
+      "response": "0/0/CPU0",
+      "description": "entPhysicalName - LineCard 0/0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.7.4",
+      "response": "A9K-20HG-FLEX"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.7.4",
+      "response": "0/1/CPU0",
+      "description": "entPhysicalName - LineCard 0/1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.7.5",
+      "response": "A9K-PWR-3000W"
     },
     {
       "oid": "1.3.6.1.2.1.47.1.1.1.1.7.6",
       "response": "A9K-FAN-V2"
     },
     {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.8.1",
+      "response": "V01"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.8.1",
+      "response": "V01",
+      "description": "entPhysicalHardwareRev - Chassis"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.8.1001",
+      "response": "1.0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.8.1002",
+      "response": "1.0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.8.1003",
+      "response": "1.0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.8.1004",
+      "response": "1.0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.8.1005",
+      "response": "1.0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.8.2",
+      "response": "V02"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.8.2",
+      "response": "V02",
+      "description": "entPhysicalHardwareRev - RSP"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.8.3",
+      "response": "V01"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.8.4",
+      "response": "V03"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.8.5",
+      "response": "V01"
+    },
+    {
       "oid": "1.3.6.1.2.1.47.1.1.1.1.8.6",
       "response": "V02"
     },
     {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.11.6",
-      "response": "DCB2134N7EF"
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.9",
+      "response": "1"
     },
     {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.6",
-      "response": "A9K-FAN-V2"
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.9.1",
+      "response": "Chassis"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.9.1",
+      "response": "",
+      "description": "entPhysicalFirmwareRev - Chassis"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.9.10",
+      "response": "TenGigE Port 0/0/0/0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.9.1001",
+      "response": "1.0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.9.1002",
+      "response": "1.0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.9.1003",
+      "response": "1.0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.9.1004",
+      "response": "1.0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.9.1005",
+      "response": "1.0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.9.11",
+      "response": "TenGigE Port 0/0/0/1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.9.12",
+      "response": "HundredGigE Port 0/1/0/0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.9.2",
+      "response": "Route Switch Processor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.9.2",
+      "response": "15.52",
+      "description": "entPhysicalFirmwareRev - RSP"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.9.3",
+      "response": "Line Card Slot 0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.9.4",
+      "response": "Line Card Slot 1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.9.5",
+      "response": "Power Supply 0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.9.6",
+      "response": "Power Supply 1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.9.7",
+      "response": "Fan Tray 0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.9.8",
+      "response": "Fan Tray 1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.9.9",
+      "response": "Fan Tray 2"
     },
     {
       "oid": "1.3.6.1.2.1.47.1.2.1.1.2.1",
@@ -373,518 +1163,24 @@
       "response": "0"
     },
     {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.1.1",
-      "response": "1"
+      "oid": "1.3.6.1.2.1.47.1.3.2.1.2.1001.0",
+      "response": "1.3.6.1.2.1.2.2.1.1.1"
     },
     {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.1.2",
-      "response": "2"
+      "oid": "1.3.6.1.2.1.47.1.3.2.1.2.1002.0",
+      "response": "1.3.6.1.2.1.2.2.1.1.2"
     },
     {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.1.3",
-      "response": "3"
+      "oid": "1.3.6.1.2.1.47.1.3.2.1.2.1003.0",
+      "response": "1.3.6.1.2.1.2.2.1.1.3"
     },
     {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.1.4",
-      "response": "4"
+      "oid": "1.3.6.1.2.1.47.1.3.2.1.2.1004.0",
+      "response": "1.3.6.1.2.1.2.2.1.1.4"
     },
     {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.1.5",
-      "response": "5"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.1.6",
-      "response": "6"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.1.7",
-      "response": "7"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.1.8",
-      "response": "8"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.1.9",
-      "response": "9"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.1.10",
-      "response": "10"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.1.11",
-      "response": "11"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.1.12",
-      "response": "12"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.4.1",
-      "response": "Cisco Systems, Inc."
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.4.2",
-      "response": "Cisco Systems, Inc."
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.4.3",
-      "response": "Cisco Systems, Inc."
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.4.4",
-      "response": "Cisco Systems, Inc."
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.4.5",
-      "response": "Cisco Systems, Inc."
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.4.6",
-      "response": "Cisco Systems, Inc."
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.9.1",
-      "response": "Chassis"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.9.2",
-      "response": "Route Switch Processor"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.9.3",
-      "response": "Line Card Slot 0"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.9.4",
-      "response": "Line Card Slot 1"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.9.5",
-      "response": "Power Supply 0"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.9.6",
-      "response": "Power Supply 1"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.9.7",
-      "response": "Fan Tray 0"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.9.8",
-      "response": "Fan Tray 1"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.9.9",
-      "response": "Fan Tray 2"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.9.10",
-      "response": "TenGigE Port 0/0/0/0"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.9.11",
-      "response": "TenGigE Port 0/0/0/1"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.9.12",
-      "response": "HundredGigE Port 0/1/0/0"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.10.1",
-      "response": "Data Center Floor 3, Rack A-12"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.10.2",
-      "response": "RP Slot 0"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.10.3",
-      "response": "LC Slot 0/0"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.10.4",
-      "response": "LC Slot 0/1"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.10.5",
-      "response": "PS Bay 0"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.10.6",
-      "response": "PS Bay 1"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.10.7",
-      "response": "Fan Bay 0"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.10.8",
-      "response": "Fan Bay 1"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.10.9",
-      "response": "Fan Bay 2"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1",
-      "response": "ASR9010-CHASSIS"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.2",
-      "response": "A9K-RSP880-TR"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.3",
-      "response": "A9K-8T/4-B"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.4",
-      "response": "A9K-20HG-FLEX"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.5",
-      "response": "A9K-PWR-3000W"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.6",
-      "response": "A9K-PWR-3000W"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.7",
-      "response": "A9K-FAN-V2"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.8",
-      "response": "A9K-FAN-V2"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.9",
-      "response": "A9K-FAN-V2"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.1.1",
-      "response": "1",
-      "description": "entPhysicalIndex - Chassis"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.2.1",
-      "response": "ASR 9010 20-slot Chassis",
-      "description": "entPhysicalDescr - Chassis"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.3.1",
-      "response": "1.3.6.1.4.1.9.12.3.1.3.1736",
-      "description": "entPhysicalVendorType - Chassis"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.4.1",
-      "response": "0",
-      "description": "entPhysicalContainedIn - Chassis"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.5.1",
-      "response": "3",
-      "description": "entPhysicalClass - chassis(3)"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.6.1",
-      "response": "-1",
-      "description": "entPhysicalParentRelPos - Chassis"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.7.1",
-      "response": "ASR9010",
-      "description": "entPhysicalName - Chassis"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.8.1",
-      "response": "V01",
-      "description": "entPhysicalHardwareRev - Chassis"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.9.1",
-      "response": "",
-      "description": "entPhysicalFirmwareRev - Chassis"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.10.1",
-      "response": "",
-      "description": "entPhysicalSoftwareRev - Chassis"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.11.1",
-      "response": "FOC2134L5GT",
-      "description": "entPhysicalSerialNum - Chassis"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1",
-      "response": "Cisco Systems, Inc.",
-      "description": "entPhysicalMfgName - Chassis"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.1",
-      "response": "ASR9010-CHASSIS",
-      "description": "entPhysicalModelName - Chassis"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.14.1",
-      "response": "",
-      "description": "entPhysicalAlias - Chassis"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.15.1",
-      "response": "",
-      "description": "entPhysicalAssetID - Chassis"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.16.1",
-      "response": "2",
-      "description": "entPhysicalIsFRU - Chassis (true)"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.1.2",
-      "response": "2",
-      "description": "entPhysicalIndex - RSP"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.2.2",
-      "response": "A9K-RSP880-TR Route Switch Processor",
-      "description": "entPhysicalDescr - RSP"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.3.2",
-      "response": "1.3.6.1.4.1.9.12.3.1.9.16.85",
-      "description": "entPhysicalVendorType - RSP"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.4.2",
-      "response": "1",
-      "description": "entPhysicalContainedIn - RSP"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.5.2",
-      "response": "9",
-      "description": "entPhysicalClass - module(9)"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.6.2",
-      "response": "0",
-      "description": "entPhysicalParentRelPos - RSP"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.7.2",
-      "response": "0/RP0/CPU0",
-      "description": "entPhysicalName - RSP"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.8.2",
-      "response": "V02",
-      "description": "entPhysicalHardwareRev - RSP"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.9.2",
-      "response": "15.52",
-      "description": "entPhysicalFirmwareRev - RSP"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.10.2",
-      "response": "7.5.2",
-      "description": "entPhysicalSoftwareRev - RSP"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.11.2",
-      "response": "FOC2145L7HG",
-      "description": "entPhysicalSerialNum - RSP"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.2",
-      "response": "Cisco Systems, Inc.",
-      "description": "entPhysicalMfgName - RSP"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.2",
-      "response": "A9K-RSP880-TR",
-      "description": "entPhysicalModelName - RSP"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.16.2",
-      "response": "2",
-      "description": "entPhysicalIsFRU - RSP (true)"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.1.3",
-      "response": "3",
-      "description": "entPhysicalIndex - LineCard 0/0"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.2.3",
-      "response": "A9K-8T/4-B 8-port 10GE + 4-port 100GE Line Card",
-      "description": "entPhysicalDescr - LineCard 0/0"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.4.3",
-      "response": "1",
-      "description": "entPhysicalContainedIn - LineCard 0/0"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.5.3",
-      "response": "9",
-      "description": "entPhysicalClass - LineCard 0/0"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.6.3",
-      "response": "0",
-      "description": "entPhysicalParentRelPos - LineCard 0/0"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.7.3",
-      "response": "0/0/CPU0",
-      "description": "entPhysicalName - LineCard 0/0"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.11.3",
-      "response": "FOC2156L9KL",
-      "description": "entPhysicalSerialNum - LineCard 0/0"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.3",
-      "response": "A9K-8T/4-B",
-      "description": "entPhysicalModelName - LineCard 0/0"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.1.4",
-      "response": "4",
-      "description": "entPhysicalIndex - LineCard 0/1"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.2.4",
-      "response": "A9K-20HG-FLEX 20-port 100GE Flexible Line Card",
-      "description": "entPhysicalDescr - LineCard 0/1"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.4.4",
-      "response": "1",
-      "description": "entPhysicalContainedIn - LineCard 0/1"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.5.4",
-      "response": "9",
-      "description": "entPhysicalClass - LineCard 0/1"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.6.4",
-      "response": "1",
-      "description": "entPhysicalParentRelPos - LineCard 0/1"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.7.4",
-      "response": "0/1/CPU0",
-      "description": "entPhysicalName - LineCard 0/1"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.11.4",
-      "response": "FOC2167L2MN",
-      "description": "entPhysicalSerialNum - LineCard 0/1"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.4",
-      "response": "A9K-20HG-FLEX",
-      "description": "entPhysicalModelName - LineCard 0/1"
-    },
-    {
-      "oid": "1.3.6.1.2.1.2.2.1.4.1",
-      "response": "1500"
-    },
-    {
-      "oid": "1.3.6.1.2.1.2.2.1.4.2",
-      "response": "1500"
-    },
-    {
-      "oid": "1.3.6.1.2.1.4.21.1.1.0.0.0.0",
-      "response": "0.0.0.0"
-    },
-    {
-      "oid": "1.3.6.1.2.1.4.21.1.1.192.168.1.0",
-      "response": "192.168.1.0"
-    },
-    {
-      "oid": "1.3.6.1.4.1.9.3.6.3.0",
-      "response": "ASR9000-001"
-    },
-    {
-      "oid": "1.3.6.1.4.1.9.9.109.1.1.1.1.5.1",
-      "response": "15"
-    },
-    {
-      "oid": "1.3.6.1.4.1.9.9.13.1.4.1.2.1",
-      "response": "1"
-    },
-    {
-      "oid": "1.3.6.1.4.1.9.9.13.1.5.1.2.1",
-      "response": "1"
-    },
-    {
-      "oid": "1.3.6.1.4.1.9.9.25.1.1.1.2.2.1",
-      "response": "15.1(04)S"
-    },
-    {
-      "oid": "1.3.6.1.4.1.9.9.48.1.1.1.6.1",
-      "response": "32"
-    },
-    {
-      "oid": "1.3.6.1.2.1.2.2.1.2",
-      "response": "GigabitEthernet0/0/1"
-    },
-    {
-      "oid": "1.3.6.1.2.1.2.2.1.4",
-      "response": "1500"
-    },
-    {
-      "oid": "1.3.6.1.2.1.2.2.1.5",
-      "response": "1000000000"
-    },
-    {
-      "oid": "1.3.6.1.2.1.2.2.1.8",
-      "response": "1"
-    },
-    {
-      "oid": "1.3.6.1.2.1.25.2.3.1.4",
-      "response": "1"
-    },
-    {
-      "oid": "1.3.6.1.2.1.4.21.1.1",
-      "response": "1"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.13",
-      "response": "CiscoASR9000"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.2",
-      "response": "Main Chassis"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.3",
-      "response": "1"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.4",
-      "response": "35"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.5",
-      "response": "1"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.6",
-      "response": "1"
-    },
-    {
-      "oid": "1.3.6.1.2.1.47.1.1.1.1.9",
-      "response": "1"
+      "oid": "1.3.6.1.2.1.47.1.3.2.1.2.1005.0",
+      "response": "1.3.6.1.2.1.2.2.1.1.5"
     },
     {
       "oid": "1.3.6.1.4.1.25461.2.1.2.2.1.0",
@@ -903,15 +1199,39 @@
       "response": "15"
     },
     {
+      "oid": "1.3.6.1.4.1.9.3.6.3.0",
+      "response": "ASR9000-001"
+    },
+    {
       "oid": "1.3.6.1.4.1.9.9.109.1.1.1.1.5",
       "response": "15"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.9.109.1.1.1.1.5.1",
+      "response": "15"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.9.13.1.4.1.2.1",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.9.13.1.5.1.2.1",
+      "response": "1"
     },
     {
       "oid": "1.3.6.1.4.1.9.9.25.1.1.1.2.2",
       "response": "7.3.2"
     },
     {
+      "oid": "1.3.6.1.4.1.9.9.25.1.1.1.2.2.1",
+      "response": "15.1(04)S"
+    },
+    {
       "oid": "1.3.6.1.4.1.9.9.48.1.1.1.6",
+      "response": "32"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.9.48.1.1.1.6.1",
       "response": "32"
     }
   ],
