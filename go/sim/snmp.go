@@ -508,6 +508,11 @@ func (s *SNMPServer) findResponse(oid string) string {
 		return s.device.sysLocation
 	}
 	
+	// Handle dynamic sysName OID
+	if oid == "1.3.6.1.2.1.1.5.0" {
+		return s.device.sysName
+	}
+	
 	for _, resource := range s.device.resources.SNMP {
 		if resource.OID == oid {
 			return resource.Response
@@ -556,6 +561,15 @@ func compareOIDs(oid1, oid2 string) int {
 func (s *SNMPServer) findNextOID(currentOID string) (string, string) {
 	var candidates []SNMPResource
 	
+	// Add dynamic sysName OID if it's greater than currentOID
+	sysNameOID := "1.3.6.1.2.1.1.5.0"
+	if compareOIDs(sysNameOID, currentOID) > 0 {
+		candidates = append(candidates, SNMPResource{
+			OID:      sysNameOID,
+			Response: s.device.sysName,
+		})
+	}
+	
 	// Add dynamic sysLocation OID if it's greater than currentOID
 	sysLocationOID := "1.3.6.1.2.1.1.6.0"
 	if compareOIDs(sysLocationOID, currentOID) > 0 {
@@ -567,8 +581,8 @@ func (s *SNMPServer) findNextOID(currentOID string) (string, string) {
 	
 	// Find all OIDs that are lexicographically greater than currentOID
 	for _, resource := range s.device.resources.SNMP {
-		// Skip the sysLocation OID from resources since we handle it dynamically
-		if resource.OID == sysLocationOID {
+		// Skip the dynamic OIDs from resources since we handle them dynamically
+		if resource.OID == sysLocationOID || resource.OID == sysNameOID {
 			continue
 		}
 		if compareOIDs(resource.OID, currentOID) > 0 {

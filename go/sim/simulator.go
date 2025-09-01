@@ -218,6 +218,93 @@ func getRandomCity() string {
 	return worldCities[rand.Intn(len(worldCities))]
 }
 
+// Global lists for generating random device names
+var devicePrefixes = []string{
+	"CORE", "EDGE", "ACCESS", "DIST", "AGG", "LEAF", "SPINE", "BORDER", "PE", "CE",
+	"WAN", "LAN", "DMZ", "MGMT", "OOB", "BACKUP", "PRIMARY", "SECONDARY", "MAIN", "AUX",
+	"HQ", "DC", "BR", "SITE", "CAMPUS", "BLDG", "FLOOR", "RACK", "ROW", "ZONE",
+	"NORTH", "SOUTH", "EAST", "WEST", "CENTRAL", "UPPER", "LOWER", "FRONT", "REAR", "MID",
+	"PROD", "DEV", "TEST", "STAGE", "LAB", "DEMO", "PILOT", "TRAIN", "TEMP", "MAINT",
+}
+
+var deviceTypes = []string{
+	"RTR", "SWH", "FWL", "LB", "AP", "GW", "PX", "SRV", "HOST", "NODE",
+	"ROUTER", "SWITCH", "FIREWALL", "PROXY", "GATEWAY", "BRIDGE", "HUB", "REPEATER", "MODEM", "ADAPTER",
+}
+
+var deviceLocations = []string{
+	"NYC", "LAX", "CHI", "MIA", "SEA", "DEN", "ATL", "BOS", "PHX", "DAL",
+	"LON", "PAR", "FRA", "AMS", "MAD", "ROM", "BER", "VIE", "ZUR", "MIL",
+	"TOK", "SIN", "HKG", "SYD", "MEL", "BOM", "DEL", "BLR", "HYD", "CHE",
+	"TOR", "VAN", "MTL", "CAL", "EDM", "WPG", "HAL", "OTT", "QUE", "SAS",
+}
+
+var animalNames = []string{
+	"WOLF", "TIGER", "EAGLE", "HAWK", "LION", "BEAR", "SHARK", "FALCON", "LYNX", "PANTHER",
+	"COBRA", "VIPER", "PYTHON", "MAMBA", "DRAGON", "PHOENIX", "GRIFFIN", "PEGASUS", "HYDRA", "KRAKEN",
+	"RHINO", "BUFFALO", "BISON", "MOOSE", "STAG", "BUCK", "RAM", "BULL", "STALLION", "MUSTANG",
+}
+
+var mythNames = []string{
+	"ATLAS", "TITAN", "HERCULES", "APOLLO", "ARES", "ZEUS", "THOR", "ODIN", "LOKI", "FREYA",
+	"ARTEMIS", "ATHENA", "DIANA", "MARS", "VENUS", "NEPTUNE", "PLUTO", "MERCURY", "SATURN", "JUPITER",
+	"ORION", "ANDROMEDA", "CASSIOPEIA", "VEGA", "ALTAIR", "SIRIUS", "RIGEL", "BETELGEUSE", "POLARIS", "ANTARES",
+}
+
+// getRandomDeviceName generates a random device name using various patterns
+func getRandomDeviceName() string {
+	
+	// Choose a random pattern for the device name
+	patterns := []func() string{
+		// Pattern 1: PREFIX-TYPE-NUMBER (e.g., CORE-RTR-01)
+		func() string {
+			prefix := devicePrefixes[rand.Intn(len(devicePrefixes))]
+			devType := deviceTypes[rand.Intn(len(deviceTypes))]
+			number := rand.Intn(99) + 1
+			return fmt.Sprintf("%s-%s-%02d", prefix, devType, number)
+		},
+		// Pattern 2: LOCATION-PREFIX-NUMBER (e.g., NYC-CORE-03)
+		func() string {
+			location := deviceLocations[rand.Intn(len(deviceLocations))]
+			prefix := devicePrefixes[rand.Intn(len(devicePrefixes))]
+			number := rand.Intn(99) + 1
+			return fmt.Sprintf("%s-%s-%02d", location, prefix, number)
+		},
+		// Pattern 3: ANIMAL-NUMBER (e.g., WOLF-07)
+		func() string {
+			animal := animalNames[rand.Intn(len(animalNames))]
+			number := rand.Intn(99) + 1
+			return fmt.Sprintf("%s-%02d", animal, number)
+		},
+		// Pattern 4: MYTH-LOCATION (e.g., ATLAS-NYC)
+		func() string {
+			myth := mythNames[rand.Intn(len(mythNames))]
+			location := deviceLocations[rand.Intn(len(deviceLocations))]
+			return fmt.Sprintf("%s-%s", myth, location)
+		},
+		// Pattern 5: PREFIX-LOCATION-TYPE (e.g., CORE-NYC-SWH)
+		func() string {
+			prefix := devicePrefixes[rand.Intn(len(devicePrefixes))]
+			location := deviceLocations[rand.Intn(len(deviceLocations))]
+			devType := deviceTypes[rand.Intn(len(deviceTypes))]
+			return fmt.Sprintf("%s-%s-%s", prefix, location, devType)
+		},
+		// Pattern 6: TYPE-ANIMAL-NUMBER (e.g., RTR-HAWK-12)
+		func() string {
+			devType := deviceTypes[rand.Intn(len(deviceTypes))]
+			animal := animalNames[rand.Intn(len(animalNames))]
+			number := rand.Intn(99) + 1
+			return fmt.Sprintf("%s-%s-%02d", devType, animal, number)
+		},
+	}
+	
+	// Select a random pattern and generate the name
+	pattern := patterns[rand.Intn(len(patterns))]
+	name := pattern()
+	log.Printf("Generated device name: %s", name)
+	return name
+}
+
 // TUN interface management functions
 func createTunInterface(name string, ip net.IP, netmask string) (*TunInterface, error) {
 	// Open TUN device
@@ -589,7 +676,8 @@ func (sm *SimulatorManager) CreateDevices(startIP string, count int, netmask str
 			tunIface:     tunIface,
 			resources:    resources,
 			resourceFile: resourceFile,
-			sysLocation:  getRandomCity(), // Assign random city for sysLocation
+			sysLocation:  getRandomCity(),     // Assign random city for sysLocation
+			sysName:      getRandomDeviceName(), // Assign random device name for sysName
 		}
 
 		// Create servers with SNMPv3 configuration

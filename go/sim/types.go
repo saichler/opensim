@@ -41,6 +41,7 @@ type DeviceSimulator struct {
 	resources    *DeviceResources
 	resourceFile string // Track which resource file was used
 	sysLocation  string // Dynamic sysLocation for this device
+	sysName      string // Dynamic sysName for this device
 	running      bool
 	mu           sync.RWMutex
 }
