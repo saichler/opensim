@@ -99,7 +99,6 @@ func (s *SNMPServer) parseSNMPv3Message(data []byte) (*SNMPv3Message, error) {
 	}
 	pos = newPos
 
-	log.Printf("DEBUG: Security parameters length: %d at pos %d", secParamsLen, pos)
 	
 	if secParamsLen > 0 {
 		if pos+secParamsLen > len(data) {
@@ -108,20 +107,17 @@ func (s *SNMPServer) parseSNMPv3Message(data []byte) (*SNMPv3Message, error) {
 		secParamsData := data[pos : pos+secParamsLen]
 		err = s.parseUSMSecurityParameters(secParamsData, &msg.SecurityParams)
 		if err != nil {
-			log.Printf("DEBUG: Failed to parse USM security parameters: %v, continuing with empty params", err)
 			// Don't fail completely, just use empty security params for basic functionality
 		}
 		pos += secParamsLen
 	}
 	
-	log.Printf("DEBUG: After security params, pos=%d, remaining bytes=%d", pos, len(data)-pos)
 
 	// Parse scopedPduData - can be either OCTET STRING (encrypted) or SEQUENCE (plaintext)
 	if pos >= len(data) {
 		return nil, fmt.Errorf("unexpected end of data when parsing scopedPduData")
 	}
 	
-	log.Printf("DEBUG: Looking for scopedPduData at pos %d, tag: 0x%02X", pos, data[pos])
 	
 	if data[pos] == ASN1_OCTET_STRING {
 		// Encrypted scoped PDU
@@ -129,14 +125,12 @@ func (s *SNMPServer) parseSNMPv3Message(data []byte) (*SNMPv3Message, error) {
 		pduLen, newPos := parseLength(data, pos)
 		pos = newPos
 		msg.ScopedPDU = data[pos : pos+pduLen]
-		log.Printf("DEBUG: Found encrypted scopedPDU (%d bytes)", pduLen)
 	} else if data[pos] == ASN1_SEQUENCE {
 		// Plaintext scoped PDU  
 		pos++
 		pduLen, newPos := parseLength(data, pos)
 		pos = newPos
 		msg.ScopedPDU = data[pos : pos+pduLen]
-		log.Printf("DEBUG: Found plaintext scopedPDU (%d bytes)", pduLen)
 	} else {
 		return nil, fmt.Errorf("expected scopedPduData OCTET STRING or SEQUENCE, got 0x%02X at pos %d", data[pos], pos)
 	}
@@ -147,30 +141,14 @@ func (s *SNMPServer) parseSNMPv3Message(data []byte) (*SNMPv3Message, error) {
 // parseUSMSecurityParameters parses USM security parameters
 func (s *SNMPServer) parseUSMSecurityParameters(data []byte, params *SNMPv3SecurityParams) error {
 	if len(data) == 0 {
-		log.Printf("DEBUG: Empty USM security parameters")
 		return nil
 	}
 	
-	log.Printf("DEBUG: Parsing USM security parameters (%d bytes)", len(data))
-	
-	// Print hex dump of security parameters
-	for i := 0; i < len(data) && i < 32; i += 8 {
-		end := i + 8
-		if end > len(data) {
-			end = len(data)
-		}
-		hexStr := fmt.Sprintf("  USM %02X: ", i)
-		for j := i; j < end; j++ {
-			hexStr += fmt.Sprintf("%02X ", data[j])
-		}
-		log.Printf(hexStr)
-	}
 
 	pos := 0
 
 	// Parse outer SEQUENCE
 	if pos >= len(data) || data[pos] != ASN1_SEQUENCE {
-		log.Printf("DEBUG: Expected SEQUENCE at pos %d, got 0x%02X", pos, data[pos])
 		return fmt.Errorf("expected USM parameters SEQUENCE")
 	}
 	pos++
@@ -179,59 +157,46 @@ func (s *SNMPServer) parseUSMSecurityParameters(data []byte, params *SNMPv3Secur
 		return fmt.Errorf("invalid USM SEQUENCE length")
 	}
 	pos = newPos
-	log.Printf("DEBUG: USM SEQUENCE length: %d", seqLen)
 
 	// Parse authoritativeEngineID
 	engineID, newPos, err := parseOctetString(data, pos)
 	if err != nil {
-		log.Printf("DEBUG: Failed to parse authoritativeEngineID: %v", err)
 		return fmt.Errorf("failed to parse authoritativeEngineID: %v", err)
 	}
 	params.AuthoritativeEngineID = string(engineID)
 	pos = newPos
-	log.Printf("DEBUG: AuthoritativeEngineID: %q (%d bytes)", params.AuthoritativeEngineID, len(engineID))
 
 	// Parse authoritativeEngineBoots
 	params.AuthoritativeEngineBoots, pos, err = parseInteger(data, pos)
 	if err != nil {
-		log.Printf("DEBUG: Failed to parse authoritativeEngineBoots: %v", err)
 		return fmt.Errorf("failed to parse authoritativeEngineBoots: %v", err)
 	}
-	log.Printf("DEBUG: AuthoritativeEngineBoots: %d", params.AuthoritativeEngineBoots)
 
 	// Parse authoritativeEngineTime
 	params.AuthoritativeEngineTime, pos, err = parseInteger(data, pos)
 	if err != nil {
-		log.Printf("DEBUG: Failed to parse authoritativeEngineTime: %v", err)
 		return fmt.Errorf("failed to parse authoritativeEngineTime: %v", err)
 	}
-	log.Printf("DEBUG: AuthoritativeEngineTime: %d", params.AuthoritativeEngineTime)
 
 	// Parse userName
 	userName, newPos, err := parseOctetString(data, pos)
 	if err != nil {
-		log.Printf("DEBUG: Failed to parse userName: %v", err)
 		return fmt.Errorf("failed to parse userName: %v", err)
 	}
 	params.UserName = string(userName)
 	pos = newPos
-	log.Printf("DEBUG: UserName: %q (%d bytes)", params.UserName, len(userName))
 
 	// Parse authenticationParameters
 	params.AuthParams, pos, err = parseOctetString(data, pos)
 	if err != nil {
-		log.Printf("DEBUG: Failed to parse authParams: %v", err)
 		return fmt.Errorf("failed to parse authParams: %v", err)
 	}
-	log.Printf("DEBUG: AuthParams: %d bytes", len(params.AuthParams))
 
 	// Parse privacyParameters
 	params.PrivParams, pos, err = parseOctetString(data, pos)
 	if err != nil {
-		log.Printf("DEBUG: Failed to parse privParams: %v", err)
 		return fmt.Errorf("failed to parse privParams: %v", err)
 	}
-	log.Printf("DEBUG: PrivParams: %d bytes", len(params.PrivParams))
 
 	return nil
 }

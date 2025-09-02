@@ -53,52 +53,20 @@ func (s *SNMPServer) handleRequests() {
 
 		requestData := buffer[:n] // Store the full request
 
-		// Debug: Print hex dump of request packet
-		log.Printf("DEBUG: Request packet hex (%d bytes):", n)
-		for i := 0; i < n && i < 64; i += 16 {
-			end := i + 16
-			if end > n {
-				end = n
-			}
-			hexStr := fmt.Sprintf("  %04X: ", i)
-			for j := i; j < end; j++ {
-				hexStr += fmt.Sprintf("%02X ", requestData[j])
-			}
-			log.Printf(hexStr)
-		}
-
 		var responsePacket []byte
 
 		// Check if this is SNMPv3 request
 		if isSNMPv3Request(requestData) {
-			log.Printf("DEBUG: Processing SNMPv3 request")
 			responsePacket = s.handleSNMPv3Request(requestData)
 		} else {
-			log.Printf("DEBUG: Processing SNMPv1/v2c request")
 			responsePacket = s.handleSNMPv2cRequest(requestData)
 		}
 
 		// Send response
 		if len(responsePacket) > 0 {
-			// Debug: Print hex dump of response packet
-			log.Printf("DEBUG: Response packet hex (first 64 bytes):")
-			for i := 0; i < len(responsePacket) && i < 64; i += 16 {
-				end := i + 16
-				if end > len(responsePacket) {
-					end = len(responsePacket)
-				}
-				hexStr := fmt.Sprintf("  %04X: ", i)
-				for j := i; j < end; j++ {
-					hexStr += fmt.Sprintf("%02X ", responsePacket[j])
-				}
-				log.Printf(hexStr)
-			}
-
 			_, err = s.listener.WriteToUDP(responsePacket, clientAddr)
 			if err != nil {
 				log.Printf("Error sending SNMP response: %v", err)
-			} else {
-				log.Printf("DEBUG: Sent response packet (%d bytes)", len(responsePacket))
 			}
 		}
 	}
@@ -114,8 +82,6 @@ func (s *SNMPServer) handleSNMPv2cRequest(requestData []byte) []byte {
 
 	// Determine PDU type from request data
 	pduType := s.getPDUType(requestData)
-	log.Printf("DEBUG: Received %s request for OID: %s (version=%d, community=%s, requestID=0x%X)", 
-		map[byte]string{ASN1_GET_REQUEST: "GET", ASN1_GET_NEXT: "GETNEXT"}[pduType], oid, req.Version, req.Community, req.RequestID)
 	
 	if pduType == ASN1_GET_NEXT {
 		// Handle GetNext request for SNMP walk
@@ -126,12 +92,6 @@ func (s *SNMPServer) handleSNMPv2cRequest(requestData []byte) []byte {
 			response = "endOfMibView"
 		}
 		log.Printf("SNMP %s: GetNext %s -> %s = %s", s.device.ID, oid, responseOID, response)
-		
-		// Additional debug - show all available OIDs for comparison
-		log.Printf("DEBUG: Available OIDs:")
-		for i, res := range s.device.resources.SNMP[:5] { // Show first 5
-			log.Printf("  %d: %s = %s", i, res.OID, res.Response)
-		}
 	} else {
 		// Handle regular Get request
 		responseOID = oid
@@ -268,7 +228,6 @@ func (s *SNMPServer) extractOIDFromScopedPDU(scopedPDU []byte) (string, error) {
 	}
 	
 	pduType := scopedPDU[pos]
-	log.Printf("DEBUG: Scoped PDU type: 0x%02X", pduType)
 	
 	if pduType != ASN1_GET_REQUEST && pduType != ASN1_GET_NEXT {
 		return "", fmt.Errorf("unsupported PDU type in scoped PDU: 0x%02X", pduType)
@@ -320,7 +279,6 @@ func (s *SNMPServer) extractOIDFromScopedPDU(scopedPDU []byte) (string, error) {
 	oidBytes := scopedPDU[pos : pos+oidLen]
 	oid := decodeOID(oidBytes)
 	
-	log.Printf("DEBUG: Extracted OID from scoped PDU: %s", oid)
 	return oid, nil
 }
 
@@ -354,7 +312,6 @@ func (s *SNMPServer) extractOIDAndTypeFromScopedPDU(scopedPDU []byte) (string, b
 	}
 	
 	pduType := scopedPDU[pos]
-	log.Printf("DEBUG: Scoped PDU type: 0x%02X", pduType)
 	
 	if pduType != ASN1_GET_REQUEST && pduType != ASN1_GET_NEXT {
 		return "", ASN1_GET_REQUEST, fmt.Errorf("unsupported PDU type in scoped PDU: 0x%02X", pduType)
@@ -406,7 +363,6 @@ func (s *SNMPServer) extractOIDAndTypeFromScopedPDU(scopedPDU []byte) (string, b
 	oidBytes := scopedPDU[pos : pos+oidLen]
 	oid := decodeOID(oidBytes)
 	
-	log.Printf("DEBUG: Extracted OID from scoped PDU: %s, PDU type: 0x%02X", oid, pduType)
 	return oid, pduType, nil
 }
 
@@ -1027,7 +983,6 @@ func (s *SNMPServer) parseIncomingRequest(data []byte) SNMPRequest {
 		return req
 	}
 
-	log.Printf("DEBUG: Starting parse, data length: %d", len(data))
 
 	// Parse the SNMP packet structure
 	// SEQUENCE { version, community, PDU }
@@ -1035,78 +990,54 @@ func (s *SNMPServer) parseIncomingRequest(data []byte) SNMPRequest {
 
 	// Skip SEQUENCE tag and length
 	if data[pos] != ASN1_SEQUENCE {
-		log.Printf("DEBUG: Expected SEQUENCE tag at pos %d, got 0x%02X", pos, data[pos])
 		return req
 	}
-	log.Printf("DEBUG: Found SEQUENCE at pos %d", pos)
 	pos++
 	lengthSkip := s.skipLength(data[pos:])
-	log.Printf("DEBUG: Skipping %d bytes for SEQUENCE length", lengthSkip)
 	pos += lengthSkip
 
 	// Parse version
 	if pos < len(data) && data[pos] == ASN1_INTEGER {
-		log.Printf("DEBUG: Found version INTEGER at pos %d", pos)
 		pos++
 		versionLen := int(data[pos])
-		log.Printf("DEBUG: Version length: %d", versionLen)
 		pos++
 		if pos+versionLen <= len(data) && versionLen == 1 {
 			req.Version = int(data[pos])
-			log.Printf("DEBUG: Version: %d", req.Version)
 			pos += versionLen
 		} else {
-			log.Printf("DEBUG: Skipping version, invalid length")
 			pos += versionLen // skip if we can't parse
 		}
 	}
 
 	// Parse community
 	if pos < len(data) && data[pos] == ASN1_OCTET_STRING {
-		log.Printf("DEBUG: Found community STRING at pos %d", pos)
 		pos++
 		communityLen := int(data[pos])
-		log.Printf("DEBUG: Community length: %d", communityLen)
 		pos++
 		if pos+communityLen <= len(data) {
 			req.Community = string(data[pos : pos+communityLen])
-			log.Printf("DEBUG: Community: %s", req.Community)
 			pos += communityLen
 		}
 	}
 
 	// Parse PDU (GetRequest = 0xa0, GetNext = 0xa1)
-	log.Printf("DEBUG: Looking for PDU at pos %d, byte: 0x%02X", pos, data[pos])
 	if pos < len(data) && (data[pos] == 0xa0 || data[pos] == 0xa1) {
-		pduType := data[pos]
-		log.Printf("DEBUG: Found PDU type 0x%02X at pos %d", pduType, pos)
 		pos++
 		pduLengthSkip := s.skipLength(data[pos:])
-		log.Printf("DEBUG: Skipping %d bytes for PDU length", pduLengthSkip)
 		pos += pduLengthSkip
 
 		// Parse request ID
-		log.Printf("DEBUG: Looking for request ID at pos %d, byte: 0x%02X", pos, data[pos])
 		if pos < len(data) && data[pos] == ASN1_INTEGER {
-			log.Printf("DEBUG: Found request ID INTEGER at pos %d", pos)
 			pos++
 			reqIDLen := int(data[pos])
-			log.Printf("DEBUG: Request ID length: %d", reqIDLen)
 			pos++
 			if pos+reqIDLen <= len(data) && reqIDLen <= 4 {
 				req.RequestID = 0
-				log.Printf("DEBUG: Request ID bytes at pos %d:", pos)
 				for i := 0; i < reqIDLen; i++ {
-					log.Printf("  byte[%d] = 0x%02X", i, data[pos+i])
 					req.RequestID = (req.RequestID << 8) | int(data[pos+i])
 				}
 				pos += reqIDLen
-				log.Printf("DEBUG: Parsed Request ID: 0x%X (%d bytes)", req.RequestID, reqIDLen)
-			} else {
-				log.Printf("DEBUG: Invalid request ID length or bounds")
 			}
-		} else {
-			log.Printf("DEBUG: No INTEGER tag for request ID")
 		}
 
 		// Skip error-status and error-index
