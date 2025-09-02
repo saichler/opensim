@@ -301,7 +301,7 @@ func getRandomDeviceName() string {
 	// Select a random pattern and generate the name
 	pattern := patterns[rand.Intn(len(patterns))]
 	name := pattern()
-	log.Printf("Generated device name: %s", name)
+	// log.Printf("Generated device name: %s", name)
 	return name
 }
 
@@ -353,7 +353,7 @@ func (tun *TunInterface) configure(netmask string) error {
 		return fmt.Errorf("failed to bring interface up: %v", err)
 	}
 
-	log.Printf("Created TUN interface %s with IP %s", tun.Name, tun.IP.String())
+	// log.Printf("Created TUN interface %s with IP %s", tun.Name, tun.IP.String())
 	return nil
 }
 
@@ -532,13 +532,13 @@ func (sm *SimulatorManager) LoadSpecificResources(filename string) (*DeviceResou
 	sort.Slice(resources.SNMP, func(i, j int) bool {
 		return compareOIDsLexicographically(resources.SNMP[i].OID, resources.SNMP[j].OID) < 0
 	})
-	log.Printf("Sorted %d SNMP OIDs in lexicographic order for %s", len(resources.SNMP), filename)
+	// log.Printf("Sorted %d SNMP OIDs in lexicographic order for %s", len(resources.SNMP), filename)
 
 	// Cache the loaded resources
 	sm.resourcesCache[filename] = &resources
 
-	log.Printf("Loaded resource file %s: %d SNMP, %d SSH resources", 
-		filename, len(resources.SNMP), len(resources.SSH))
+	// log.Printf("Loaded resource file %s: %d SNMP, %d SSH resources", 
+	//	filename, len(resources.SNMP), len(resources.SSH))
 	return &resources, nil
 }
 
@@ -635,11 +635,11 @@ func (sm *SimulatorManager) CreateDevices(startIP string, count int, netmask str
 		if err != nil {
 			return fmt.Errorf("failed to load resource file %s: %v", resourceFile, err)
 		}
-		log.Printf("Using resource file: %s", resourceFile)
+			// log.Printf("Using resource file: %s", resourceFile)
 	} else {
 		// Use default resources
 		resources = sm.deviceResources
-		log.Printf("Using default resources")
+		// log.Printf("Using default resources")
 	}
 
 	for i := 0; i < count; i++ {
@@ -647,7 +647,7 @@ func (sm *SimulatorManager) CreateDevices(startIP string, count int, netmask str
 
 		// Check if device already exists
 		if _, exists := sm.devices[deviceID]; exists {
-			log.Printf("Device %s already exists, skipping", deviceID)
+			// log.Printf("Device %s already exists, skipping", deviceID)
 			sm.incrementIP()
 			continue
 		}
@@ -659,7 +659,7 @@ func (sm *SimulatorManager) CreateDevices(startIP string, count int, netmask str
 		
 		tunIface, err := createTunInterface(tunName, tunIP, netmask)
 		if err != nil {
-			log.Printf("Failed to create TUN interface for %s: %v", deviceID, err)
+			// log.Printf("Failed to create TUN interface for %s: %v", deviceID, err)
 			sm.incrementIP()
 			continue
 		}
@@ -689,7 +689,7 @@ func (sm *SimulatorManager) CreateDevices(startIP string, count int, netmask str
 
 		// Start device services
 		if err := device.Start(); err != nil {
-			log.Printf("Failed to start device %s: %v", deviceID, err)
+			// log.Printf("Failed to start device %s: %v", deviceID, err)
 			device.Stop() // Clean up
 			continue
 		}
@@ -697,7 +697,7 @@ func (sm *SimulatorManager) CreateDevices(startIP string, count int, netmask str
 		sm.devices[deviceID] = device
 		successCount++
 
-		log.Printf("Created device: %s on IP %s (interface: %s)", deviceID, sm.currentIP.String(), tunName)
+		// log.Printf("Created device: %s on IP %s (interface: %s)", deviceID, sm.currentIP.String(), tunName)
 		sm.incrementIP()
 	}
 
@@ -763,11 +763,11 @@ func (sm *SimulatorManager) DeleteDevice(deviceID string) error {
 
 	// Stop and cleanup device
 	if err := device.Stop(); err != nil {
-		log.Printf("Error stopping device %s: %v", deviceID, err)
+		// log.Printf("Error stopping device %s: %v", deviceID, err)
 	}
 
 	delete(sm.devices, deviceID)
-	log.Printf("Deleted device: %s", deviceID)
+	// log.Printf("Deleted device: %s", deviceID)
 	return nil
 }
 
@@ -776,7 +776,6 @@ func (sm *SimulatorManager) DeleteAllDevices() error {
 	defer sm.mu.Unlock()
 
 	var errors []string
-	count := len(sm.devices)
 
 	for deviceID, device := range sm.devices {
 		if err := device.Stop(); err != nil {
@@ -786,7 +785,7 @@ func (sm *SimulatorManager) DeleteAllDevices() error {
 
 	// Clear the devices map
 	sm.devices = make(map[string]*DeviceSimulator)
-	log.Printf("Deleted all %d devices", count)
+	// log.Printf("Deleted all %d devices", count)
 
 	if len(errors) > 0 {
 		return fmt.Errorf("errors deleting devices: %s", strings.Join(errors, ", "))
@@ -823,8 +822,8 @@ func (d *DeviceSimulator) Start() error {
 	}
 
 	d.running = true
-	log.Printf("Device %s started on %s (interface: %s, SNMP:%d, SSH:%d)",
-		d.ID, d.IP.String(), d.tunIface.Name, d.SNMPPort, d.SSHPort)
+	// log.Printf("Device %s started on %s (interface: %s, SNMP:%d, SSH:%d)",
+	//	d.ID, d.IP.String(), d.tunIface.Name, d.SNMPPort, d.SSHPort)
 
 	return nil
 }
@@ -855,7 +854,7 @@ func (d *DeviceSimulator) Stop() error {
 	// The SimulatorManager handles TUN interface lifecycle
 
 	d.running = false
-	log.Printf("Device %s stopped", d.ID)
+	// log.Printf("Device %s stopped", d.ID)
 
 	if len(errors) > 0 {
 		return fmt.Errorf("errors stopping services: %s", strings.Join(errors, ", "))

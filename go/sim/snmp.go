@@ -91,12 +91,12 @@ func (s *SNMPServer) handleSNMPv2cRequest(requestData []byte) []byte {
 			responseOID = oid
 			response = "endOfMibView"
 		}
-		log.Printf("SNMP %s: GetNext %s -> %s = %s", s.device.ID, oid, responseOID, response)
+		// log.Printf("SNMP %s: GetNext %s -> %s = %s", s.device.ID, oid, responseOID, response)
 	} else {
 		// Handle regular Get request
 		responseOID = oid
 		response = s.findResponse(oid)
-		log.Printf("SNMP %s: Get %s -> %s", s.device.ID, oid, response)
+		// log.Printf("SNMP %s: Get %s -> %s", s.device.ID, oid, response)
 	}
 
 	// Create proper SNMP response (pass the request data)
@@ -107,14 +107,14 @@ func (s *SNMPServer) handleSNMPv2cRequest(requestData []byte) []byte {
 func (s *SNMPServer) handleSNMPv3Request(requestData []byte) []byte {
 	// Check if SNMPv3 is enabled
 	if s.v3Config == nil || !s.v3Config.Enabled {
-		log.Printf("SNMPv3 request received but SNMPv3 not enabled")
+		// log.Printf("SNMPv3 request received but SNMPv3 not enabled")
 		return []byte{} // Return empty response
 	}
 
 	// Parse SNMPv3 message
 	v3Msg, err := s.parseSNMPv3Message(requestData)
 	if err != nil {
-		log.Printf("Error parsing SNMPv3 message: %v", err)
+		// log.Printf("Error parsing SNMPv3 message: %v", err)
 		return []byte{}
 	}
 
@@ -124,36 +124,36 @@ func (s *SNMPServer) handleSNMPv3Request(requestData []byte) []byte {
 	
 	// Validate credentials (discovery requests are allowed through)
 	if !s.validateSNMPv3Credentials(v3Msg) {
-		log.Printf("SNMPv3 authentication failed")
+		// log.Printf("SNMPv3 authentication failed")
 		return []byte{}
 	}
 	
 	if isDiscovery {
-		log.Printf("SNMPv3: Processing discovery request")
+		// log.Printf("SNMPv3: Processing discovery request")
 		// For discovery, return a report with our engine ID
 		return s.createSNMPv3DiscoveryResponse(v3Msg)
 	}
 
-	log.Printf("SNMPv3: Authenticated user: %s, flags: 0x%02X", 
-		v3Msg.SecurityParams.UserName, v3Msg.GlobalData.MsgFlags)
+	// log.Printf("SNMPv3: Authenticated user: %s, flags: 0x%02X", 
+	//	v3Msg.SecurityParams.UserName, v3Msg.GlobalData.MsgFlags)
 
 	// Handle scoped PDU decryption
 	scopedPDU := v3Msg.ScopedPDU
 	if v3Msg.GlobalData.MsgFlags&SNMPV3_MSG_FLAG_PRIV != 0 {
-		log.Printf("SNMPv3: Privacy enabled, attempting decryption")
+		// log.Printf("SNMPv3: Privacy enabled, attempting decryption")
 		decryptedPDU, err := s.decryptScopedPDU(v3Msg.ScopedPDU, v3Msg.SecurityParams.PrivParams)
 		if err != nil {
-			log.Printf("SNMPv3: Failed to decrypt scoped PDU: %v", err)
-			log.Printf("SNMPv3: Using default OID for encrypted request (decryption failed)")
+			// log.Printf("SNMPv3: Failed to decrypt scoped PDU: %v", err)
+			// log.Printf("SNMPv3: Using default OID for encrypted request (decryption failed)")
 		} else {
-			log.Printf("SNMPv3: Successfully decrypted scoped PDU (%d bytes)", len(decryptedPDU))
+			// log.Printf("SNMPv3: Successfully decrypted scoped PDU (%d bytes)", len(decryptedPDU))
 			// Verify the decrypted data looks valid (starts with SEQUENCE tag)
 			if len(decryptedPDU) > 0 && decryptedPDU[0] == ASN1_SEQUENCE {
 				scopedPDU = decryptedPDU
-				log.Printf("SNMPv3: Decrypted data appears valid (starts with SEQUENCE)")
+				// log.Printf("SNMPv3: Decrypted data appears valid (starts with SEQUENCE)")
 			} else {
-				log.Printf("SNMPv3: Decrypted data appears invalid (tag: 0x%02X), using default OID", 
-					func() byte { if len(decryptedPDU) > 0 { return decryptedPDU[0] } else { return 0 } }())
+				// log.Printf("SNMPv3: Decrypted data appears invalid (tag: 0x%02X), using default OID", 
+				//	func() byte { if len(decryptedPDU) > 0 { return decryptedPDU[0] } else { return 0 } }())
 			}
 		}
 	}
@@ -166,7 +166,7 @@ func (s *SNMPServer) handleSNMPv3Request(requestData []byte) []byte {
 		// Since snmpwalk typically starts with 1.3.6.1.2.1.1, use system description
 		oid = "1.3.6.1.2.1.1.1.0" // System description OID
 		pduType = ASN1_GET_REQUEST // Default to GET
-		log.Printf("SNMPv3: Using default OID %s for failed decryption case", oid)
+		// log.Printf("SNMPv3: Using default OID %s for failed decryption case", oid)
 	}
 
 	// Handle GetNext request for SNMP walk (same logic as SNMPv2)
@@ -174,19 +174,19 @@ func (s *SNMPServer) handleSNMPv3Request(requestData []byte) []byte {
 	var response string
 	
 	if pduType == ASN1_GET_NEXT {
-		log.Printf("SNMPv3: Processing GetNext request for OID: %s", oid)
+		// log.Printf("SNMPv3: Processing GetNext request for OID: %s", oid)
 		responseOID, response = s.findNextOID(oid)
 		if responseOID == "" {
 			// End of MIB view - use a special response
 			responseOID = oid
 			response = "endOfMibView"
 		}
-		log.Printf("SNMPv3 %s: GetNext %s -> %s = %s", s.device.ID, oid, responseOID, response)
+		// log.Printf("SNMPv3 %s: GetNext %s -> %s = %s", s.device.ID, oid, responseOID, response)
 	} else {
 		// Handle regular Get request
 		responseOID = oid
 		response = s.findResponse(oid)
-		log.Printf("SNMPv3 %s: Get %s -> %s", s.device.ID, oid, response)
+		// log.Printf("SNMPv3 %s: Get %s -> %s", s.device.ID, oid, response)
 	}
 
 	// Create SNMPv3 response (use responseOID for the response)
@@ -372,7 +372,7 @@ func (s *SNMPServer) createSNMPv3DiscoveryResponse(requestMsg *SNMPv3Message) []
 		return []byte{}
 	}
 	
-	log.Printf("SNMPv3: Creating discovery response with engine ID: %s", s.v3Config.EngineID)
+	// log.Printf("SNMPv3: Creating discovery response with engine ID: %s", s.v3Config.EngineID)
 	
 	// Create discovery response scoped PDU (typically a report PDU)
 	reportOID := "1.3.6.1.6.3.15.1.1.4.0" // usmStatsUnknownEngineIDs
@@ -1146,15 +1146,15 @@ func (s *SNMPServer) decryptScopedPDU(encryptedPDU []byte, privParams []byte) ([
 		return encryptedPDU, nil
 	}
 	
-	log.Printf("SNMPv3: Attempting to decrypt scoped PDU with privacy protocol")
+	// log.Printf("SNMPv3: Attempting to decrypt scoped PDU with privacy protocol")
 	
 	// Decrypt based on the configured privacy protocol
 	switch s.v3Config.PrivProtocol {
 	case SNMPV3_PRIV_DES:
-		log.Printf("SNMPv3: Using DES decryption")
+		// log.Printf("SNMPv3: Using DES decryption")
 		return s.decryptDES(encryptedPDU, privParams)
 	case SNMPV3_PRIV_AES128:
-		log.Printf("SNMPv3: Using AES128 decryption")
+		// log.Printf("SNMPv3: Using AES128 decryption")
 		return s.decryptAES128(encryptedPDU, privParams)
 	default:
 		return nil, fmt.Errorf("unsupported privacy protocol: %d", s.v3Config.PrivProtocol)
@@ -1245,8 +1245,8 @@ func (s *SNMPServer) decryptDES(encryptedData []byte, privParams []byte) ([]byte
 	key := s.generateDESKey() // Use the same method as encryption
 	iv := privParams[:8] // Use privacy parameters as IV
 	
-	log.Printf("SNMPv3: DES decryption - key: %d bytes, IV: %d bytes, data: %d bytes", 
-		len(key), len(iv), len(encryptedData))
+	// log.Printf("SNMPv3: DES decryption - key: %d bytes, IV: %d bytes, data: %d bytes", 
+	//	len(key), len(iv), len(encryptedData))
 	
 	// For simulation purposes, implement basic DES-CBC decryption
 	// In a real implementation, you'd need proper key derivation from the password
@@ -1274,23 +1274,23 @@ func (s *SNMPServer) decryptDES(encryptedData []byte, privParams []byte) ([]byte
 		}
 	}
 	
-	log.Printf("SNMPv3: DES decryption completed - result: %d bytes", len(decrypted))
+	// log.Printf("SNMPv3: DES decryption completed - result: %d bytes", len(decrypted))
 	
 	// Print hex dump of decrypted data for debugging
-	if len(decrypted) > 0 {
-		log.Printf("Decrypted data hex:")
-		for i := 0; i < len(decrypted) && i < 64; i += 16 {
-			end := i + 16
-			if end > len(decrypted) {
-				end = len(decrypted)
-			}
-			hexStr := fmt.Sprintf("  %04X: ", i)
-			for j := i; j < end; j++ {
-				hexStr += fmt.Sprintf("%02X ", decrypted[j])
-			}
-			log.Printf(hexStr)
-		}
-	}
+	// if len(decrypted) > 0 {
+	//	log.Printf("Decrypted data hex:")
+	//	for i := 0; i < len(decrypted) && i < 64; i += 16 {
+	//		end := i + 16
+	//		if end > len(decrypted) {
+	//			end = len(decrypted)
+	//		}
+	//		hexStr := fmt.Sprintf("  %04X: ", i)
+	//		for j := i; j < end; j++ {
+	//			hexStr += fmt.Sprintf("%02X ", decrypted[j])
+	//		}
+	//		log.Printf(hexStr)
+	//	}
+	// }
 	
 	return decrypted, nil
 }

@@ -152,7 +152,7 @@ func (s *SSHServer) handleSession(channel ssh.Channel, requests <-chan *ssh.Requ
 		response := s.findCommandResponse(command)
 		channel.Write([]byte(response + "\n\n"))
 
-		log.Printf("SSH %s: %s -> %s", s.device.ID, command, strings.Split(response, "\n")[0])
+		// log.Printf("SSH %s: %s -> %s", s.device.ID, command, strings.Split(response, "\n")[0])
 	}
 }
 
