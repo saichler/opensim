@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/binary"
+	"encoding/csv"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -61,160 +62,74 @@ const (
 // Global manager instance
 var manager *SimulatorManager
 
-// Global list of world cities for random sysLocation assignment
-var worldCities = []string{
-	"New York, NY, USA",
-	"London, England, UK", 
-	"Tokyo, Japan",
-	"Paris, France",
-	"Sydney, Australia",
-	"Toronto, Canada",
-	"Berlin, Germany",
-	"Singapore, Singapore",
-	"Hong Kong, China",
-	"Dubai, UAE",
-	"Mumbai, India",
-	"São Paulo, Brazil",
-	"Mexico City, Mexico",
-	"Moscow, Russia",
-	"Seoul, South Korea",
-	"Amsterdam, Netherlands",
-	"Stockholm, Sweden",
-	"Copenhagen, Denmark",
-	"Oslo, Norway",
-	"Helsinki, Finland",
-	"Zurich, Switzerland",
-	"Vienna, Austria",
-	"Madrid, Spain",
-	"Rome, Italy",
-	"Athens, Greece",
-	"Istanbul, Turkey",
-	"Tel Aviv, Israel",
-	"Cairo, Egypt",
-	"Cape Town, South Africa",
-	"Lagos, Nigeria",
-	"Nairobi, Kenya",
-	"Bangkok, Thailand",
-	"Jakarta, Indonesia",
-	"Manila, Philippines",
-	"Kuala Lumpur, Malaysia",
-	"Ho Chi Minh City, Vietnam",
-	"Bangalore, India",
-	"Shanghai, China",
-	"Beijing, China",
-	"Shenzhen, China",
-	"Taipei, Taiwan",
-	"Melbourne, Australia",
-	"Brisbane, Australia",
-	"Auckland, New Zealand",
-	"Wellington, New Zealand",
-	"Vancouver, Canada",
-	"Montreal, Canada",
-	"Chicago, IL, USA",
-	"Los Angeles, CA, USA",
-	"San Francisco, CA, USA",
-	"Seattle, WA, USA",
-	"Boston, MA, USA",
-	"Washington DC, USA",
-	"Miami, FL, USA",
-	"Atlanta, GA, USA",
-	"Denver, CO, USA",
-	"Phoenix, AZ, USA",
-	"Las Vegas, NV, USA",
-	"Portland, OR, USA",
-	"Austin, TX, USA",
-	"Dallas, TX, USA",
-	"Houston, TX, USA",
-	"Buenos Aires, Argentina",
-	"Rio de Janeiro, Brazil",
-	"Lima, Peru",
-	"Bogotá, Colombia",
-	"Santiago, Chile",
-	"Montevideo, Uruguay",
-	"Caracas, Venezuela",
-	"Quito, Ecuador",
-	"La Paz, Bolivia",
-	"Asunción, Paraguay",
-	"Dublin, Ireland",
-	"Edinburgh, Scotland",
-	"Cardiff, Wales",
-	"Brussels, Belgium",
-	"Luxembourg City, Luxembourg",
-	"Prague, Czech Republic",
-	"Budapest, Hungary",
-	"Warsaw, Poland",
-	"Krakow, Poland",
-	"Bucharest, Romania",
-	"Sofia, Bulgaria",
-	"Belgrade, Serbia",
-	"Zagreb, Croatia",
-	"Ljubljana, Slovenia",
-	"Bratislava, Slovakia",
-	"Tallinn, Estonia",
-	"Riga, Latvia",
-	"Vilnius, Lithuania",
-	"Kiev, Ukraine",
-	"Minsk, Belarus",
-	"St. Petersburg, Russia",
-	"Novosibirsk, Russia",
-	"Yekaterinburg, Russia",
-	"Almaty, Kazakhstan",
-	"Tashkent, Uzbekistan",
-	"Bishkek, Kyrgyzstan",
-	"Dushanbe, Tajikistan",
-	"Ashgabat, Turkmenistan",
-	"Baku, Azerbaijan",
-	"Yerevan, Armenia",
-	"Tbilisi, Georgia",
-	"Tehran, Iran",
-	"Baghdad, Iraq",
-	"Kuwait City, Kuwait",
-	"Riyadh, Saudi Arabia",
-	"Doha, Qatar",
-	"Abu Dhabi, UAE",
-	"Muscat, Oman",
-	"Manama, Bahrain",
-	"Amman, Jordan",
-	"Beirut, Lebanon",
-	"Damascus, Syria",
-	"Ankara, Turkey",
-	"Nicosia, Cyprus",
-	"Valletta, Malta",
-	"Rabat, Morocco",
-	"Tunis, Tunisia",
-	"Algiers, Algeria",
-	"Tripoli, Libya",
-	"Khartoum, Sudan",
-	"Addis Ababa, Ethiopia",
-	"Kampala, Uganda",
-	"Kigali, Rwanda",
-	"Dar es Salaam, Tanzania",
-	"Lusaka, Zambia",
-	"Harare, Zimbabwe",
-	"Gaborone, Botswana",
-	"Windhoek, Namibia",
-	"Maputo, Mozambique",
-	"Antananarivo, Madagascar",
-	"Port Louis, Mauritius",
-	"Victoria, Seychelles",
-	"Colombo, Sri Lanka",
-	"Dhaka, Bangladesh",
-	"Kathmandu, Nepal",
-	"Thimphu, Bhutan",
-	"Male, Maldives",
-	"Islamabad, Pakistan",
-	"Kabul, Afghanistan",
-	"Ulaanbaatar, Mongolia",
-	"Pyongyang, North Korea",
-	"Vientiane, Laos",
-	"Phnom Penh, Cambodia",
-	"Yangon, Myanmar",
-	"Hanoi, Vietnam",
+// Global list of world cities loaded from CSV file
+var worldCities []string
+
+// loadWorldCities loads cities from worldcities.csv file
+func loadWorldCities() error {
+	file, err := os.Open("worldcities.csv")
+	if err != nil {
+		log.Printf("Failed to open worldcities.csv, using fallback cities: %v", err)
+		// Fallback to a smaller set of cities if CSV file is not available
+		worldCities = []string{
+			"Tokyo, Japan",
+			"New York, NY, USA", 
+			"London, England, UK",
+			"Paris, France",
+			"Sydney, Australia",
+			"Berlin, Germany",
+			"Singapore, Singapore",
+			"Mumbai, India",
+			"São Paulo, Brazil",
+			"Moscow, Russia",
+		}
+		return nil
+	}
+	defer file.Close()
+
+	reader := csv.NewReader(file)
+	records, err := reader.ReadAll()
+	if err != nil {
+		return fmt.Errorf("failed to read CSV: %v", err)
+	}
+
+	// Skip header row and extract city and country information
+	worldCities = make([]string, 0, len(records)-1)
+	for i, record := range records {
+		if i == 0 || len(record) < 5 {
+			continue // Skip header or malformed rows
+		}
+		
+		city := record[0]    // city name
+		country := record[4] // country name
+		
+		// Format as "City, Country"
+		location := fmt.Sprintf("%s, %s", city, country)
+		worldCities = append(worldCities, location)
+	}
+
+	log.Printf("Loaded %d cities from worldcities.csv", len(worldCities))
+	return nil
 }
+
 
 // getRandomCity returns a random city from the world cities list
 func getRandomCity() string {
 	rand.Seed(time.Now().UnixNano())
+	
+	// Ensure cities are loaded
+	if len(worldCities) == 0 {
+		log.Printf("Warning: worldCities not loaded, loading fallback cities")
+		err := loadWorldCities()
+		if err != nil {
+			log.Printf("Error loading cities: %v", err)
+		}
+	}
+	
+	if len(worldCities) == 0 {
+		return "Unknown Location"
+	}
+	
 	return worldCities[rand.Intn(len(worldCities))]
 }
 
@@ -947,6 +862,11 @@ func main() {
 
 	// Initialize manager
 	manager = NewSimulatorManager()
+
+	// Load world cities from CSV file
+	if err := loadWorldCities(); err != nil {
+		log.Printf("Warning: failed to load world cities: %v", err)
+	}
 
 	// Load default resources - look for asr9k first, then fallback to cisco_ios
 	err := manager.LoadResources("resources/asr9k.json")
