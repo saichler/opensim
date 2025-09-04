@@ -94,17 +94,40 @@ func loadWorldCities() error {
 	}
 
 	// Skip header row and extract city and country information
-	worldCities = make([]string, 0, len(records)-1)
+	// Use a map to ensure uniqueness and avoid duplicate city-country combinations
+	uniqueLocations := make(map[string]bool)
+	
 	for i, record := range records {
 		if i == 0 || len(record) < 5 {
 			continue // Skip header or malformed rows
 		}
 		
-		city := record[0]    // city name
-		country := record[4] // country name
+		city := record[0]     // city name
+		country := record[4]  // country name
+		adminName := ""
+		if len(record) > 7 {
+			adminName = record[7] // admin_name (state/province)
+		}
 		
-		// Format as "City, Country"
-		location := fmt.Sprintf("%s, %s", city, country)
+		// Create location string with more detail for disambiguation
+		var location string
+		if adminName != "" && adminName != city && adminName != country {
+			// Include state/province for better distinction (e.g., "Boston, Massachusetts, United States")
+			location = fmt.Sprintf("%s, %s, %s", city, adminName, country)
+		} else {
+			// Simple city, country format
+			location = fmt.Sprintf("%s, %s", city, country)
+		}
+		
+		// Only add if we haven't seen this exact location before
+		if !uniqueLocations[location] {
+			uniqueLocations[location] = true
+		}
+	}
+	
+	// Convert map keys to slice
+	worldCities = make([]string, 0, len(uniqueLocations))
+	for location := range uniqueLocations {
 		worldCities = append(worldCities, location)
 	}
 
