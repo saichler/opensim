@@ -86,7 +86,6 @@ type SNMPServer struct {
 	listener  *net.UDPConn
 	running   bool
 	v3Config  *SNMPv3Config
-	mu        sync.RWMutex
 }
 
 type SSHServer struct {

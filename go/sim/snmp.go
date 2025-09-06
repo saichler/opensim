@@ -14,9 +14,6 @@ import (
 
 // SNMP Server implementation
 func (s *SNMPServer) Start() error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	
 	addr := &net.UDPAddr{
 		IP:   s.device.IP,
 		Port: s.device.SNMPPort,
@@ -35,9 +32,6 @@ func (s *SNMPServer) Start() error {
 }
 
 func (s *SNMPServer) Stop() error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	
 	if s.listener != nil {
 		s.running = false
 		return s.listener.Close()
@@ -49,21 +43,13 @@ func (s *SNMPServer) handleRequests() {
 	buffer := make([]byte, 1024)
 
 	for {
-		s.mu.RLock()
-		running := s.running
-		listener := s.listener
-		s.mu.RUnlock()
-		
-		if !running || listener == nil {
+		if !s.running || s.listener == nil {
 			break
 		}
 
-		n, clientAddr, err := listener.ReadFromUDP(buffer)
+		n, clientAddr, err := s.listener.ReadFromUDP(buffer)
 		if err != nil {
-			s.mu.RLock()
-			stillRunning := s.running
-			s.mu.RUnlock()
-			if stillRunning {
+			if s.running {
 				log.Printf("SNMP server error reading UDP: %v", err)
 			}
 			continue
@@ -82,11 +68,8 @@ func (s *SNMPServer) handleRequests() {
 
 		// Send response
 		if len(responsePacket) > 0 {
-			s.mu.RLock()
-			currentListener := s.listener
-			s.mu.RUnlock()
-			if currentListener != nil {
-				_, err = currentListener.WriteToUDP(responsePacket, clientAddr)
+			if s.listener != nil {
+				_, err = s.listener.WriteToUDP(responsePacket, clientAddr)
 				if err != nil {
 					log.Printf("Error sending SNMP response: %v", err)
 				}
