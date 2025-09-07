@@ -40,13 +40,12 @@ func (s *SNMPServer) Stop() error {
 }
 
 func (s *SNMPServer) handleRequests() {
-	buffer := make([]byte, 1024)
-
 	for {
 		if !s.running || s.listener == nil {
 			break
 		}
 
+		buffer := make([]byte, 1024)
 		n, clientAddr, err := s.listener.ReadFromUDP(buffer)
 		if err != nil {
 			if s.running {
@@ -55,24 +54,28 @@ func (s *SNMPServer) handleRequests() {
 			continue
 		}
 
-		requestData := buffer[:n] // Store the full request
+		// Handle each request concurrently to avoid blocking
+		go s.handleSingleRequest(buffer[:n], clientAddr)
+	}
+}
 
-		var responsePacket []byte
+// handleSingleRequest processes a single SNMP request in its own goroutine
+func (s *SNMPServer) handleSingleRequest(requestData []byte, clientAddr *net.UDPAddr) {
+	var responsePacket []byte
 
-		// Check if this is SNMPv3 request
-		if isSNMPv3Request(requestData) {
-			responsePacket = s.handleSNMPv3Request(requestData)
-		} else {
-			responsePacket = s.handleSNMPv2cRequest(requestData)
-		}
+	// Check if this is SNMPv3 request
+	if isSNMPv3Request(requestData) {
+		responsePacket = s.handleSNMPv3Request(requestData)
+	} else {
+		responsePacket = s.handleSNMPv2cRequest(requestData)
+	}
 
-		// Send response
-		if len(responsePacket) > 0 {
-			if s.listener != nil {
-				_, err = s.listener.WriteToUDP(responsePacket, clientAddr)
-				if err != nil {
-					log.Printf("Error sending SNMP response: %v", err)
-				}
+	// Send response
+	if len(responsePacket) > 0 {
+		if s.listener != nil {
+			_, err := s.listener.WriteToUDP(responsePacket, clientAddr)
+			if err != nil {
+				log.Printf("Error sending SNMP response: %v", err)
 			}
 		}
 	}
@@ -467,13 +470,23 @@ func (s *SNMPServer) createDiscoveryScopedPDU(oid, value string) ([]byte, error)
 func (s *SNMPServer) findResponse(oid string) string {
 	// Handle dynamic sysLocation OID
 	if oid == "1.3.6.1.2.1.1.6.0" {
-		return s.device.sysLocation
+		s.device.mu.RLock()
+		sysLocation := s.device.sysLocation
+		s.device.mu.RUnlock()
+		return sysLocation
 	}
 	
 	// Handle dynamic sysName OID
 	if oid == "1.3.6.1.2.1.1.5.0" {
-		return s.device.sysName
+		s.device.mu.RLock()
+		sysName := s.device.sysName
+		s.device.mu.RUnlock()
+		return sysName
 	}
+	
+	// Safely access resources with read lock
+	s.device.mu.RLock()
+	defer s.device.mu.RUnlock()
 	
 	for _, resource := range s.device.resources.SNMP {
 		if resource.OID == oid {
@@ -521,6 +534,10 @@ func compareOIDs(oid1, oid2 string) int {
 
 // Find the next OID in lexicographic order for SNMP GetNext requests
 func (s *SNMPServer) findNextOID(currentOID string) (string, string) {
+	// Acquire read lock to safely access device data
+	s.device.mu.RLock()
+	defer s.device.mu.RUnlock()
+	
 	var candidates []SNMPResource
 	
 	// Add dynamic sysName OID if it's greater than currentOID

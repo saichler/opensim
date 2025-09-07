@@ -157,6 +157,10 @@ func (s *SSHServer) handleSession(channel ssh.Channel, requests <-chan *ssh.Requ
 }
 
 func (s *SSHServer) findCommandResponse(command string) string {
+	// Safely access resources with read lock
+	s.device.mu.RLock()
+	defer s.device.mu.RUnlock()
+	
 	for _, resource := range s.device.resources.SSH {
 		if strings.EqualFold(resource.Command, command) {
 			return resource.Response
