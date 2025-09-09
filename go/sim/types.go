@@ -27,6 +27,10 @@ type SSHResource struct {
 type DeviceResources struct {
 	SNMP []SNMPResource `json:"snmp"`
 	SSH  []SSHResource  `json:"ssh"`
+	
+	// Performance optimization indexes (not serialized)
+	oidIndex    map[string]string  `json:"-"` // OID -> Response mapping for O(1) lookups
+	sortedOIDs  []string          `json:"-"` // Pre-sorted OID list for GetNext operations
 }
 
 // Device simulator represents a single simulated device

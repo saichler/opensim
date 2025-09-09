@@ -371,7 +371,10 @@ func (sm *SimulatorManager) LoadResources(filename string) error {
 		return err
 	}
 
-	log.Printf("Loaded %d SNMP and %d SSH resources", len(sm.deviceResources.SNMP), len(sm.deviceResources.SSH))
+	// Build indexes for loaded default resources
+	sm.buildResourceIndexes(sm.deviceResources)
+	
+	log.Printf("Loaded %d SNMP and %d SSH resources with indexes", len(sm.deviceResources.SNMP), len(sm.deviceResources.SSH))
 	return nil
 }
 
@@ -433,6 +436,9 @@ func (sm *SimulatorManager) createDefaultResources(filename string) error {
 		return err
 	}
 
+	// Build indexes for default resources too
+	sm.buildResourceIndexes(defaultResources)
+	
 	sm.deviceResources = defaultResources
 	log.Printf("Created default resources file %s with %d SNMP and %d SSH resources",
 		filename, len(defaultResources.SNMP), len(defaultResources.SSH))
@@ -470,14 +476,38 @@ func (sm *SimulatorManager) LoadSpecificResources(filename string) (*DeviceResou
 	sort.Slice(resources.SNMP, func(i, j int) bool {
 		return compareOIDsLexicographically(resources.SNMP[i].OID, resources.SNMP[j].OID) < 0
 	})
-	// log.Printf("Sorted %d SNMP OIDs in lexicographic order for %s", len(resources.SNMP), filename)
+	
+	// Build performance indexes for fast lookups
+	sm.buildResourceIndexes(&resources)
+	// log.Printf("Built indexes for %d SNMP OIDs in %s", len(resources.SNMP), filename)
 
-	// Cache the loaded resources
+	// Cache the loaded resources with indexes
 	sm.resourcesCache[filename] = &resources
 
 	// log.Printf("Loaded resource file %s: %d SNMP, %d SSH resources", 
 	//	filename, len(resources.SNMP), len(resources.SSH))
 	return &resources, nil
+}
+
+// buildResourceIndexes builds performance optimization indexes for fast OID lookups
+func (sm *SimulatorManager) buildResourceIndexes(resources *DeviceResources) {
+	// Initialize the hash map for O(1) OID lookups
+	resources.oidIndex = make(map[string]string, len(resources.SNMP))
+	
+	// Initialize sorted OID slice for binary search in GetNext operations
+	resources.sortedOIDs = make([]string, 0, len(resources.SNMP))
+	
+	// Build both indexes from the SNMP resources
+	for _, resource := range resources.SNMP {
+		// Hash map index: OID -> Response
+		resources.oidIndex[resource.OID] = resource.Response
+		
+		// Sorted OID list for binary search (resources are already sorted)
+		resources.sortedOIDs = append(resources.sortedOIDs, resource.OID)
+	}
+	
+	// Note: sortedOIDs should already be in lexicographic order since
+	// resources.SNMP was sorted before calling this function
 }
 
 // ListAvailableResources lists all available resource files in the resources directory

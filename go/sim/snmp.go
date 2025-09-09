@@ -484,14 +484,12 @@ func (s *SNMPServer) findResponse(oid string) string {
 		return sysName
 	}
 	
-	// Safely access resources with read lock
+	// Fast O(1) lookup using hash map index
 	s.device.mu.RLock()
 	defer s.device.mu.RUnlock()
 	
-	for _, resource := range s.device.resources.SNMP {
-		if resource.OID == oid {
-			return resource.Response
-		}
+	if response, exists := s.device.resources.oidIndex[oid]; exists {
+		return response
 	}
 	return "OID not supported"
 }
@@ -538,50 +536,81 @@ func (s *SNMPServer) findNextOID(currentOID string) (string, string) {
 	s.device.mu.RLock()
 	defer s.device.mu.RUnlock()
 	
-	var candidates []SNMPResource
-	
-	// Add dynamic sysName OID if it's greater than currentOID
+	// Dynamic OIDs - check these first
 	sysNameOID := "1.3.6.1.2.1.1.5.0"
-	if compareOIDs(sysNameOID, currentOID) > 0 {
-		candidates = append(candidates, SNMPResource{
-			OID:      sysNameOID,
-			Response: s.device.sysName,
-		})
-	}
-	
-	// Add dynamic sysLocation OID if it's greater than currentOID
 	sysLocationOID := "1.3.6.1.2.1.1.6.0"
-	if compareOIDs(sysLocationOID, currentOID) > 0 {
-		candidates = append(candidates, SNMPResource{
-			OID:      sysLocationOID,
-			Response: s.device.sysLocation,
-		})
+	
+	var nextOID string
+	var response string
+	
+	// Use binary search on pre-sorted OIDs for O(log n) performance
+	sortedOIDs := s.device.resources.sortedOIDs
+	if len(sortedOIDs) == 0 {
+		// Fallback to checking only dynamic OIDs
+		if compareOIDs(sysNameOID, currentOID) > 0 {
+			return sysNameOID, s.device.sysName
+		}
+		if compareOIDs(sysLocationOID, currentOID) > 0 {
+			return sysLocationOID, s.device.sysLocation
+		}
+		return "", "endOfMibView"
 	}
 	
-	// Find all OIDs that are lexicographically greater than currentOID
-	for _, resource := range s.device.resources.SNMP {
-		// Skip the dynamic OIDs from resources since we handle them dynamically
-		if resource.OID == sysLocationOID || resource.OID == sysNameOID {
-			continue
+	// Find first OID greater than currentOID using binary search
+	left, right := 0, len(sortedOIDs)
+	for left < right {
+		mid := (left + right) / 2
+		if compareOIDs(sortedOIDs[mid], currentOID) <= 0 {
+			left = mid + 1
+		} else {
+			right = mid
 		}
-		if compareOIDs(resource.OID, currentOID) > 0 {
-			candidates = append(candidates, resource)
+	}
+	
+	// Check candidates: next static OID, dynamic sysName, and dynamic sysLocation
+	candidates := make([]struct{ oid, resp string }, 0, 3)
+	
+	// Add next static OID if found
+	if left < len(sortedOIDs) {
+		staticOID := sortedOIDs[left]
+		// Skip dynamic OIDs that might be in the sorted list
+		if staticOID != sysNameOID && staticOID != sysLocationOID {
+			candidates = append(candidates, struct{ oid, resp string }{
+				oid:  staticOID,
+				resp: s.device.resources.oidIndex[staticOID],
+			})
 		}
+	}
+	
+	// Add dynamic OIDs if they're greater than currentOID
+	if compareOIDs(sysNameOID, currentOID) > 0 {
+		candidates = append(candidates, struct{ oid, resp string }{
+			oid:  sysNameOID,
+			resp: s.device.sysName,
+		})
+	}
+	if compareOIDs(sysLocationOID, currentOID) > 0 {
+		candidates = append(candidates, struct{ oid, resp string }{
+			oid:  sysLocationOID,
+			resp: s.device.sysLocation,
+		})
 	}
 	
 	if len(candidates) == 0 {
 		return "", "endOfMibView"
 	}
 	
-	// Find the smallest OID among candidates (lexicographically first)
-	nextOID := candidates[0]
-	for _, candidate := range candidates[1:] {
-		if compareOIDs(candidate.OID, nextOID.OID) < 0 {
-			nextOID = candidate
+	// Find lexicographically smallest candidate
+	nextOID = candidates[0].oid
+	response = candidates[0].resp
+	for i := 1; i < len(candidates); i++ {
+		if compareOIDs(candidates[i].oid, nextOID) < 0 {
+			nextOID = candidates[i].oid
+			response = candidates[i].resp
 		}
 	}
 	
-	return nextOID.OID, nextOID.Response
+	return nextOID, response
 }
 
 // Extract PDU type from SNMP request
