@@ -685,15 +685,26 @@ func (sm *SimulatorManager) incrementIP() {
 
 	// Increment the last octet
 	newIP[3]++
+
+	// Skip .0 and .255 addresses (network and broadcast)
+	if newIP[3] == 0 || newIP[3] == 255 {
+		newIP[3]++
+	}
+
+	// Handle overflow and continue skipping reserved addresses
 	if newIP[3] == 0 {
 		newIP[2]++
+		newIP[3] = 1 // Start from .1 in the new subnet
 		if newIP[2] == 0 {
 			newIP[1]++
+			newIP[3] = 1 // Start from .1 in the new subnet
 			if newIP[1] == 0 {
 				newIP[0]++
+				newIP[3] = 1 // Start from .1 in the new subnet
 			}
 		}
 	}
+
 	sm.currentIP = newIP
 }
 
