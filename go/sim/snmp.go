@@ -12,6 +12,14 @@ import (
 	"time"
 )
 
+// Helper function for minimum of two integers
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
 // SNMP Server implementation
 func (s *SNMPServer) Start() error {
 	addr := &net.UDPAddr{
@@ -91,6 +99,7 @@ func (s *SNMPServer) handleSNMPv2cRequest(requestData []byte) []byte {
 
 	// Determine PDU type from request data
 	pduType := s.getPDUType(requestData)
+	log.Printf("SNMP %s: Detected PDU type: 0x%02X for OID: %s", s.device.ID, pduType, oid)
 	
 	if pduType == ASN1_GET_NEXT {
 		// Handle GetNext request for SNMP walk
@@ -102,7 +111,8 @@ func (s *SNMPServer) handleSNMPv2cRequest(requestData []byte) []byte {
 		}
 		// log.Printf("SNMP %s: GetNext %s -> %s = %s", s.device.ID, oid, responseOID, response)
 	} else if pduType == ASN1_GET_BULK {
-		// Handle GetBulk request
+		// Handle GetBulk request - return multiple OIDs
+		log.Printf("SNMP %s: Processing GetBulk request for OID: %s", s.device.ID, oid)
 		return s.handleGetBulk(oid, requestData)
 	} else {
 		// Handle regular Get request
@@ -112,7 +122,9 @@ func (s *SNMPServer) handleSNMPv2cRequest(requestData []byte) []byte {
 	}
 
 	// Create proper SNMP response (pass the request data)
-	return s.createSNMPResponse(responseOID, response, requestData)
+	responseBytes := s.createSNMPResponse(responseOID, response, requestData)
+	log.Printf("SNMP %s: Created response for %s, length: %d bytes", s.device.ID, responseOID, len(responseBytes))
+	return responseBytes
 }
 
 // handleSNMPv3Request handles SNMPv3 requests with USM authentication
@@ -196,7 +208,7 @@ func (s *SNMPServer) handleSNMPv3Request(requestData []byte) []byte {
 		// log.Printf("SNMPv3 %s: GetNext %s -> %s = %s", s.device.ID, oid, responseOID, response)
 	} else if pduType == ASN1_GET_BULK {
 		// Handle GetBulk request for SNMPv3
-		return s.handleSNMPv3GetBulk(oid, msg, scopedPDU)
+		return s.handleSNMPv3GetBulk(oid, v3Msg, scopedPDU)
 	} else {
 		// Handle regular Get request
 		responseOID = oid
@@ -622,7 +634,9 @@ func (s *SNMPServer) findNextOID(currentOID string) (string, string) {
 // handleGetBulk processes SNMP GetBulk requests
 func (s *SNMPServer) handleGetBulk(startOID string, requestData []byte) []byte {
 	// Parse GetBulk parameters (non-repeaters and max-repetitions)
-	nonRepeaters, maxRepetitions := s.parseGetBulkParams(requestData)
+	_, maxRepetitions := s.parseGetBulkParams(requestData)
+
+	log.Printf("SNMP %s: GetBulk parameters - maxRepetitions: %d", s.device.ID, maxRepetitions)
 
 	// For simplicity, we'll return up to maxRepetitions OIDs starting from startOID
 	// In a real implementation, you'd handle non-repeaters properly
@@ -636,7 +650,11 @@ func (s *SNMPServer) handleGetBulk(startOID string, requestData []byte) []byte {
 	// Collect up to maxRepetitions OIDs
 	for count < maxRepetitions {
 		nextOID, response := s.findNextOID(currentOID)
+		log.Printf("SNMP %s: GetBulk iteration %d - currentOID: %s, nextOID: %s, response: %s",
+			s.device.ID, count, currentOID, nextOID, response)
+
 		if nextOID == "" || response == "endOfMibView" {
+			log.Printf("SNMP %s: GetBulk reached end of MIB", s.device.ID)
 			break
 		}
 
@@ -646,21 +664,90 @@ func (s *SNMPServer) handleGetBulk(startOID string, requestData []byte) []byte {
 		count++
 	}
 
+	log.Printf("SNMP %s: GetBulk collected %d OIDs", s.device.ID, len(oids))
+
 	// Create GetBulk response with multiple variable bindings
-	return s.createGetBulkResponse(oids, responses, requestData)
+	responseBytes := s.createGetBulkResponse(oids, responses, requestData)
+	log.Printf("SNMP %s: GetBulk response created, length: %d bytes", s.device.ID, len(responseBytes))
+	return responseBytes
 }
 
 // parseGetBulkParams extracts non-repeaters and max-repetitions from GetBulk request
 func (s *SNMPServer) parseGetBulkParams(data []byte) (int, int) {
 	// Default values
 	nonRepeaters := 0
-	maxRepetitions := 10 // Default to 10 if not found
+	maxRepetitions := 10
 
-	// Simple parsing - in GetBulk PDU, after request-id comes non-repeaters, then max-repetitions
-	// For now, we'll use defaults and implement basic parsing
+	// Find the GetBulk PDU in the message
+	// Structure: [SEQUENCE][version][community][GetBulk PDU]
+	// GetBulk PDU: [PDU Type][Length][Request-ID][Non-Repeaters][Max-Repetitions][Variable Bindings]
 
-	// TODO: Implement proper GetBulk parameter parsing
-	// The PDU structure is: [PDU Type][Length][Request-ID][Non-Repeaters][Max-Repetitions][Variable Bindings]
+	pos := 0
+	// Skip outer SEQUENCE
+	if pos >= len(data) || data[pos] != ASN1_SEQUENCE {
+		return nonRepeaters, maxRepetitions
+	}
+	pos++
+	_, newPos := parseLength(data, pos)
+	pos = newPos
+
+	// Skip version
+	if pos >= len(data) || data[pos] != ASN1_INTEGER {
+		return nonRepeaters, maxRepetitions
+	}
+	pos++
+	verLen, newPos := parseLength(data, pos)
+	pos = newPos + verLen
+
+	// Skip community
+	if pos >= len(data) || data[pos] != ASN1_OCTET_STRING {
+		return nonRepeaters, maxRepetitions
+	}
+	pos++
+	commLen, newPos := parseLength(data, pos)
+	pos = newPos + commLen
+
+	// Now we're at the GetBulk PDU
+	if pos >= len(data) || data[pos] != ASN1_GET_BULK {
+		return nonRepeaters, maxRepetitions
+	}
+	pos++
+	_, newPos = parseLength(data, pos)
+	pos = newPos
+
+	// Skip request-id
+	if pos >= len(data) || data[pos] != ASN1_INTEGER {
+		return nonRepeaters, maxRepetitions
+	}
+	pos++
+	reqIdLen, newPos := parseLength(data, pos)
+	pos = newPos + reqIdLen
+
+	// Parse non-repeaters
+	if pos >= len(data) || data[pos] != ASN1_INTEGER {
+		return nonRepeaters, maxRepetitions
+	}
+	pos++
+	nonRepLen, newPos := parseLength(data, pos)
+	pos = newPos
+	if nonRepLen == 1 && pos < len(data) {
+		nonRepeaters = int(data[pos])
+	}
+	pos += nonRepLen
+
+	// Parse max-repetitions
+	if pos >= len(data) || data[pos] != ASN1_INTEGER {
+		return nonRepeaters, maxRepetitions
+	}
+	pos++
+	maxRepLen, newPos := parseLength(data, pos)
+	pos = newPos
+	if maxRepLen == 1 && pos < len(data) {
+		maxRepetitions = int(data[pos])
+	}
+
+	log.Printf("SNMP %s: GetBulk parsed parameters - nonRepeaters: %d, maxRepetitions: %d",
+		s.device.ID, nonRepeaters, maxRepetitions)
 
 	return nonRepeaters, maxRepetitions
 }
@@ -674,18 +761,34 @@ func (s *SNMPServer) createGetBulkResponse(oids []string, responses []string, re
 
 	// Parse request to get community and request ID
 	req := s.parseIncomingRequest(requestData)
+	log.Printf("SNMP %s: GetBulk using Request-ID: %d, Community: %s, Version: %d",
+		s.device.ID, req.RequestID, req.Community, req.Version)
 
-	// Build multiple variable bindings
+	// Build multiple variable bindings - using same format as single response
 	var varBindList []byte
 
 	for i, oid := range oids {
-		// Create variable binding: SEQUENCE { OID, value }
+		// Determine proper value encoding (same logic as createSNMPResponse)
+		var valueBytes []byte
+		value := responses[i]
+
+		if value == "endOfMibView" {
+			// Special handling for endOfMibView (SNMPv2c)
+			valueBytes = []byte{0x82, 0x00} // endOfMibView exception
+		} else if intVal, err := strconv.Atoi(value); err == nil {
+			// Integer value
+			valueBytes = encodeInteger(intVal)
+		} else {
+			// String value
+			valueBytes = encodeOctetString(value)
+		}
+
+		// Create variable binding: SEQUENCE { OID, value } - CORRECT ORDER
 		oidBytes := encodeOID(oid)
-		valueBytes := encodeOctetString(responses[i])
+		varBindingContents := append(oidBytes, valueBytes...)
 
 		varBinding := []byte{ASN1_SEQUENCE}
-		varBindingContents := append(oidBytes, valueBytes...)
-		varBinding = append(varBinding, encodeLength(len(varBindingContents))...)
+		varBinding = append(varBinding, encodeLength(len(varBindingContents))...) // Length BEFORE contents
 		varBinding = append(varBinding, varBindingContents...)
 
 		varBindList = append(varBindList, varBinding...)
@@ -699,26 +802,25 @@ func (s *SNMPServer) createGetBulkResponse(oids []string, responses []string, re
 	// PDU contents: request-id, error-status, error-index, variable-bindings
 	var pduContents []byte
 	pduContents = append(pduContents, encodeInteger(req.RequestID)...) // Use actual request ID
-	pduContents = append(pduContents, encodeInteger(0)...)             // error-status
+	pduContents = append(pduContents, encodeInteger(0)...)             // error-status (noError)
 	pduContents = append(pduContents, encodeInteger(0)...)             // error-index
 	pduContents = append(pduContents, varBindSequence...)              // variable-bindings
 
-	// GetResponse PDU
+	// GetResponse PDU (same as regular responses)
 	pdu := []byte{SNMP_GET_RESPONSE}
 	pdu = append(pdu, encodeLength(len(pduContents))...)
 	pdu = append(pdu, pduContents...)
 
 	// Message contents: version, community, PDU
-	var msgContents []byte
-	msgContents = append(msgContents, encodeInteger(req.Version)...)
-	msgContents = append(msgContents, encodeOctetString(req.Community)...)
-	msgContents = append(msgContents, pdu...)
+	msgContents := []byte{}
+	msgContents = append(msgContents, encodeInteger(req.Version)...)       // Use client's version
+	msgContents = append(msgContents, encodeOctetString(req.Community)...) // Use actual community
+	msgContents = append(msgContents, pdu...)                              // PDU
 
-	// Final message
-	msg := []byte{ASN1_SEQUENCE}
-	msg = append(msg, encodeLength(len(msgContents))...)
-	msg = append(msg, msgContents...)
-
+	// Complete SNMP message - use same approach as regular response
+	msg := encodeSequence(msgContents)
+	// Debug: Hex dump of GetBulk response
+	log.Printf("SNMP %s: GetBulk response hex: %x", s.device.ID, msg[:min(len(msg), 100)])
 	return msg
 }
 
@@ -1298,7 +1400,10 @@ func (s *SNMPServer) createSNMPResponse(oid, value string, requestData []byte) [
 	msgContents = append(msgContents, pdu...)                              // PDU
 
 	// Complete SNMP message
-	return encodeSequence(msgContents)
+	msg := encodeSequence(msgContents)
+	// Debug: Hex dump of regular response
+	log.Printf("SNMP %s: Regular response hex: %x", s.device.ID, msg[:min(len(msg), 100)])
+	return msg
 }
 
 // decryptScopedPDU decrypts an encrypted scoped PDU

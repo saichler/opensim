@@ -805,7 +805,7 @@ func abs(x int) int {
 // handleSNMPv3GetBulk processes SNMPv3 GetBulk requests
 func (s *SNMPServer) handleSNMPv3GetBulk(startOID string, msg *SNMPv3Message, scopedPDU []byte) []byte {
 	// Parse GetBulk parameters from the scoped PDU
-	nonRepeaters, maxRepetitions := s.parseSNMPv3GetBulkParams(scopedPDU)
+	_, maxRepetitions := s.parseSNMPv3GetBulkParams(scopedPDU)
 
 	// Collect multiple OIDs starting from startOID
 	var oids []string
@@ -847,10 +847,18 @@ func (s *SNMPServer) parseSNMPv3GetBulkParams(scopedPDU []byte) (int, int) {
 func (s *SNMPServer) createSNMPv3GetBulkResponse(oids []string, responses []string, msg *SNMPv3Message) []byte {
 	if len(oids) == 0 {
 		// Fallback to single response if no OIDs found
-		return s.createSNMPv3Response("1.3.6.1.2.1.1.1.0", "No data", msg)
+		responseBytes, err := s.createSNMPv3Response("1.3.6.1.2.1.1.1.0", "No data", msg)
+		if err != nil {
+			return []byte{}
+		}
+		return responseBytes
 	}
 
 	// For simplicity, create a response with the first OID found
 	// In a complete implementation, you would create multiple variable bindings
-	return s.createSNMPv3Response(oids[0], responses[0], msg)
+	responseBytes, err := s.createSNMPv3Response(oids[0], responses[0], msg)
+	if err != nil {
+		return []byte{}
+	}
+	return responseBytes
 }
