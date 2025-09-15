@@ -406,7 +406,7 @@ func (s *SNMPServer) extractRequestIDFromScopedPDU(scopedPDU []byte) int {
 	}
 	
 	// Parse PDU to get request ID
-	if pos < len(scopedPDU) && (scopedPDU[pos] == ASN1_GET_REQUEST || scopedPDU[pos] == ASN1_GET_NEXT) {
+	if pos < len(scopedPDU) && (scopedPDU[pos] == ASN1_GET_REQUEST || scopedPDU[pos] == ASN1_GET_NEXT || scopedPDU[pos] == ASN1_GET_BULK) {
 		pos++ // Skip PDU type
 		_, newPos := parseLength(scopedPDU, pos) // Skip PDU length
 		pos = newPos
@@ -800,4 +800,57 @@ func abs(x int) int {
 		return -x
 	}
 	return x
+}
+
+// handleSNMPv3GetBulk processes SNMPv3 GetBulk requests
+func (s *SNMPServer) handleSNMPv3GetBulk(startOID string, msg *SNMPv3Message, scopedPDU []byte) []byte {
+	// Parse GetBulk parameters from the scoped PDU
+	nonRepeaters, maxRepetitions := s.parseSNMPv3GetBulkParams(scopedPDU)
+
+	// Collect multiple OIDs starting from startOID
+	var oids []string
+	var responses []string
+
+	currentOID := startOID
+	count := 0
+
+	// Collect up to maxRepetitions OIDs
+	for count < maxRepetitions {
+		nextOID, response := s.findNextOID(currentOID)
+		if nextOID == "" || response == "endOfMibView" {
+			break
+		}
+
+		oids = append(oids, nextOID)
+		responses = append(responses, response)
+		currentOID = nextOID
+		count++
+	}
+
+	// Create SNMPv3 GetBulk response
+	return s.createSNMPv3GetBulkResponse(oids, responses, msg)
+}
+
+// parseSNMPv3GetBulkParams extracts non-repeaters and max-repetitions from SNMPv3 GetBulk scoped PDU
+func (s *SNMPServer) parseSNMPv3GetBulkParams(scopedPDU []byte) (int, int) {
+	// Default values
+	nonRepeaters := 0
+	maxRepetitions := 10
+
+	// TODO: Implement proper SNMPv3 GetBulk parameter parsing
+	// For now, use defaults
+
+	return nonRepeaters, maxRepetitions
+}
+
+// createSNMPv3GetBulkResponse creates an SNMPv3 GetBulk response with multiple variable bindings
+func (s *SNMPServer) createSNMPv3GetBulkResponse(oids []string, responses []string, msg *SNMPv3Message) []byte {
+	if len(oids) == 0 {
+		// Fallback to single response if no OIDs found
+		return s.createSNMPv3Response("1.3.6.1.2.1.1.1.0", "No data", msg)
+	}
+
+	// For simplicity, create a response with the first OID found
+	// In a complete implementation, you would create multiple variable bindings
+	return s.createSNMPv3Response(oids[0], responses[0], msg)
 }

@@ -101,6 +101,9 @@ func (s *SNMPServer) handleSNMPv2cRequest(requestData []byte) []byte {
 			response = "endOfMibView"
 		}
 		// log.Printf("SNMP %s: GetNext %s -> %s = %s", s.device.ID, oid, responseOID, response)
+	} else if pduType == ASN1_GET_BULK {
+		// Handle GetBulk request
+		return s.handleGetBulk(oid, requestData)
 	} else {
 		// Handle regular Get request
 		responseOID = oid
@@ -191,6 +194,9 @@ func (s *SNMPServer) handleSNMPv3Request(requestData []byte) []byte {
 			response = "endOfMibView"
 		}
 		// log.Printf("SNMPv3 %s: GetNext %s -> %s = %s", s.device.ID, oid, responseOID, response)
+	} else if pduType == ASN1_GET_BULK {
+		// Handle GetBulk request for SNMPv3
+		return s.handleSNMPv3GetBulk(oid, msg, scopedPDU)
 	} else {
 		// Handle regular Get request
 		responseOID = oid
@@ -238,7 +244,7 @@ func (s *SNMPServer) extractOIDFromScopedPDU(scopedPDU []byte) (string, error) {
 	
 	pduType := scopedPDU[pos]
 	
-	if pduType != ASN1_GET_REQUEST && pduType != ASN1_GET_NEXT {
+	if pduType != ASN1_GET_REQUEST && pduType != ASN1_GET_NEXT && pduType != ASN1_GET_BULK {
 		return "", fmt.Errorf("unsupported PDU type in scoped PDU: 0x%02X", pduType)
 	}
 	pos++
@@ -322,7 +328,7 @@ func (s *SNMPServer) extractOIDAndTypeFromScopedPDU(scopedPDU []byte) (string, b
 	
 	pduType := scopedPDU[pos]
 	
-	if pduType != ASN1_GET_REQUEST && pduType != ASN1_GET_NEXT {
+	if pduType != ASN1_GET_REQUEST && pduType != ASN1_GET_NEXT && pduType != ASN1_GET_BULK {
 		return "", ASN1_GET_REQUEST, fmt.Errorf("unsupported PDU type in scoped PDU: 0x%02X", pduType)
 	}
 	pos++
@@ -613,6 +619,109 @@ func (s *SNMPServer) findNextOID(currentOID string) (string, string) {
 	return nextOID, response
 }
 
+// handleGetBulk processes SNMP GetBulk requests
+func (s *SNMPServer) handleGetBulk(startOID string, requestData []byte) []byte {
+	// Parse GetBulk parameters (non-repeaters and max-repetitions)
+	nonRepeaters, maxRepetitions := s.parseGetBulkParams(requestData)
+
+	// For simplicity, we'll return up to maxRepetitions OIDs starting from startOID
+	// In a real implementation, you'd handle non-repeaters properly
+
+	var oids []string
+	var responses []string
+
+	currentOID := startOID
+	count := 0
+
+	// Collect up to maxRepetitions OIDs
+	for count < maxRepetitions {
+		nextOID, response := s.findNextOID(currentOID)
+		if nextOID == "" || response == "endOfMibView" {
+			break
+		}
+
+		oids = append(oids, nextOID)
+		responses = append(responses, response)
+		currentOID = nextOID
+		count++
+	}
+
+	// Create GetBulk response with multiple variable bindings
+	return s.createGetBulkResponse(oids, responses, requestData)
+}
+
+// parseGetBulkParams extracts non-repeaters and max-repetitions from GetBulk request
+func (s *SNMPServer) parseGetBulkParams(data []byte) (int, int) {
+	// Default values
+	nonRepeaters := 0
+	maxRepetitions := 10 // Default to 10 if not found
+
+	// Simple parsing - in GetBulk PDU, after request-id comes non-repeaters, then max-repetitions
+	// For now, we'll use defaults and implement basic parsing
+
+	// TODO: Implement proper GetBulk parameter parsing
+	// The PDU structure is: [PDU Type][Length][Request-ID][Non-Repeaters][Max-Repetitions][Variable Bindings]
+
+	return nonRepeaters, maxRepetitions
+}
+
+// createGetBulkResponse creates a GetBulk response with multiple variable bindings
+func (s *SNMPServer) createGetBulkResponse(oids []string, responses []string, requestData []byte) []byte {
+	if len(oids) != len(responses) {
+		// Fallback to single response
+		return s.createSNMPResponse("1.3.6.1.2.1.1.1.0", "No data", requestData)
+	}
+
+	// Parse request to get community and request ID
+	req := s.parseIncomingRequest(requestData)
+
+	// Build multiple variable bindings
+	var varBindList []byte
+
+	for i, oid := range oids {
+		// Create variable binding: SEQUENCE { OID, value }
+		oidBytes := encodeOID(oid)
+		valueBytes := encodeOctetString(responses[i])
+
+		varBinding := []byte{ASN1_SEQUENCE}
+		varBindingContents := append(oidBytes, valueBytes...)
+		varBinding = append(varBinding, encodeLength(len(varBindingContents))...)
+		varBinding = append(varBinding, varBindingContents...)
+
+		varBindList = append(varBindList, varBinding...)
+	}
+
+	// Wrap variable bindings in SEQUENCE
+	varBindSequence := []byte{ASN1_SEQUENCE}
+	varBindSequence = append(varBindSequence, encodeLength(len(varBindList))...)
+	varBindSequence = append(varBindSequence, varBindList...)
+
+	// PDU contents: request-id, error-status, error-index, variable-bindings
+	var pduContents []byte
+	pduContents = append(pduContents, encodeInteger(req.RequestID)...) // Use actual request ID
+	pduContents = append(pduContents, encodeInteger(0)...)             // error-status
+	pduContents = append(pduContents, encodeInteger(0)...)             // error-index
+	pduContents = append(pduContents, varBindSequence...)              // variable-bindings
+
+	// GetResponse PDU
+	pdu := []byte{SNMP_GET_RESPONSE}
+	pdu = append(pdu, encodeLength(len(pduContents))...)
+	pdu = append(pdu, pduContents...)
+
+	// Message contents: version, community, PDU
+	var msgContents []byte
+	msgContents = append(msgContents, encodeInteger(req.Version)...)
+	msgContents = append(msgContents, encodeOctetString(req.Community)...)
+	msgContents = append(msgContents, pdu...)
+
+	// Final message
+	msg := []byte{ASN1_SEQUENCE}
+	msg = append(msg, encodeLength(len(msgContents))...)
+	msg = append(msg, msgContents...)
+
+	return msg
+}
+
 // Extract PDU type from SNMP request
 func (s *SNMPServer) getPDUType(data []byte) byte {
 	if len(data) < 10 {
@@ -715,7 +824,7 @@ func extractOIDFromSNMPPacket(data []byte) string {
 	}
 	pduType := data[pos]
 	if pduType != ASN1_GET_REQUEST && pduType != ASN1_GET_NEXT &&
-		pduType != ASN1_SET_REQUEST && pduType != ASN1_GET_RESPONSE {
+		pduType != ASN1_SET_REQUEST && pduType != ASN1_GET_RESPONSE && pduType != ASN1_GET_BULK {
 		return ""
 	}
 	pos++
@@ -1026,7 +1135,7 @@ type SNMPRequest struct {
 func (s *SNMPServer) parseIncomingRequest(data []byte) SNMPRequest {
 	req := SNMPRequest{
 		Community: "public",
-		RequestID: 1,
+		RequestID: 123,
 		OID:       "1.3.6.1.2.1.1.1.0",
 		Version:   1, // Default to SNMPv2c
 	}
