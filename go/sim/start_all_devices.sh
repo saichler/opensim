@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Network Device Simulator - Start All 19 Mock Devices
-# This script starts the simulator server and creates all 19 devices from Devices.go mock data
-# Starting IP: 10.20.30.1
+# Network Device Simulator - System Optimization and Device Startup Script
+# This script optimizes system settings for high-load SNMP operations before starting devices
+# Optimized for handling 1000+ parallel SNMP walks
 
 set -e  # Exit on any error
 
@@ -18,10 +18,148 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
-echo -e "${BLUE}🚀 Network Device Simulator - Starting All Mock Devices${NC}"
-echo "=================================================="
+# Function to print colored messages
+print_info() {
+    echo -e "${GREEN}[INFO]${NC} $1"
+}
+
+print_warn() {
+    echo -e "${YELLOW}[WARN]${NC} $1"
+}
+
+print_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+echo -e "${BLUE}🚀 Network Device Simulator - System Optimization & Startup${NC}"
+echo "============================================================"
+
+# ========================================
+# SYSTEM-WIDE OPTIMIZATIONS FOR HIGH LOAD
+# ========================================
+
+echo ""
+echo -e "${CYAN}📊 Applying System Optimizations for High-Load SNMP Operations${NC}"
+echo "================================================================"
+
+# 1. UDP Buffer Optimizations - Critical for handling parallel SNMP walks
+print_info "Configuring UDP buffer sizes..."
+
+# Increase maximum receive buffer size to 25MB (prevents packet drops)
+sudo sysctl -w net.core.rmem_max=26214400 > /dev/null 2>&1
+# Set default receive buffer size to 4MB per socket
+sudo sysctl -w net.core.rmem_default=4194304 > /dev/null 2>&1
+
+# Increase maximum send buffer size to 25MB
+sudo sysctl -w net.core.wmem_max=26214400 > /dev/null 2>&1
+# Set default send buffer size to 4MB per socket
+sudo sysctl -w net.core.wmem_default=4194304 > /dev/null 2>&1
+
+# Increase socket option memory to 25MB
+sudo sysctl -w net.core.optmem_max=26214400 > /dev/null 2>&1
+
+print_info "✅ UDP buffers: 4MB default, 25MB max (prevents packet loss)"
+
+# 2. Network Device Queue Optimizations
+print_info "Optimizing network device queues..."
+
+# Increase network device backlog queue (handles burst traffic)
+sudo sysctl -w net.core.netdev_max_backlog=5000 > /dev/null 2>&1
+
+# Increase network device budget (packets processed per NAPI poll)
+sudo sysctl -w net.core.netdev_budget=600 > /dev/null 2>&1
+
+print_info "✅ Network queues optimized for burst traffic"
+
+# 3. File Descriptor Limits - Required for many TUN interfaces
+print_info "Setting file descriptor limits..."
+
+# Set file descriptor limit for current session
+ulimit -n 65535
+
+# Update system-wide file descriptor limit
+sudo sh -c 'echo 65535 > /proc/sys/fs/file-max' 2>/dev/null || true
+
+print_info "✅ File descriptors: 65535 (supports 1000+ devices)"
+
+# 4. UDP-Specific Memory Optimizations
+print_info "Applying UDP memory optimizations..."
+
+# Increase UDP memory pressure thresholds (min, pressure, max in pages)
+sudo sysctl -w net.ipv4.udp_mem="102400 873800 16777216" > /dev/null 2>&1
+
+# Increase minimum UDP buffer sizes
+sudo sysctl -w net.ipv4.udp_rmem_min=8192 > /dev/null 2>&1
+sudo sysctl -w net.ipv4.udp_wmem_min=8192 > /dev/null 2>&1
+
+print_info "✅ UDP memory thresholds optimized"
+
+# 5. IP Local Port Range
+print_info "Expanding local port range..."
+
+# Increase range for outgoing connections
+sudo sysctl -w net.ipv4.ip_local_port_range="1024 65535" > /dev/null 2>&1
+
+print_info "✅ Port range: 1024-65535"
+
+# 6. Connection Tracking Optimization (if loaded)
+if lsmod | grep -q nf_conntrack; then
+    print_info "Optimizing connection tracking..."
+
+    # Increase connection tracking table size
+    sudo sysctl -w net.netfilter.nf_conntrack_max=524288 > /dev/null 2>&1 || true
+    sudo sysctl -w net.nf_conntrack_max=524288 > /dev/null 2>&1 || true
+
+    # Reduce UDP connection tracking timeouts
+    sudo sysctl -w net.netfilter.nf_conntrack_udp_timeout=30 > /dev/null 2>&1 || true
+    sudo sysctl -w net.netfilter.nf_conntrack_udp_timeout_stream=30 > /dev/null 2>&1 || true
+
+    print_info "✅ Connection tracking optimized for UDP"
+fi
+
+# 7. CPU Performance Optimization
+if [ -d /sys/devices/system/cpu/cpu0/cpufreq ]; then
+    print_info "Setting CPU governor to performance mode..."
+    for cpu in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do
+        sudo sh -c "echo performance > $cpu" 2>/dev/null || true
+    done
+    print_info "✅ CPU in performance mode"
+fi
+
+# 8. Go Runtime Optimization
+print_info "Configuring Go runtime..."
+export GOMAXPROCS=$(nproc)
+print_info "✅ GOMAXPROCS set to $(nproc) cores"
+
+# 9. Check TUN/TAP Module
+if ! lsmod | grep -q tun; then
+    print_info "Loading TUN/TAP kernel module..."
+    sudo modprobe tun
+    print_info "✅ TUN/TAP module loaded"
+fi
+
+# Display optimization summary
+echo ""
+echo -e "${GREEN}✅ System Optimizations Complete${NC}"
+echo "--------------------------------"
+echo "• UDP Buffers: 4MB default, 25MB max"
+echo "• Network Queue: 5000 packet backlog"
+echo "• File Descriptors: 65535 limit"
+echo "• CPU Cores: $(nproc) in performance mode"
+echo "• Port Range: 1024-65535"
+echo ""
+
+# Pre-flight memory check
+available_mem=$(free -g | awk '/^Mem:/{print $7}')
+if [ "$available_mem" -lt 2 ]; then
+    print_warn "Less than 2GB available memory. May experience issues with many devices"
+fi
+
+echo -e "${BLUE}🚀 Starting Network Device Simulator${NC}"
+echo "====================================="
 echo "Server Port: $SERVER_PORT"
 echo "Starting IP: ${BASE_IP}.${START_IP_LAST_OCTET}"
 echo "Log File: $LOG_FILE"
