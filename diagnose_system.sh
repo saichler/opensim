@@ -176,8 +176,8 @@ if [ $total_issues -eq 0 ]; then
     echo "🎉 System appears ready for Network Device Simulator!"
     echo ""
     echo "✅ Next steps:"
-    echo "1. Build the simulator: go build -o sim/sim ./sim"
-    echo "2. Run with root privileges: sudo ./sim/sim"
+    echo "1. Build the simulator: go build -o simulator/simulator ./simulator"
+    echo "2. Run with root privileges: sudo ./simulator/simulator"
 else
     echo "⚠️  Found $total_issues issue(s) that need to be addressed"
     echo ""

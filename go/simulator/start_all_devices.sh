@@ -231,7 +231,7 @@ fi
 
 # Start the simulator server in background
 echo -e "${BLUE}🌐 Starting simulator server on port $SERVER_PORT...${NC}"
-sudo ./sim -port "$SERVER_PORT" > "$LOG_FILE" 2>&1 &
+sudo ./simulator -port "$SERVER_PORT" > "$LOG_FILE" 2>&1 &
 SIMULATOR_PID=$!
 echo $SIMULATOR_PID > "$PID_FILE"
 

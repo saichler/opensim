@@ -1,1 +1,1 @@
-sudo nohup ./sim  -auto-start-ip $1 -auto-count $2 -auto-netmask 24 &
+sudo nohup ./simulator  -auto-start-ip $1 -auto-count $2 -auto-netmask 24 &
