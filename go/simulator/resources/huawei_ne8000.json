@@ -1,0 +1,354 @@
+{
+  "snmp": [
+    {
+      "oid": "1.3.6.1.2.1.1.1.0",
+      "response": "Huawei Versatile Routing Platform Software, NE8000 Version 8.20.10"
+    },
+    {
+      "oid": "1.3.6.1.2.1.1.2.0",
+      "response": "1.3.6.1.4.1.2011.2.239.1.1.1.1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.1.3.0",
+      "response": "1755915800"
+    },
+    {
+      "oid": "1.3.6.1.2.1.1.4.0",
+      "response": "Network Operations"
+    },
+    {
+      "oid": "1.3.6.1.2.1.1.5.0",
+      "response": "FRA-CORE-02"
+    },
+    {
+      "oid": "1.3.6.1.2.1.1.6.0",
+      "response": "Frankfurt, Germany"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.1.0",
+      "response": "96"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.2",
+      "response": "GigabitEthernet0/0/1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.2.1",
+      "response": "FastEthernet0/1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.2.2",
+      "response": "FastEthernet0/2"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.4",
+      "response": "1500"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.4.1",
+      "response": "1500"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.4.2",
+      "response": "1500"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.5",
+      "response": "1000000000"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.5.1",
+      "response": "100000000"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.5.2",
+      "response": "100000000"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.8",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.8.1",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.8.2",
+      "response": "2"
+    },
+    {
+      "oid": "1.3.6.1.2.1.25.2.3.1.4",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.4.21.1.1",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.4.21.1.1.0.0.0.0",
+      "response": "0.0.0.0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.4.21.1.1.192.168.1.0",
+      "response": "192.168.1.0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.10.1001",
+      "response": "1.0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.10.1002",
+      "response": "1.0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.11.1001",
+      "response": "SN001001"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.11.1002",
+      "response": "SN001002"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1001",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1002",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.13",
+      "response": "HuaweiNE8000X16"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.1",
+      "response": "MODEL123"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.1001",
+      "response": "FE-PORT"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.1002",
+      "response": "FE-PORT"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.14.1001",
+      "response": "FastEthernet0/1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.14.1002",
+      "response": "FastEthernet0/2"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.15.1001",
+      "response": "ASSET1001"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.15.1002",
+      "response": "ASSET1002"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.16.1001",
+      "response": "2"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.16.1002",
+      "response": "2"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.2",
+      "response": "Main Chassis"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.2.1",
+      "response": "Main Chassis"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.2.1001",
+      "response": "FastEthernet0/1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.2.1002",
+      "response": "FastEthernet0/2"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.2.2",
+      "response": "Line Card 1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.3",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.3.1",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.3.1001",
+      "response": "1.3.6.1.4.1.0.0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.3.1002",
+      "response": "1.3.6.1.4.1.0.0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.3.2",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.4",
+      "response": "43"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.4.1",
+      "response": "43"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.4.1001",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.4.1002",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.5",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.5.1",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.5.1001",
+      "response": "10"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.5.1002",
+      "response": "10"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.6",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.6.1",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.6.1001",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.6.1002",
+      "response": "2"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.7.1001",
+      "response": "FastEthernet0/1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.7.1002",
+      "response": "FastEthernet0/2"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.8.1001",
+      "response": "1.0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.8.1002",
+      "response": "1.0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.9",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.9.1",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.9.1001",
+      "response": "1.0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.9.1002",
+      "response": "1.0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.3.2.1.2.1001.0",
+      "response": "1.3.6.1.2.1.2.2.1.1.1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.3.2.1.2.1002.0",
+      "response": "1.3.6.1.2.1.2.2.1.1.2"
+    },
+    {
+      "oid": "1.3.6.1.4.1.2011.2.15.2.4.1.1.1.0",
+      "response": "NE8000-001"
+    },
+    {
+      "oid": "1.3.6.1.4.1.2011.5.25.1.1.1.0",
+      "response": "8.20.10"
+    },
+    {
+      "oid": "1.3.6.1.4.1.2011.5.25.31.1.1.1.1.11.0",
+      "response": "43"
+    },
+    {
+      "oid": "1.3.6.1.4.1.2011.5.25.31.1.1.1.1.3.0",
+      "response": "67"
+    },
+    {
+      "oid": "1.3.6.1.4.1.2011.5.25.31.1.1.1.1.5.0",
+      "response": "42"
+    },
+    {
+      "oid": "1.3.6.1.4.1.25461.2.1.2.2.1.0",
+      "response": "127"
+    },
+    {
+      "oid": "1.3.6.1.4.1.25461.2.1.2.3.1.0",
+      "response": "2500"
+    },
+    {
+      "oid": "1.3.6.1.4.1.25461.2.1.2.4.1.3",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.4.1.2636.3.1.13.1.8",
+      "response": "42"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.9.109.1.1.1.1.5",
+      "response": "42"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.9.48.1.1.1.6",
+      "response": "67"
+    }
+  ],
+  "ssh": [
+    {
+      "command": "display version",
+      "response": "Huawei Versatile Routing Platform Software\nVRP (R) software, Version 8.20.10 (NE8000 V800R021C10SPC300)\nCopyright (C) 2012-2021 Huawei Technologies Co., Ltd.\nHUAWEI NE8000-X16 uptime is 203 days, 11 hours, 18 minutes\n\nNE8000-X16(Master) 1 : uptime is 203 days, 11 hours, 16 minutes\n        StartupTime 2024/12/17   03:15:42\nMemory    Size    : 32768 M bytes\nFlash     Size    : 4096 M bytes\nNVRAM     Size    : 1024 K bytes"
+    },
+    {
+      "command": "display interface brief",
+      "response": "PHY: Physical, *down: administratively down, (l): loopback\n(s): spoofing, (B): BFD down, (e): ETHOAM down, (d): Dampening Suppressed\n(p): port alarm down, (dl): DLDP down, (c): CFM down\nInterface                   PHY   Protocol  InUti OutUti   inErrors  outErrors\n10GE1/0/0                   up    up           0%     5%          0          0\n10GE1/0/1                   up    up           2%     8%          0          0\n10GE1/0/2                   up    down         0%     0%          0          0\nXGE1/1/0                    up    up          12%    15%          0          0"
+    },
+    {
+      "command": "display ip routing-table",
+      "response": "Route Flags: R - relay, D - download to fib\n------------------------------------------------------------------------------\nRouting Table : Public\n         Destinations : 25       Routes : 25       \n\nDestination/Mask    Proto   Pre  Cost      Flags NextHop         Interface\n\n        0.0.0.0/0   Static  60   0          RD   192.168.102.254 10GE1/0/0\n  192.168.102.0/24  Direct  0    0           D   192.168.102.1   10GE1/0/0\n  192.168.102.1/32  Direct  0    0           D   127.0.0.1       10GE1/0/0"
+    },
+    {
+      "command": "display current-configuration",
+      "response": "#\nsysname FRA-CORE-02\n#\ninterface 10GE1/0/0\n ip address 192.168.102.1 255.255.255.0\n#\ninterface 10GE1/0/1\n ip address 10.1.2.1 255.255.255.252\n#\nip route-static 0.0.0.0 0.0.0.0 192.168.102.254\n#\nreturn"
+    },
+    {
+      "command": "display environment",
+      "response": "Environment Information:\n========================================\nSlot    Type         State      PowerConsumption(W)  \n========================================\n0       X16-MAIN16   Normal     450                   \n1       X16-LPUF-200 Normal     180                   \n\nFan Information:\n========================================\nSlot    Type         State      Speed(RPM)  \n========================================\nFAN1    FAN-150W     Normal     3500         \nFAN2    FAN-150W     Normal     3480         \nFAN3    FAN-150W     Normal     3520         \n\nPower Information:\n========================================\nPowerID  Type         State      Voltage(V)  Current(A)  Power(W)  \n========================================\nPWR1     AC-4000W     Normal     220         18.2        4000      \nPWR2     AC-4000W     Normal     220         18.1        3980      \n\nTemperature Information:\n========================================\nSlot    Sensor       Temperature(C)  \n========================================\n0       INLET        28              \n0       OUTLET       35              \n1       CPU          43              \n1       MEMORY       41"
+    }
+  ]
+}

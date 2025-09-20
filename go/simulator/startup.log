@@ -1,0 +1,406 @@
+2025/09/20 08:28:46 Network Device Simulator with TUN/TAP support starting...
+2025/09/20 08:28:46 Loaded 47723 cities from worldcities.csv
+2025/09/20 08:28:46 Loaded 297 SNMP and 43 SSH resources with indexes
+2025/09/20 08:28:46 Network Device Simulator server starting on port :8080
+2025/09/20 08:28:46 
+2025/09/20 08:28:46 🌐 Web UI:
+2025/09/20 08:28:46   http://localhost:8080/
+2025/09/20 08:28:46   http://localhost:8080/ui
+2025/09/20 08:28:46 
+2025/09/20 08:28:46 🚀 DEVICE STARTUP TEST: Creating 1 devices starting from 10.20.30.6/24
+2025/09/20 08:28:46 📊 Device Creation Parameters:
+2025/09/20 08:28:46    - Device Count: 1
+2025/09/20 08:28:46    - Start IP: 10.20.30.6/24
+2025/09/20 08:28:46    - Resource File: juniper_mx960.json
+2025/09/20 08:28:46    - SNMPv3 Enabled: false
+2025/09/20 08:28:46    - Test Started: 2025-09-20 08:28:46.554
+2025/09/20 08:28:46 
+2025/09/20 08:28:46 ⏱️  DEVICE CREATION START TIME: 08:28:46.554
+2025/09/20 08:28:46 ⏱️  DEVICE START TIMESTAMP (nanoseconds): 1758382126554530107
+2025/09/20 08:28:46 ✅ Web UI is now available at http://localhost:8080/ui
+2025/09/20 08:28:46 
+2025/09/20 08:28:46 📡 API Endpoints:
+2025/09/20 08:28:46   POST   /api/v1/devices           - Create devices
+2025/09/20 08:28:46   GET    /api/v1/devices           - List devices
+2025/09/20 08:28:46   GET    /api/v1/devices/export    - Export devices to CSV
+2025/09/20 08:28:46   GET    /api/v1/devices/routes    - Download route configuration script
+2025/09/20 08:28:46   DELETE /api/v1/devices/{id}      - Delete device
+2025/09/20 08:28:46   DELETE /api/v1/devices           - Delete all devices
+2025/09/20 08:28:46   GET    /health                   - Health check
+2025/09/20 08:28:46 
+2025/09/20 08:28:46 💡 Example curl commands:
+2025/09/20 08:28:46   curl -X POST http://localhost:8080/api/v1/devices -H "Content-Type: application/json" -d '{"start_ip":"192.168.100.1","device_count":3,"netmask":"24"}'
+2025/09/20 08:28:46 
+2025/09/20 08:28:46   curl http://localhost:8080/api/v1/devices
+2025/09/20 08:28:46 
+2025/09/20 08:28:46   curl http://localhost:8080/api/v1/devices/export -o devices.csv
+2025/09/20 08:28:46 
+2025/09/20 08:28:46   curl http://localhost:8080/api/v1/devices/routes -o add_routes.sh
+2025/09/20 08:28:46 
+2025/09/20 08:28:46 
+2025/09/20 08:28:46 🔐 SNMPv3 + SSH Examples:
+2025/09/20 08:28:46   Create devices with SNMPv3 support:
+2025/09/20 08:28:46     sudo ./sim -auto-start-ip 192.168.100.1 -auto-count 2 \
+2025/09/20 08:28:46 
+2025/09/20 08:28:46       -snmpv3-engine-id 800000090300AABBCCDD -snmpv3-auth md5
+2025/09/20 08:28:46 
+2025/09/20 08:28:46 
+2025/09/20 08:28:46   Or via REST API with SNMPv3:
+2025/09/20 08:28:46     curl -X POST http://localhost:8080/api/v1/devices \
+2025/09/20 08:28:46 
+2025/09/20 08:28:46       -H "Content-Type: application/json" \
+2025/09/20 08:28:46 
+2025/09/20 08:28:46       -d '{"start_ip":"192.168.100.1","device_count":1,"netmask":"24",
+2025/09/20 08:28:46 
+2025/09/20 08:28:46            "snmpv3":{"enabled":true,"engine_id":"800000090300AABBCCDD",
+2025/09/20 08:28:46 
+2025/09/20 08:28:46            "username":"simadmin","password":"simadmin","auth_protocol":1,"priv_protocol":0}}'
+2025/09/20 08:28:46 
+2025/09/20 08:28:46 
+2025/09/20 08:28:46 🔧 Connection Examples:
+2025/09/20 08:28:46   SSH (same credentials for all devices):
+2025/09/20 08:28:46     ssh simadmin@<device-ip>
+2025/09/20 08:28:46     Password: simadmin
+2025/09/20 08:28:46 
+2025/09/20 08:28:46   SNMP v2c (traditional):
+2025/09/20 08:28:46     snmpwalk -v2c -c public <device-ip> 1.3.6.1.2.1.1.1.0
+2025/09/20 08:28:46 
+2025/09/20 08:28:46   SNMPv3 (when enabled):
+2025/09/20 08:28:46     # MD5 auth, no privacy:
+2025/09/20 08:28:46     snmpwalk -v3 -u simadmin -A simadmin -a MD5 -l authNoPriv <device-ip> 1.3.6.1.2.1.1.1.0
+2025/09/20 08:28:46 
+2025/09/20 08:28:46     # MD5 auth + DES privacy:
+2025/09/20 08:28:46     snmpwalk -v3 -u simadmin -A simadmin -X simadmin -a MD5 -x DES -l authPriv <device-ip> 1.3.6.1.2.1.1.1.0
+2025/09/20 08:28:46 
+2025/09/20 08:28:46 🔧 Additional Tips:
+2025/09/20 08:28:46   - Open the Web UI in your browser for easy management
+2025/09/20 08:28:46   - All devices use same credentials: simadmin/simadmin
+2025/09/20 08:28:46   - SNMPv2c community: public
+2025/09/20 08:28:46   - Check TUN interfaces: ip addr show | grep sim
+2025/09/20 08:28:46   - Test script available: ./test_snmpv3.sh
+2025/09/20 08:28:46 ⏱️  DEVICE CREATION END TIME: 08:28:46.922
+2025/09/20 08:28:46 ⏱️  DEVICE END TIMESTAMP (nanoseconds): 1758382126922776391
+2025/09/20 08:28:46 
+2025/09/20 08:28:46 🎯 DEVICE CREATION RESULTS:
+2025/09/20 08:28:46    ✅ Total devices created: 1/1
+2025/09/20 08:28:46    ⏱️  Total device creation time: 368.245782ms
+2025/09/20 08:28:46    ⏱️  Total device creation time (milliseconds): 368.246 ms
+2025/09/20 08:28:46    ⏱️  Total device creation time (nanoseconds): 368245782 ns
+2025/09/20 08:28:46    📊 Average time per device: 368.246 ms
+2025/09/20 08:28:46    📊 Average time per device: 368245782 ns
+2025/09/20 08:28:46    🚀 Devices created per second: 2.72
+2025/09/20 08:28:46    💡 Mode: Sequential creation with on-demand interfaces
+2025/09/20 08:28:46    ✅ Success rate: 100%
+2025/09/20 08:28:46 Successfully created 1 out of 1 requested devices
+2025/09/20 08:28:46 🚀 DEVICE STARTUP TEST: Creating 1 devices starting from 10.20.30.7/24
+2025/09/20 08:28:46 📊 Device Creation Parameters:
+2025/09/20 08:28:46    - Device Count: 1
+2025/09/20 08:28:46    - Start IP: 10.20.30.7/24
+2025/09/20 08:28:46    - Resource File: cisco_nexus_9500.json
+2025/09/20 08:28:46    - SNMPv3 Enabled: false
+2025/09/20 08:28:46    - Test Started: 2025-09-20 08:28:46.932
+2025/09/20 08:28:46 
+2025/09/20 08:28:46 ⏱️  DEVICE CREATION START TIME: 08:28:46.932
+2025/09/20 08:28:46 ⏱️  DEVICE START TIMESTAMP (nanoseconds): 1758382126932374153
+2025/09/20 08:28:47 ⏱️  DEVICE CREATION END TIME: 08:28:47.214
+2025/09/20 08:28:47 ⏱️  DEVICE END TIMESTAMP (nanoseconds): 1758382127214629474
+2025/09/20 08:28:47 
+2025/09/20 08:28:47 🎯 DEVICE CREATION RESULTS:
+2025/09/20 08:28:47    ✅ Total devices created: 1/1
+2025/09/20 08:28:47    ⏱️  Total device creation time: 282.255139ms
+2025/09/20 08:28:47    ⏱️  Total device creation time (milliseconds): 282.255 ms
+2025/09/20 08:28:47    ⏱️  Total device creation time (nanoseconds): 282255139 ns
+2025/09/20 08:28:47    📊 Average time per device: 282.255 ms
+2025/09/20 08:28:47    📊 Average time per device: 282255139 ns
+2025/09/20 08:28:47    🚀 Devices created per second: 3.54
+2025/09/20 08:28:47    💡 Mode: Sequential creation with on-demand interfaces
+2025/09/20 08:28:47    ✅ Success rate: 100%
+2025/09/20 08:28:47 Successfully created 1 out of 1 requested devices
+2025/09/20 08:28:47 🚀 DEVICE STARTUP TEST: Creating 1 devices starting from 10.20.30.8/24
+2025/09/20 08:28:47 📊 Device Creation Parameters:
+2025/09/20 08:28:47    - Device Count: 1
+2025/09/20 08:28:47    - Start IP: 10.20.30.8/24
+2025/09/20 08:28:47    - Resource File: huawei_ne8000.json
+2025/09/20 08:28:47    - SNMPv3 Enabled: false
+2025/09/20 08:28:47    - Test Started: 2025-09-20 08:28:47.224
+2025/09/20 08:28:47 
+2025/09/20 08:28:47 ⏱️  DEVICE CREATION START TIME: 08:28:47.224
+2025/09/20 08:28:47 ⏱️  DEVICE START TIMESTAMP (nanoseconds): 1758382127224683040
+2025/09/20 08:28:47 ⏱️  DEVICE CREATION END TIME: 08:28:47.332
+2025/09/20 08:28:47 ⏱️  DEVICE END TIMESTAMP (nanoseconds): 1758382127332360838
+2025/09/20 08:28:47 
+2025/09/20 08:28:47 🎯 DEVICE CREATION RESULTS:
+2025/09/20 08:28:47    ✅ Total devices created: 1/1
+2025/09/20 08:28:47    ⏱️  Total device creation time: 107.677592ms
+2025/09/20 08:28:47    ⏱️  Total device creation time (milliseconds): 107.678 ms
+2025/09/20 08:28:47    ⏱️  Total device creation time (nanoseconds): 107677592 ns
+2025/09/20 08:28:47    📊 Average time per device: 107.678 ms
+2025/09/20 08:28:47    📊 Average time per device: 107677592 ns
+2025/09/20 08:28:47    🚀 Devices created per second: 9.29
+2025/09/20 08:28:47    💡 Mode: Sequential creation with on-demand interfaces
+2025/09/20 08:28:47    ✅ Success rate: 100%
+2025/09/20 08:28:47 Successfully created 1 out of 1 requested devices
+2025/09/20 08:28:47 🚀 DEVICE STARTUP TEST: Creating 1 devices starting from 10.20.30.9/24
+2025/09/20 08:28:47 📊 Device Creation Parameters:
+2025/09/20 08:28:47    - Device Count: 1
+2025/09/20 08:28:47    - Start IP: 10.20.30.9/24
+2025/09/20 08:28:47    - Resource File: dell_poweredge_r750.json
+2025/09/20 08:28:47    - SNMPv3 Enabled: false
+2025/09/20 08:28:47    - Test Started: 2025-09-20 08:28:47.342
+2025/09/20 08:28:47 
+2025/09/20 08:28:47 ⏱️  DEVICE CREATION START TIME: 08:28:47.342
+2025/09/20 08:28:47 ⏱️  DEVICE START TIMESTAMP (nanoseconds): 1758382127342399045
+2025/09/20 08:28:47 ⏱️  DEVICE CREATION END TIME: 08:28:47.495
+2025/09/20 08:28:47 ⏱️  DEVICE END TIMESTAMP (nanoseconds): 1758382127495384850
+2025/09/20 08:28:47 
+2025/09/20 08:28:47 🎯 DEVICE CREATION RESULTS:
+2025/09/20 08:28:47    ✅ Total devices created: 1/1
+2025/09/20 08:28:47    ⏱️  Total device creation time: 152.98552ms
+2025/09/20 08:28:47    ⏱️  Total device creation time (milliseconds): 152.986 ms
+2025/09/20 08:28:47    ⏱️  Total device creation time (nanoseconds): 152985520 ns
+2025/09/20 08:28:47    📊 Average time per device: 152.986 ms
+2025/09/20 08:28:47    📊 Average time per device: 152985520 ns
+2025/09/20 08:28:47    🚀 Devices created per second: 6.54
+2025/09/20 08:28:47    💡 Mode: Sequential creation with on-demand interfaces
+2025/09/20 08:28:47    ✅ Success rate: 100%
+2025/09/20 08:28:47 Successfully created 1 out of 1 requested devices
+2025/09/20 08:28:47 🚀 DEVICE STARTUP TEST: Creating 1 devices starting from 10.20.30.10/24
+2025/09/20 08:28:47 📊 Device Creation Parameters:
+2025/09/20 08:28:47    - Device Count: 1
+2025/09/20 08:28:47    - Start IP: 10.20.30.10/24
+2025/09/20 08:28:47    - Resource File: nec_ix3315.json
+2025/09/20 08:28:47    - SNMPv3 Enabled: false
+2025/09/20 08:28:47    - Test Started: 2025-09-20 08:28:47.504
+2025/09/20 08:28:47 
+2025/09/20 08:28:47 ⏱️  DEVICE CREATION START TIME: 08:28:47.504
+2025/09/20 08:28:47 ⏱️  DEVICE START TIMESTAMP (nanoseconds): 1758382127504815211
+2025/09/20 08:28:47 ⏱️  DEVICE CREATION END TIME: 08:28:47.722
+2025/09/20 08:28:47 ⏱️  DEVICE END TIMESTAMP (nanoseconds): 1758382127722325716
+2025/09/20 08:28:47 
+2025/09/20 08:28:47 🎯 DEVICE CREATION RESULTS:
+2025/09/20 08:28:47    ✅ Total devices created: 1/1
+2025/09/20 08:28:47    ⏱️  Total device creation time: 217.510312ms
+2025/09/20 08:28:47    ⏱️  Total device creation time (milliseconds): 217.510 ms
+2025/09/20 08:28:47    ⏱️  Total device creation time (nanoseconds): 217510312 ns
+2025/09/20 08:28:47    📊 Average time per device: 217.510 ms
+2025/09/20 08:28:47    📊 Average time per device: 217510312 ns
+2025/09/20 08:28:47    🚀 Devices created per second: 4.60
+2025/09/20 08:28:47    💡 Mode: Sequential creation with on-demand interfaces
+2025/09/20 08:28:47    ✅ Success rate: 100%
+2025/09/20 08:28:47 Successfully created 1 out of 1 requested devices
+2025/09/20 08:28:47 🚀 DEVICE STARTUP TEST: Creating 1 devices starting from 10.20.30.11/24
+2025/09/20 08:28:47 📊 Device Creation Parameters:
+2025/09/20 08:28:47    - Device Count: 1
+2025/09/20 08:28:47    - Start IP: 10.20.30.11/24
+2025/09/20 08:28:47    - Resource File: arista_7280r3.json
+2025/09/20 08:28:47    - SNMPv3 Enabled: false
+2025/09/20 08:28:47    - Test Started: 2025-09-20 08:28:47.731
+2025/09/20 08:28:47 
+2025/09/20 08:28:47 ⏱️  DEVICE CREATION START TIME: 08:28:47.731
+2025/09/20 08:28:47 ⏱️  DEVICE START TIMESTAMP (nanoseconds): 1758382127731489218
+2025/09/20 08:28:47 ⏱️  DEVICE CREATION END TIME: 08:28:47.893
+2025/09/20 08:28:47 ⏱️  DEVICE END TIMESTAMP (nanoseconds): 1758382127893178523
+2025/09/20 08:28:47 
+2025/09/20 08:28:47 🎯 DEVICE CREATION RESULTS:
+2025/09/20 08:28:47    ✅ Total devices created: 1/1
+2025/09/20 08:28:47    ⏱️  Total device creation time: 161.689026ms
+2025/09/20 08:28:47    ⏱️  Total device creation time (milliseconds): 161.689 ms
+2025/09/20 08:28:47    ⏱️  Total device creation time (nanoseconds): 161689026 ns
+2025/09/20 08:28:47    📊 Average time per device: 161.689 ms
+2025/09/20 08:28:47    📊 Average time per device: 161689026 ns
+2025/09/20 08:28:47    🚀 Devices created per second: 6.18
+2025/09/20 08:28:47    💡 Mode: Sequential creation with on-demand interfaces
+2025/09/20 08:28:47    ✅ Success rate: 100%
+2025/09/20 08:28:47 Successfully created 1 out of 1 requested devices
+2025/09/20 08:28:47 🚀 DEVICE STARTUP TEST: Creating 1 devices starting from 10.20.30.12/24
+2025/09/20 08:28:47 📊 Device Creation Parameters:
+2025/09/20 08:28:47    - Device Count: 1
+2025/09/20 08:28:47    - Start IP: 10.20.30.12/24
+2025/09/20 08:28:47    - Resource File: check_point_15600.json
+2025/09/20 08:28:47    - SNMPv3 Enabled: false
+2025/09/20 08:28:47    - Test Started: 2025-09-20 08:28:47.902
+2025/09/20 08:28:47 
+2025/09/20 08:28:47 ⏱️  DEVICE CREATION START TIME: 08:28:47.902
+2025/09/20 08:28:47 ⏱️  DEVICE START TIMESTAMP (nanoseconds): 1758382127902938369
+2025/09/20 08:28:48 ⏱️  DEVICE CREATION END TIME: 08:28:48.083
+2025/09/20 08:28:48 ⏱️  DEVICE END TIMESTAMP (nanoseconds): 1758382128083843166
+2025/09/20 08:28:48 
+2025/09/20 08:28:48 🎯 DEVICE CREATION RESULTS:
+2025/09/20 08:28:48    ✅ Total devices created: 1/1
+2025/09/20 08:28:48    ⏱️  Total device creation time: 180.904583ms
+2025/09/20 08:28:48    ⏱️  Total device creation time (milliseconds): 180.905 ms
+2025/09/20 08:28:48    ⏱️  Total device creation time (nanoseconds): 180904583 ns
+2025/09/20 08:28:48    📊 Average time per device: 180.905 ms
+2025/09/20 08:28:48    📊 Average time per device: 180904583 ns
+2025/09/20 08:28:48    🚀 Devices created per second: 5.53
+2025/09/20 08:28:48    💡 Mode: Sequential creation with on-demand interfaces
+2025/09/20 08:28:48    ✅ Success rate: 100%
+2025/09/20 08:28:48 Successfully created 1 out of 1 requested devices
+2025/09/20 08:28:48 🚀 DEVICE STARTUP TEST: Creating 1 devices starting from 10.20.30.13/24
+2025/09/20 08:28:48 📊 Device Creation Parameters:
+2025/09/20 08:28:48    - Device Count: 1
+2025/09/20 08:28:48    - Start IP: 10.20.30.13/24
+2025/09/20 08:28:48    - Resource File: hpe_proliant_dl380.json
+2025/09/20 08:28:48    - SNMPv3 Enabled: false
+2025/09/20 08:28:48    - Test Started: 2025-09-20 08:28:48.093
+2025/09/20 08:28:48 
+2025/09/20 08:28:48 ⏱️  DEVICE CREATION START TIME: 08:28:48.093
+2025/09/20 08:28:48 ⏱️  DEVICE START TIMESTAMP (nanoseconds): 1758382128093820447
+2025/09/20 08:28:48 ⏱️  DEVICE CREATION END TIME: 08:28:48.140
+2025/09/20 08:28:48 ⏱️  DEVICE END TIMESTAMP (nanoseconds): 1758382128140644902
+2025/09/20 08:28:48 
+2025/09/20 08:28:48 🎯 DEVICE CREATION RESULTS:
+2025/09/20 08:28:48    ✅ Total devices created: 1/1
+2025/09/20 08:28:48    ⏱️  Total device creation time: 46.82425ms
+2025/09/20 08:28:48    ⏱️  Total device creation time (milliseconds): 46.824 ms
+2025/09/20 08:28:48    ⏱️  Total device creation time (nanoseconds): 46824250 ns
+2025/09/20 08:28:48    📊 Average time per device: 46.824 ms
+2025/09/20 08:28:48    📊 Average time per device: 46824250 ns
+2025/09/20 08:28:48    🚀 Devices created per second: 21.36
+2025/09/20 08:28:48    💡 Mode: Sequential creation with on-demand interfaces
+2025/09/20 08:28:48    ✅ Success rate: 100%
+2025/09/20 08:28:48 Successfully created 1 out of 1 requested devices
+2025/09/20 08:28:48 🚀 DEVICE STARTUP TEST: Creating 1 devices starting from 10.20.30.14/24
+2025/09/20 08:28:48 📊 Device Creation Parameters:
+2025/09/20 08:28:48    - Device Count: 1
+2025/09/20 08:28:48    - Start IP: 10.20.30.14/24
+2025/09/20 08:28:48    - Resource File: cisco_crs_x.json
+2025/09/20 08:28:48    - SNMPv3 Enabled: false
+2025/09/20 08:28:48    - Test Started: 2025-09-20 08:28:48.150
+2025/09/20 08:28:48 
+2025/09/20 08:28:48 ⏱️  DEVICE CREATION START TIME: 08:28:48.150
+2025/09/20 08:28:48 ⏱️  DEVICE START TIMESTAMP (nanoseconds): 1758382128150246479
+2025/09/20 08:28:48 ⏱️  DEVICE CREATION END TIME: 08:28:48.547
+2025/09/20 08:28:48 ⏱️  DEVICE END TIMESTAMP (nanoseconds): 1758382128547836063
+2025/09/20 08:28:48 
+2025/09/20 08:28:48 🎯 DEVICE CREATION RESULTS:
+2025/09/20 08:28:48    ✅ Total devices created: 1/1
+2025/09/20 08:28:48    ⏱️  Total device creation time: 397.589395ms
+2025/09/20 08:28:48    ⏱️  Total device creation time (milliseconds): 397.589 ms
+2025/09/20 08:28:48    ⏱️  Total device creation time (nanoseconds): 397589395 ns
+2025/09/20 08:28:48    📊 Average time per device: 397.589 ms
+2025/09/20 08:28:48    📊 Average time per device: 397589395 ns
+2025/09/20 08:28:48    🚀 Devices created per second: 2.52
+2025/09/20 08:28:48    💡 Mode: Sequential creation with on-demand interfaces
+2025/09/20 08:28:48    ✅ Success rate: 100%
+2025/09/20 08:28:48 Successfully created 1 out of 1 requested devices
+2025/09/20 08:28:48 🚀 DEVICE STARTUP TEST: Creating 1 devices starting from 10.20.30.15/24
+2025/09/20 08:28:48 📊 Device Creation Parameters:
+2025/09/20 08:28:48    - Device Count: 1
+2025/09/20 08:28:48    - Start IP: 10.20.30.15/24
+2025/09/20 08:28:48    - Resource File: extreme_vsp4450.json
+2025/09/20 08:28:48    - SNMPv3 Enabled: false
+2025/09/20 08:28:48    - Test Started: 2025-09-20 08:28:48.557
+2025/09/20 08:28:48 
+2025/09/20 08:28:48 ⏱️  DEVICE CREATION START TIME: 08:28:48.557
+2025/09/20 08:28:48 ⏱️  DEVICE START TIMESTAMP (nanoseconds): 1758382128557090923
+2025/09/20 08:28:48 ⏱️  DEVICE CREATION END TIME: 08:28:48.721
+2025/09/20 08:28:48 ⏱️  DEVICE END TIMESTAMP (nanoseconds): 1758382128721675477
+2025/09/20 08:28:48 
+2025/09/20 08:28:48 🎯 DEVICE CREATION RESULTS:
+2025/09/20 08:28:48    ✅ Total devices created: 1/1
+2025/09/20 08:28:48    ⏱️  Total device creation time: 164.584357ms
+2025/09/20 08:28:48    ⏱️  Total device creation time (milliseconds): 164.584 ms
+2025/09/20 08:28:48    ⏱️  Total device creation time (nanoseconds): 164584357 ns
+2025/09/20 08:28:48    📊 Average time per device: 164.584 ms
+2025/09/20 08:28:48    📊 Average time per device: 164584357 ns
+2025/09/20 08:28:48    🚀 Devices created per second: 6.08
+2025/09/20 08:28:48    💡 Mode: Sequential creation with on-demand interfaces
+2025/09/20 08:28:48    ✅ Success rate: 100%
+2025/09/20 08:28:48 Successfully created 1 out of 1 requested devices
+2025/09/20 08:28:48 🚀 DEVICE STARTUP TEST: Creating 1 devices starting from 10.20.30.16/24
+2025/09/20 08:28:48 📊 Device Creation Parameters:
+2025/09/20 08:28:48    - Device Count: 1
+2025/09/20 08:28:48    - Start IP: 10.20.30.16/24
+2025/09/20 08:28:48    - Resource File: nokia_7750_sr12.json
+2025/09/20 08:28:48    - SNMPv3 Enabled: false
+2025/09/20 08:28:48    - Test Started: 2025-09-20 08:28:48.730
+2025/09/20 08:28:48 
+2025/09/20 08:28:48 ⏱️  DEVICE CREATION START TIME: 08:28:48.730
+2025/09/20 08:28:48 ⏱️  DEVICE START TIMESTAMP (nanoseconds): 1758382128730965149
+2025/09/20 08:28:49 ⏱️  DEVICE CREATION END TIME: 08:28:49.224
+2025/09/20 08:28:49 ⏱️  DEVICE END TIMESTAMP (nanoseconds): 1758382129224624847
+2025/09/20 08:28:49 
+2025/09/20 08:28:49 🎯 DEVICE CREATION RESULTS:
+2025/09/20 08:28:49    ✅ Total devices created: 1/1
+2025/09/20 08:28:49    ⏱️  Total device creation time: 493.65952ms
+2025/09/20 08:28:49    ⏱️  Total device creation time (milliseconds): 493.660 ms
+2025/09/20 08:28:49    ⏱️  Total device creation time (nanoseconds): 493659520 ns
+2025/09/20 08:28:49    📊 Average time per device: 493.660 ms
+2025/09/20 08:28:49    📊 Average time per device: 493659520 ns
+2025/09/20 08:28:49    🚀 Devices created per second: 2.03
+2025/09/20 08:28:49    💡 Mode: Sequential creation with on-demand interfaces
+2025/09/20 08:28:49    ✅ Success rate: 100%
+2025/09/20 08:28:49 Successfully created 1 out of 1 requested devices
+2025/09/20 08:28:49 🚀 DEVICE STARTUP TEST: Creating 1 devices starting from 10.20.30.17/24
+2025/09/20 08:28:49 📊 Device Creation Parameters:
+2025/09/20 08:28:49    - Device Count: 1
+2025/09/20 08:28:49    - Start IP: 10.20.30.17/24
+2025/09/20 08:28:49    - Resource File: sonicwall_nsa6700.json
+2025/09/20 08:28:49    - SNMPv3 Enabled: false
+2025/09/20 08:28:49    - Test Started: 2025-09-20 08:28:49.234
+2025/09/20 08:28:49 
+2025/09/20 08:28:49 ⏱️  DEVICE CREATION START TIME: 08:28:49.234
+2025/09/20 08:28:49 ⏱️  DEVICE START TIMESTAMP (nanoseconds): 1758382129234030789
+2025/09/20 08:28:49 ⏱️  DEVICE CREATION END TIME: 08:28:49.716
+2025/09/20 08:28:49 ⏱️  DEVICE END TIMESTAMP (nanoseconds): 1758382129716831009
+2025/09/20 08:28:49 
+2025/09/20 08:28:49 🎯 DEVICE CREATION RESULTS:
+2025/09/20 08:28:49    ✅ Total devices created: 1/1
+2025/09/20 08:28:49    ⏱️  Total device creation time: 482.800016ms
+2025/09/20 08:28:49    ⏱️  Total device creation time (milliseconds): 482.800 ms
+2025/09/20 08:28:49    ⏱️  Total device creation time (nanoseconds): 482800016 ns
+2025/09/20 08:28:49    📊 Average time per device: 482.800 ms
+2025/09/20 08:28:49    📊 Average time per device: 482800016 ns
+2025/09/20 08:28:49    🚀 Devices created per second: 2.07
+2025/09/20 08:28:49    💡 Mode: Sequential creation with on-demand interfaces
+2025/09/20 08:28:49    ✅ Success rate: 100%
+2025/09/20 08:28:49 Successfully created 1 out of 1 requested devices
+2025/09/20 08:28:49 🚀 DEVICE STARTUP TEST: Creating 1 devices starting from 10.20.30.18/24
+2025/09/20 08:28:49 📊 Device Creation Parameters:
+2025/09/20 08:28:49    - Device Count: 1
+2025/09/20 08:28:49    - Start IP: 10.20.30.18/24
+2025/09/20 08:28:49    - Resource File: dlink_dgs3630.json
+2025/09/20 08:28:49    - SNMPv3 Enabled: false
+2025/09/20 08:28:49    - Test Started: 2025-09-20 08:28:49.725
+2025/09/20 08:28:49 
+2025/09/20 08:28:49 ⏱️  DEVICE CREATION START TIME: 08:28:49.725
+2025/09/20 08:28:49 ⏱️  DEVICE START TIMESTAMP (nanoseconds): 1758382129725441951
+2025/09/20 08:28:50 ⏱️  DEVICE CREATION END TIME: 08:28:50.041
+2025/09/20 08:28:50 ⏱️  DEVICE END TIMESTAMP (nanoseconds): 1758382130041540603
+2025/09/20 08:28:50 
+2025/09/20 08:28:50 🎯 DEVICE CREATION RESULTS:
+2025/09/20 08:28:50    ✅ Total devices created: 1/1
+2025/09/20 08:28:50    ⏱️  Total device creation time: 316.098395ms
+2025/09/20 08:28:50    ⏱️  Total device creation time (milliseconds): 316.098 ms
+2025/09/20 08:28:50    ⏱️  Total device creation time (nanoseconds): 316098395 ns
+2025/09/20 08:28:50    📊 Average time per device: 316.098 ms
+2025/09/20 08:28:50    📊 Average time per device: 316098395 ns
+2025/09/20 08:28:50    🚀 Devices created per second: 3.16
+2025/09/20 08:28:50    💡 Mode: Sequential creation with on-demand interfaces
+2025/09/20 08:28:50    ✅ Success rate: 100%
+2025/09/20 08:28:50 Successfully created 1 out of 1 requested devices
+2025/09/20 08:28:50 🚀 DEVICE STARTUP TEST: Creating 1 devices starting from 10.20.30.19/24
+2025/09/20 08:28:50 📊 Device Creation Parameters:
+2025/09/20 08:28:50    - Device Count: 1
+2025/09/20 08:28:50    - Start IP: 10.20.30.19/24
+2025/09/20 08:28:50    - Resource File: ibm_power_s922.json
+2025/09/20 08:28:50    - SNMPv3 Enabled: false
+2025/09/20 08:28:50    - Test Started: 2025-09-20 08:28:50.050
+2025/09/20 08:28:50 
+2025/09/20 08:28:50 ⏱️  DEVICE CREATION START TIME: 08:28:50.050
+2025/09/20 08:28:50 ⏱️  DEVICE START TIMESTAMP (nanoseconds): 1758382130050973687
+2025/09/20 08:28:50 ⏱️  DEVICE CREATION END TIME: 08:28:50.570
+2025/09/20 08:28:50 ⏱️  DEVICE END TIMESTAMP (nanoseconds): 1758382130570777208
+2025/09/20 08:28:50 
+2025/09/20 08:28:50 🎯 DEVICE CREATION RESULTS:
+2025/09/20 08:28:50    ✅ Total devices created: 1/1
+2025/09/20 08:28:50    ⏱️  Total device creation time: 519.803321ms
+2025/09/20 08:28:50    ⏱️  Total device creation time (milliseconds): 519.803 ms
+2025/09/20 08:28:50    ⏱️  Total device creation time (nanoseconds): 519803321 ns
+2025/09/20 08:28:50    📊 Average time per device: 519.803 ms
+2025/09/20 08:28:50    📊 Average time per device: 519803321 ns
+2025/09/20 08:28:50    🚀 Devices created per second: 1.92
+2025/09/20 08:28:50    💡 Mode: Sequential creation with on-demand interfaces
+2025/09/20 08:28:50    ✅ Success rate: 100%
+2025/09/20 08:28:50 Successfully created 1 out of 1 requested devices

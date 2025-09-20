@@ -1,0 +1,362 @@
+{
+  "snmp": [
+    {
+      "oid": "1.3.6.1.2.1.1.1.0",
+      "response": "HPE ProLiant DL380 Gen10 running Ubuntu Server 20.04.5 LTS"
+    },
+    {
+      "oid": "1.3.6.1.2.1.1.2.0",
+      "response": "1.3.6.1.4.1.232.9.4.10"
+    },
+    {
+      "oid": "1.3.6.1.2.1.1.3.0",
+      "response": "295350000"
+    },
+    {
+      "oid": "1.3.6.1.2.1.1.4.0",
+      "response": "System Administrator"
+    },
+    {
+      "oid": "1.3.6.1.2.1.1.5.0",
+      "response": "SEO-SRV-01"
+    },
+    {
+      "oid": "1.3.6.1.2.1.1.6.0",
+      "response": "Seoul, South Korea"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.1.0",
+      "response": "4"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.2",
+      "response": "GigabitEthernet0/0/1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.2.1",
+      "response": "FastEthernet0/1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.2.2",
+      "response": "FastEthernet0/2"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.4",
+      "response": "1500"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.4.1",
+      "response": "1500"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.4.2",
+      "response": "1500"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.5",
+      "response": "1000000000"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.5.1",
+      "response": "100000000"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.5.2",
+      "response": "100000000"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.8",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.8.1",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.2.2.1.8.2",
+      "response": "2"
+    },
+    {
+      "oid": "1.3.6.1.2.1.25.2.3.1.4",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.25.2.3.1.4.1",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.4.21.1.1",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.10.1001",
+      "response": "1.0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.10.1002",
+      "response": "1.0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.11.1001",
+      "response": "SN001001"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.11.1002",
+      "response": "SN001002"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1001",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1002",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.13",
+      "response": "HPEProLiantDL380Gen10"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.1",
+      "response": "MODEL123"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.1001",
+      "response": "FE-PORT"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.1002",
+      "response": "FE-PORT"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.14.1001",
+      "response": "FastEthernet0/1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.14.1002",
+      "response": "FastEthernet0/2"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.15.1001",
+      "response": "ASSET1001"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.15.1002",
+      "response": "ASSET1002"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.16.1001",
+      "response": "2"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.16.1002",
+      "response": "2"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.2",
+      "response": "Main Chassis"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.2.1",
+      "response": "Main Chassis"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.2.1001",
+      "response": "FastEthernet0/1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.2.1002",
+      "response": "FastEthernet0/2"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.2.2",
+      "response": "Line Card 1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.3",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.3.1",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.3.1001",
+      "response": "1.3.6.1.4.1.0.0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.3.1002",
+      "response": "1.3.6.1.4.1.0.0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.3.2",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.4",
+      "response": "51"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.4.1",
+      "response": "51"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.4.1001",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.4.1002",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.5",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.5.1",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.5.1001",
+      "response": "10"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.5.1002",
+      "response": "10"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.6",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.6.1",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.6.1001",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.6.1002",
+      "response": "2"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.7.1001",
+      "response": "FastEthernet0/1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.7.1002",
+      "response": "FastEthernet0/2"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.8.1001",
+      "response": "1.0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.8.1002",
+      "response": "1.0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.9",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.9.1",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.9.1001",
+      "response": "1.0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.9.1002",
+      "response": "1.0"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.3.2.1.2.1001.0",
+      "response": "1.3.6.1.2.1.2.2.1.1.1"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.3.2.1.2.1002.0",
+      "response": "1.3.6.1.2.1.2.2.1.1.2"
+    },
+    {
+      "oid": "1.3.6.1.4.1.232.2.2.4.2.0",
+      "response": "HP-DL380-001"
+    },
+    {
+      "oid": "1.3.6.1.4.1.232.6.2.14.13.1.17.1.1",
+      "response": "91"
+    },
+    {
+      "oid": "1.3.6.1.4.1.232.6.2.6.8.1.3.1.3",
+      "response": "51"
+    },
+    {
+      "oid": "1.3.6.1.4.1.232.6.2.6.8.1.4.1.3",
+      "response": "78"
+    },
+    {
+      "oid": "1.3.6.1.4.1.25461.2.1.2.2.1.0",
+      "response": "127"
+    },
+    {
+      "oid": "1.3.6.1.4.1.25461.2.1.2.3.1.0",
+      "response": "2500"
+    },
+    {
+      "oid": "1.3.6.1.4.1.25461.2.1.2.4.1.3",
+      "response": "1"
+    },
+    {
+      "oid": "1.3.6.1.4.1.2636.3.1.13.1.8",
+      "response": "78"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.9.109.1.1.1.1.5",
+      "response": "78"
+    },
+    {
+      "oid": "1.3.6.1.4.1.9.9.48.1.1.1.6",
+      "response": "91"
+    }
+  ],
+  "ssh": [
+    {
+      "command": "uname -a",
+      "response": "Linux SEO-SRV-01 5.4.0-126-generic #142-Ubuntu SMP Fri Aug 26 12:12:57 UTC 2022 x86_64 x86_64 x86_64 GNU/Linux"
+    },
+    {
+      "command": "dmidecode -s system-product-name",
+      "response": "ProLiant DL380 Gen10"
+    },
+    {
+      "command": "dmidecode -s system-serial-number",
+      "response": "HP-DL380-001"
+    },
+    {
+      "command": "uptime",
+      "response": " 14:28:15 up 34 days,  6:15,  3 users,  load average: 0.78, 0.82, 0.85"
+    },
+    {
+      "command": "free -h",
+      "response": "              total        used        free      shared  buff/cache   available\\nMem:           63Gi        58Gi        2.1Gi       1.2Gi        3.2Gi        3.8Gi\\nSwap:          2.0Gi       1.5Gi       512Mi\\n\\nWarning: Memory usage at 91%"
+    },
+    {
+      "command": "df -h",
+      "response": "Filesystem      Size  Used Avail Use% Mounted on\\n/dev/sda1       894G  412G  437G  49% /\\n/dev/sda2       1.9G  147M  1.6G   9% /boot\\n/dev/sda15      105M  6.1M   99M   6% /boot/efi\\ntmpfs            32G  1.2G   31G   4% /dev/shm\\ntmpfs            13G  2.4M   13G   1% /run\\ntmpfs           5.0M     0  5.0M   0% /run/lock"
+    },
+    {
+      "command": "top -bn1 | head -5",
+      "response": "top - 14:28:15 up 34 days,  6:15,  3 users,  load average: 0.78, 0.82, 0.85\\nTasks: 298 total,   2 running, 246 sleeping,   0 stopped,   0 zombie\\n%Cpu(s): 78.2 us,  2.1 sy,  0.0 ni, 19.3 id,  0.4 wa,  0.0 hi,  0.0 si,  0.0 st\\nMiB Mem :  64512.3 total,   2156.8 free,  59234.7 used,   3120.8 buff/cache\\nMiB Swap:   2048.0 total,    512.0 free,   1536.0 used.   3896.2 avail Mem"
+    },
+    {
+      "command": "sensors",
+      "response": "hpilo-isa-0000\\nAdapter: ISA adapter\\nFan 1:       3240 RPM  (min = 1800 RPM)\\nFan 2:       3180 RPM  (min = 1800 RPM)\\nFan 3:       3280 RPM  (min = 1800 RPM)\\nFan 4:       3200 RPM  (min = 1800 RPM)\\nTemp 1:      +51.0\u00b0C  (high = +80.0\u00b0C, crit = +90.0\u00b0C)\\nTemp 2:      +48.0\u00b0C  (high = +80.0\u00b0C, crit = +90.0\u00b0C)\\nTemp 3:      +53.0\u00b0C  (high = +80.0\u00b0C, crit = +90.0\u00b0C)\\n\\nWarning: System temperature elevated"
+    },
+    {
+      "command": "ip addr show",
+      "response": "1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000\\n    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00\\n    inet 127.0.0.1/8 scope host lo\\n2: eno1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP group default qlen 1000\\n    link/ether 94:57:a5:12:34:56 brd ff:ff:ff:ff:ff:ff\\n    inet 192.168.203.1/24 brd 192.168.203.255 scope global eno1\\n3: eno2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP group default qlen 1000\\n    link/ether 94:57:a5:12:34:57 brd ff:ff:ff:ff:ff:ff\\n4: eno3: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN group default qlen 1000\\n    link/ether 94:57:a5:12:34:58 brd ff:ff:ff:ff:ff:ff\\n5: eno4: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN group default qlen 1000\\n    link/ether 94:57:a5:12:34:59 brd ff:ff:ff:ff:ff:ff"
+    }
+  ]
+}
