@@ -640,7 +640,8 @@ func (sm *SimulatorManager) PreAllocateTunInterfaces(poolSize int, maxWorkers in
 	log.Println()
 
 	startTime := time.Now()
-	log.Printf("⏱️  START TIME: %v", startTime.Format("15:04:05.000"))
+	log.Printf("⏱️  PRE-ALLOCATION START TIME: %v", startTime.Format("15:04:05.000"))
+	log.Printf("⏱️  START TIMESTAMP (nanoseconds): %d", startTime.UnixNano())
 
 	// Store pool size for device creation to know pre-allocation was done
 	sm.tunPoolSize = poolSize
@@ -719,13 +720,17 @@ func (sm *SimulatorManager) PreAllocateTunInterfaces(poolSize int, maxWorkers in
 	created := sm.preAllocProgress.Load().(int)
 	endTime := time.Now()
 
-	log.Printf("⏱️  END TIME: %v", endTime.Format("15:04:05.000"))
+	log.Printf("⏱️  PRE-ALLOCATION END TIME: %v", endTime.Format("15:04:05.000"))
+	log.Printf("⏱️  END TIMESTAMP (nanoseconds): %d", endTime.UnixNano())
 	log.Println()
 
 	log.Printf("🎯 PERFORMANCE RESULTS:")
 	log.Printf("   ✅ Total interfaces created: %d/%d", created, poolSize)
 	log.Printf("   ⏱️  Total time: %v", elapsed)
-	log.Printf("   📊 Average time per interface: %.2f ms", float64(elapsed.Nanoseconds())/float64(created*1e6))
+	log.Printf("   ⏱️  Total time (milliseconds): %.3f ms", float64(elapsed.Nanoseconds())/1e6)
+	log.Printf("   ⏱️  Total time (nanoseconds): %d ns", elapsed.Nanoseconds())
+	log.Printf("   📊 Average time per interface: %.3f ms", float64(elapsed.Nanoseconds())/float64(created*1e6))
+	log.Printf("   📊 Average time per interface: %.0f ns", float64(elapsed.Nanoseconds())/float64(created))
 	log.Printf("   🚀 Interfaces per second: %.2f", float64(created)/elapsed.Seconds())
 	log.Printf("   👥 Workers used: %d", maxWorkers)
 	log.Printf("   💾 Memory efficiency: ~%.1f KB per interface", float64(created*4)/1024.0) // Rough estimate
@@ -795,6 +800,19 @@ func (sm *SimulatorManager) CreateDevices(startIP string, count int, netmask str
 	sm.deviceCreateProgress.Store(0)
 	sm.deviceCreateTotal.Store(count)
 	defer sm.isCreatingDevices.Store(false)
+
+	log.Printf("🚀 DEVICE STARTUP TEST: Creating %d devices starting from %s/%s", count, startIP, netmask)
+	log.Printf("📊 Device Creation Parameters:")
+	log.Printf("   - Device Count: %d", count)
+	log.Printf("   - Start IP: %s/%s", startIP, netmask)
+	log.Printf("   - Resource File: %s", resourceFile)
+	log.Printf("   - SNMPv3 Enabled: %t", v3Config != nil && v3Config.Enabled)
+	log.Printf("   - Test Started: %s", time.Now().Format("2006-01-02 15:04:05.000"))
+	log.Println()
+
+	deviceStartTime := time.Now()
+	log.Printf("⏱️  DEVICE CREATION START TIME: %v", deviceStartTime.Format("15:04:05.000"))
+	log.Printf("⏱️  DEVICE START TIMESTAMP (nanoseconds): %d", deviceStartTime.UnixNano())
 
 	// Check for root privileges for TUN interface creation
 	if os.Geteuid() != 0 {
@@ -938,6 +956,35 @@ func (sm *SimulatorManager) CreateDevices(startIP string, count int, netmask str
 
 	}
 
+	deviceElapsed := time.Since(deviceStartTime)
+	deviceEndTime := time.Now()
+
+	log.Printf("⏱️  DEVICE CREATION END TIME: %v", deviceEndTime.Format("15:04:05.000"))
+	log.Printf("⏱️  DEVICE END TIMESTAMP (nanoseconds): %d", deviceEndTime.UnixNano())
+	log.Println()
+
+	log.Printf("🎯 DEVICE CREATION RESULTS:")
+	log.Printf("   ✅ Total devices created: %d/%d", successCount, count)
+	log.Printf("   ⏱️  Total device creation time: %v", deviceElapsed)
+	log.Printf("   ⏱️  Total device creation time (milliseconds): %.3f ms", float64(deviceElapsed.Nanoseconds())/1e6)
+	log.Printf("   ⏱️  Total device creation time (nanoseconds): %d ns", deviceElapsed.Nanoseconds())
+	log.Printf("   📊 Average time per device: %.3f ms", float64(deviceElapsed.Nanoseconds())/float64(successCount*1e6))
+	log.Printf("   📊 Average time per device: %.0f ns", float64(deviceElapsed.Nanoseconds())/float64(successCount))
+	log.Printf("   🚀 Devices created per second: %.2f", float64(successCount)/deviceElapsed.Seconds())
+	if sm.tunPoolSize > 0 {
+		log.Printf("   💡 Mode: Parallel creation with pre-allocated interfaces")
+		log.Printf("   👥 Workers used: %d", sm.maxWorkers)
+	} else {
+		log.Printf("   💡 Mode: Sequential creation with on-demand interfaces")
+	}
+
+	if successCount < count {
+		log.Printf("   ❌ Failed devices: %d", count-successCount)
+		log.Printf("   📈 Success rate: %.1f%%", float64(successCount)/float64(count)*100.0)
+	} else {
+		log.Printf("   ✅ Success rate: 100%%")
+	}
+
 	log.Printf("Successfully created %d out of %d requested devices", successCount, count)
 	return nil
 }
@@ -949,8 +996,9 @@ func (sm *SimulatorManager) createDevicesParallel(count int, netmask string, res
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 
-	log.Printf("Creating %d devices in parallel with %d workers...", count, sm.maxWorkers)
-	startTime := time.Now()
+	log.Printf("📡 Creating %d devices in parallel with %d workers...", count, sm.maxWorkers)
+	parallelStartTime := time.Now()
+	log.Printf("⏱️  PARALLEL DEVICE START TIME: %v", parallelStartTime.Format("15:04:05.000"))
 
 	// Get starting IP with read lock
 	sm.mu.RLock()
@@ -1004,9 +1052,12 @@ func (sm *SimulatorManager) createDevicesParallel(count int, netmask string, res
 	// Wait for all workers to complete
 	wg.Wait()
 
-	elapsed := time.Since(startTime)
-	log.Printf("Parallel device creation completed: %d devices in %v (%.2fms per device)",
-		*successCount, elapsed, float64(elapsed.Nanoseconds())/float64(*successCount*1e6))
+	parallelElapsed := time.Since(parallelStartTime)
+	parallelEndTime := time.Now()
+	log.Printf("⏱️  PARALLEL DEVICE END TIME: %v", parallelEndTime.Format("15:04:05.000"))
+	log.Printf("📊 Parallel device creation completed: %d devices in %v (%.3f ms per device)",
+		*successCount, parallelElapsed, float64(parallelElapsed.Nanoseconds())/float64(*successCount*1e6))
+	log.Printf("📊 Parallel creation rate: %.2f devices/second", float64(*successCount)/parallelElapsed.Seconds())
 }
 
 // createSingleDevice creates a single device - used by parallel device creation
