@@ -146,8 +146,6 @@ func loadWorldCities() error {
 
 // getRandomCity returns a random city from the world cities list
 func getRandomCity() string {
-	mathrand.Seed(time.Now().UnixNano())
-	
 	// Ensure cities are loaded
 	if len(worldCities) == 0 {
 		log.Printf("Warning: worldCities not loaded, loading fallback cities")
@@ -395,6 +393,9 @@ func compareOIDsLexicographically(oid1, oid2 string) int {
 
 // SimulatorManager implementation
 func NewSimulatorManager() *SimulatorManager {
+	// Initialize random seed once at startup
+	mathrand.Seed(time.Now().UnixNano())
+
 	sm := &SimulatorManager{
 		devices:        make(map[string]*DeviceSimulator),
 		nextTunIndex:   0,
