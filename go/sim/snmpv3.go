@@ -9,7 +9,6 @@ import (
 	"crypto/rand"
 	"crypto/sha1"
 	"fmt"
-	"log"
 	"strconv"
 	"time"
 )
@@ -278,7 +277,7 @@ func (s *SNMPServer) createSNMPv3Response(oid, value string, requestMsg *SNMPv3M
 	// For basic simulation, don't require actual HMAC validation
 	// Copy the request's auth params if present (simplified approach)
 	if len(requestMsg.SecurityParams.AuthParams) > 0 {
-		log.Printf("SNMPv3: Using simplified auth params for response")
+		// log.Printf("SNMPv3: Using simplified auth params for response")
 		secParams.AuthParams = make([]byte, 12) // Standard 12-byte auth params
 	}
 
@@ -310,27 +309,27 @@ func (s *SNMPServer) createSNMPv3Response(oid, value string, requestMsg *SNMPv3M
 	// For simulation purposes, we skip HMAC authentication as it requires
 	// proper RFC 3414 key derivation which is complex to implement correctly
 	if s.v3Config.AuthProtocol != SNMPV3_AUTH_NONE && (requestMsg.GlobalData.MsgFlags&SNMPV3_MSG_FLAG_AUTH) != 0 {
-		log.Printf("SNMPv3: Skipping HMAC authentication for simulation (would require proper key derivation)")
+		// log.Printf("SNMPv3: Skipping HMAC authentication for simulation (would require proper key derivation)")
 		// In a full implementation, you would call s.authenticateMessage(msgBytes, &secParams)
 	}
 
-	log.Printf("SNMPv3: Created response message (%d bytes)", len(msgBytes))
+	// log.Printf("SNMPv3: Created response message (%d bytes)", len(msgBytes))
 	
 	// Debug: Print response structure
-	if len(msgBytes) > 0 {
-		log.Printf("SNMPv3 Response hex (first 64 bytes):")
-		for i := 0; i < len(msgBytes) && i < 64; i += 16 {
-			end := i + 16
-			if end > len(msgBytes) {
-				end = len(msgBytes)
-			}
-			hexStr := fmt.Sprintf("  %04X: ", i)
-			for j := i; j < end; j++ {
-				hexStr += fmt.Sprintf("%02X ", msgBytes[j])
-			}
-			log.Printf(hexStr)
-		}
-	}
+	// if len(msgBytes) > 0 {
+	//	log.Printf("SNMPv3 Response hex (first 64 bytes):")
+	//	for i := 0; i < len(msgBytes) && i < 64; i += 16 {
+	//		end := i + 16
+	//		if end > len(msgBytes) {
+	//			end = len(msgBytes)
+	//		}
+	//		hexStr := fmt.Sprintf("  %04X: ", i)
+	//		for j := i; j < end; j++ {
+	//			hexStr += fmt.Sprintf("%02X ", msgBytes[j])
+	//		}
+	//		log.Printf(hexStr)
+	//	}
+	// }
 
 	return msgBytes, nil
 }
@@ -340,7 +339,7 @@ func (s *SNMPServer) createScopedPDU(oid, value string, requestMsg *SNMPv3Messag
 	// Extract the original request ID from the incoming scoped PDU
 	requestID := s.extractRequestIDFromScopedPDU(requestMsg.ScopedPDU)
 	
-	log.Printf("SNMPv3: Creating scoped PDU response for OID %s = %s (reqID: %d)", oid, value, requestID)
+	// log.Printf("SNMPv3: Creating scoped PDU response for OID %s = %s (reqID: %d)", oid, value, requestID)
 	
 	// Create the response PDU similar to v2c but wrapped in scoped PDU
 	var valueBytes []byte
@@ -379,7 +378,7 @@ func (s *SNMPServer) createScopedPDU(oid, value string, requestMsg *SNMPv3Messag
 
 	scopedPDU := encodeSequence(scopedContents)
 	
-	log.Printf("SNMPv3: Created scoped PDU (%d bytes)", len(scopedPDU))
+	// log.Printf("SNMPv3: Created scoped PDU (%d bytes)", len(scopedPDU))
 	return scopedPDU, nil
 }
 
@@ -425,15 +424,15 @@ func (s *SNMPServer) extractRequestIDFromScopedPDU(scopedPDU []byte) int {
 
 // encryptScopedPDU encrypts the scoped PDU using the configured privacy protocol
 func (s *SNMPServer) encryptScopedPDU(scopedPDU []byte, requestMsg *SNMPv3Message) ([]byte, []byte, error) {
-	log.Printf("SNMPv3: Attempting to encrypt scoped PDU with privacy protocol")
+	// log.Printf("SNMPv3: Attempting to encrypt scoped PDU with privacy protocol")
 	
 	// Encrypt based on the configured privacy protocol
 	switch s.v3Config.PrivProtocol {
 	case SNMPV3_PRIV_DES:
-		log.Printf("SNMPv3: Using DES encryption")
+		// log.Printf("SNMPv3: Using DES encryption")
 		return s.encryptDES(scopedPDU)
 	case SNMPV3_PRIV_AES128:
-		log.Printf("SNMPv3: Using AES128 encryption")
+		// log.Printf("SNMPv3: Using AES128 encryption")
 		return s.encryptAES128(scopedPDU)
 	default:
 		return nil, nil, fmt.Errorf("unsupported privacy protocol: %d", s.v3Config.PrivProtocol)
@@ -496,7 +495,7 @@ func (s *SNMPServer) encryptAES128(data []byte) ([]byte, []byte, error) {
 	encrypted := make([]byte, len(data))
 	stream.XORKeyStream(encrypted, data)
 	
-	log.Printf("SNMPv3: AES encrypted %d bytes with salt length %d", len(data), len(salt))
+	// log.Printf("SNMPv3: AES encrypted %d bytes with salt length %d", len(data), len(salt))
 	return encrypted, salt, nil // Return only the 8-byte salt, not full IV
 }
 
@@ -534,7 +533,7 @@ func (s *SNMPServer) decryptAES128(encrypted []byte, privParams []byte) ([]byte,
 	decrypted := make([]byte, len(encrypted))
 	stream.XORKeyStream(decrypted, encrypted)
 	
-	log.Printf("SNMPv3: AES decrypted %d bytes", len(encrypted))
+	// log.Printf("SNMPv3: AES decrypted %d bytes", len(encrypted))
 	return decrypted, nil
 }
 
@@ -557,7 +556,7 @@ func (s *SNMPServer) generateAESKey(password string) []byte {
 	// Localize the key with engine ID
 	engineIDBytes, err := s.parseHexEngineID(s.v3Config.EngineID)
 	if err != nil {
-		log.Printf("SNMPv3: Failed to parse engine ID, using default: %v", err)
+		// log.Printf("SNMPv3: Failed to parse engine ID, using default: %v", err)
 		engineIDBytes = []byte("default")
 	}
 	
@@ -571,7 +570,7 @@ func (s *SNMPServer) generateAESKey(password string) []byte {
 	aesKey := make([]byte, 16)
 	copy(aesKey, localKey[:16])
 	
-	log.Printf("SNMPv3: Generated AES key from password")
+	// log.Printf("SNMPv3: Generated AES key from password")
 	return aesKey
 }
 
@@ -632,11 +631,11 @@ func (s *SNMPServer) encodeSNMPv3Message(msg *SNMPv3Message, usmParams []byte) (
 	if isEncrypted {
 		// Encrypted: wrap in OCTET STRING
 		contents = append(contents, encodeOctetString(string(msg.ScopedPDU))...)
-		log.Printf("SNMPv3: Encoding scoped PDU as OCTET STRING (encrypted)")
+		// log.Printf("SNMPv3: Encoding scoped PDU as OCTET STRING (encrypted)")
 	} else {
 		// Unencrypted: append as-is (already a SEQUENCE)
 		contents = append(contents, msg.ScopedPDU...)
-		log.Printf("SNMPv3: Encoding scoped PDU as SEQUENCE (unencrypted)")
+		// log.Printf("SNMPv3: Encoding scoped PDU as SEQUENCE (unencrypted)")
 	}
 	
 	return encodeSequence(contents), nil
@@ -756,13 +755,13 @@ func (s *SNMPServer) validateSNMPv3Credentials(msg *SNMPv3Message) bool {
 	if msg.SecurityParams.UserName == "" && 
 	   msg.SecurityParams.AuthoritativeEngineID == "" &&
 	   msg.GlobalData.MsgFlags&SNMPV3_MSG_FLAG_REPORT != 0 {
-		log.Printf("SNMPv3: Handling discovery request (empty security parameters)")
+		// log.Printf("SNMPv3: Handling discovery request (empty security parameters)")
 		return true
 	}
 	
 	// Check username for non-discovery requests
 	if msg.SecurityParams.UserName != s.v3Config.Username {
-		log.Printf("SNMPv3: Invalid username: %q (expected %q)", msg.SecurityParams.UserName, s.v3Config.Username)
+		// log.Printf("SNMPv3: Invalid username: %q (expected %q)", msg.SecurityParams.UserName, s.v3Config.Username)
 		return false
 	}
 	
@@ -774,22 +773,22 @@ func (s *SNMPServer) validateSNMPv3Credentials(msg *SNMPv3Message) bool {
 	// - Use proper RFC 3414 key derivation functions
 	
 	if len(msg.SecurityParams.AuthParams) > 0 {
-		log.Printf("SNMPv3: Authenticated request with %d auth parameter bytes", len(msg.SecurityParams.AuthParams))
+		// log.Printf("SNMPv3: Authenticated request with %d auth parameter bytes", len(msg.SecurityParams.AuthParams))
 		
 		// For basic simulation, we skip HMAC validation
 		// This allows testing of the protocol structure without full crypto implementation
-		log.Printf("SNMPv3: WARNING - Using simplified authentication for simulation")
+		// log.Printf("SNMPv3: WARNING - Using simplified authentication for simulation")
 	}
 	
 	// Check engine time synchronization (basic)
 	currentTime := int(time.Now().Unix())
 	timeDiff := abs(currentTime - msg.SecurityParams.AuthoritativeEngineTime)
 	if timeDiff > 150 { // 150 second window (default SNMPv3 time window)
-		log.Printf("SNMPv3: WARNING - Time synchronization issue (diff: %d seconds)", timeDiff)
+		// log.Printf("SNMPv3: WARNING - Time synchronization issue (diff: %d seconds)", timeDiff)
 		// In simulation mode, we allow this to continue
 	}
 	
-	log.Printf("SNMPv3: Credentials validated for user: %s (simulation mode)", msg.SecurityParams.UserName)
+	// log.Printf("SNMPv3: Credentials validated for user: %s (simulation mode)", msg.SecurityParams.UserName)
 	return true
 
 }

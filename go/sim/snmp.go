@@ -99,7 +99,7 @@ func (s *SNMPServer) handleSNMPv2cRequest(requestData []byte) []byte {
 
 	// Determine PDU type from request data
 	pduType := s.getPDUType(requestData)
-	log.Printf("SNMP %s: Detected PDU type: 0x%02X for OID: %s", s.device.ID, pduType, oid)
+	// log.Printf("SNMP %s: Detected PDU type: 0x%02X for OID: %s", s.device.ID, pduType, oid)
 	
 	if pduType == ASN1_GET_NEXT {
 		// Handle GetNext request for SNMP walk
@@ -112,7 +112,7 @@ func (s *SNMPServer) handleSNMPv2cRequest(requestData []byte) []byte {
 		// log.Printf("SNMP %s: GetNext %s -> %s = %s", s.device.ID, oid, responseOID, response)
 	} else if pduType == ASN1_GET_BULK {
 		// Handle GetBulk request - return multiple OIDs
-		log.Printf("SNMP %s: Processing GetBulk request for OID: %s", s.device.ID, oid)
+		// log.Printf("SNMP %s: Processing GetBulk request for OID: %s", s.device.ID, oid)
 		return s.handleGetBulk(oid, requestData)
 	} else {
 		// Handle regular Get request
@@ -123,7 +123,7 @@ func (s *SNMPServer) handleSNMPv2cRequest(requestData []byte) []byte {
 
 	// Create proper SNMP response (pass the request data)
 	responseBytes := s.createSNMPResponse(responseOID, response, requestData)
-	log.Printf("SNMP %s: Created response for %s, length: %d bytes", s.device.ID, responseOID, len(responseBytes))
+	// log.Printf("SNMP %s: Created response for %s, length: %d bytes", s.device.ID, responseOID, len(responseBytes))
 	return responseBytes
 }
 
@@ -185,7 +185,7 @@ func (s *SNMPServer) handleSNMPv3Request(requestData []byte) []byte {
 	// Parse the scoped PDU to extract OID and request type
 	oid, pduType, err := s.extractOIDAndTypeFromScopedPDU(scopedPDU)
 	if err != nil {
-		log.Printf("Failed to extract OID from scoped PDU: %v, using default", err)
+		// log.Printf("Failed to extract OID from scoped PDU: %v, using default", err)
 		// For encrypted requests where decryption failed, use a reasonable default
 		// Since snmpwalk typically starts with 1.3.6.1.2.1.1, use system description
 		oid = "1.3.6.1.2.1.1.1.0" // System description OID
@@ -408,7 +408,7 @@ func (s *SNMPServer) createSNMPv3DiscoveryResponse(requestMsg *SNMPv3Message) []
 	// Create simple report scoped PDU
 	scopedPDU, err := s.createDiscoveryScopedPDU(reportOID, reportValue)
 	if err != nil {
-		log.Printf("Failed to create discovery scoped PDU: %v", err)
+		// log.Printf("Failed to create discovery scoped PDU: %v", err)
 		return []byte{}
 	}
 	
@@ -425,7 +425,7 @@ func (s *SNMPServer) createSNMPv3DiscoveryResponse(requestMsg *SNMPv3Message) []
 	// Encode USM parameters
 	usmParams, err := s.encodeUSMSecurityParameters(&secParams)
 	if err != nil {
-		log.Printf("Failed to encode USM parameters for discovery: %v", err)
+		// log.Printf("Failed to encode USM parameters for discovery: %v", err)
 		return []byte{}
 	}
 	
@@ -444,7 +444,7 @@ func (s *SNMPServer) createSNMPv3DiscoveryResponse(requestMsg *SNMPv3Message) []
 	// Encode the message
 	msgBytes, err := s.encodeSNMPv3Message(&responseMsg, usmParams)
 	if err != nil {
-		log.Printf("Failed to encode SNMPv3 discovery message: %v", err)
+		// log.Printf("Failed to encode SNMPv3 discovery message: %v", err)
 		return []byte{}
 	}
 	
@@ -636,7 +636,7 @@ func (s *SNMPServer) handleGetBulk(startOID string, requestData []byte) []byte {
 	// Parse GetBulk parameters (non-repeaters and max-repetitions)
 	_, maxRepetitions := s.parseGetBulkParams(requestData)
 
-	log.Printf("SNMP %s: GetBulk parameters - maxRepetitions: %d", s.device.ID, maxRepetitions)
+	// log.Printf("SNMP %s: GetBulk parameters - maxRepetitions: %d", s.device.ID, maxRepetitions)
 
 	// For simplicity, we'll return up to maxRepetitions OIDs starting from startOID
 	// In a real implementation, you'd handle non-repeaters properly
@@ -650,11 +650,11 @@ func (s *SNMPServer) handleGetBulk(startOID string, requestData []byte) []byte {
 	// Collect up to maxRepetitions OIDs
 	for count < maxRepetitions {
 		nextOID, response := s.findNextOID(currentOID)
-		log.Printf("SNMP %s: GetBulk iteration %d - currentOID: %s, nextOID: %s, response: %s",
-			s.device.ID, count, currentOID, nextOID, response)
+		// log.Printf("SNMP %s: GetBulk iteration %d - currentOID: %s, nextOID: %s, response: %s",
+		//	s.device.ID, count, currentOID, nextOID, response)
 
 		if nextOID == "" || response == "endOfMibView" {
-			log.Printf("SNMP %s: GetBulk reached end of MIB", s.device.ID)
+			// log.Printf("SNMP %s: GetBulk reached end of MIB", s.device.ID)
 			break
 		}
 
@@ -664,11 +664,11 @@ func (s *SNMPServer) handleGetBulk(startOID string, requestData []byte) []byte {
 		count++
 	}
 
-	log.Printf("SNMP %s: GetBulk collected %d OIDs", s.device.ID, len(oids))
+	// log.Printf("SNMP %s: GetBulk collected %d OIDs", s.device.ID, len(oids))
 
 	// Create GetBulk response with multiple variable bindings
 	responseBytes := s.createGetBulkResponse(oids, responses, requestData)
-	log.Printf("SNMP %s: GetBulk response created, length: %d bytes", s.device.ID, len(responseBytes))
+	// log.Printf("SNMP %s: GetBulk response created, length: %d bytes", s.device.ID, len(responseBytes))
 	return responseBytes
 }
 
@@ -746,8 +746,8 @@ func (s *SNMPServer) parseGetBulkParams(data []byte) (int, int) {
 		maxRepetitions = int(data[pos])
 	}
 
-	log.Printf("SNMP %s: GetBulk parsed parameters - nonRepeaters: %d, maxRepetitions: %d",
-		s.device.ID, nonRepeaters, maxRepetitions)
+	// log.Printf("SNMP %s: GetBulk parsed parameters - nonRepeaters: %d, maxRepetitions: %d",
+	//	s.device.ID, nonRepeaters, maxRepetitions)
 
 	return nonRepeaters, maxRepetitions
 }
@@ -761,8 +761,8 @@ func (s *SNMPServer) createGetBulkResponse(oids []string, responses []string, re
 
 	// Parse request to get community and request ID
 	req := s.parseIncomingRequest(requestData)
-	log.Printf("SNMP %s: GetBulk using Request-ID: %d, Community: %s, Version: %d",
-		s.device.ID, req.RequestID, req.Community, req.Version)
+	// log.Printf("SNMP %s: GetBulk using Request-ID: %d, Community: %s, Version: %d",
+	//	s.device.ID, req.RequestID, req.Community, req.Version)
 
 	// Build multiple variable bindings - using same format as single response
 	var varBindList []byte
@@ -820,7 +820,7 @@ func (s *SNMPServer) createGetBulkResponse(oids []string, responses []string, re
 	// Complete SNMP message - use same approach as regular response
 	msg := encodeSequence(msgContents)
 	// Debug: Hex dump of GetBulk response
-	log.Printf("SNMP %s: GetBulk response hex: %x", s.device.ID, msg[:min(len(msg), 100)])
+	// log.Printf("SNMP %s: GetBulk response hex: %x", s.device.ID, msg[:min(len(msg), 100)])
 	return msg
 }
 
@@ -1402,7 +1402,7 @@ func (s *SNMPServer) createSNMPResponse(oid, value string, requestData []byte) [
 	// Complete SNMP message
 	msg := encodeSequence(msgContents)
 	// Debug: Hex dump of regular response
-	log.Printf("SNMP %s: Regular response hex: %x", s.device.ID, msg[:min(len(msg), 100)])
+	// log.Printf("SNMP %s: Regular response hex: %x", s.device.ID, msg[:min(len(msg), 100)])
 	return msg
 }
 
