@@ -486,28 +486,27 @@ func (s *SNMPServer) createDiscoveryScopedPDU(oid, value string) ([]byte, error)
 }
 
 func (s *SNMPServer) findResponse(oid string) string {
-	// Handle dynamic sysLocation OID
+	// Handle dynamic sysLocation OID - lock-free access
 	if oid == "1.3.6.1.2.1.1.6.0" {
-		s.device.mu.RLock()
-		sysLocation := s.device.sysLocation
-		s.device.mu.RUnlock()
-		return sysLocation
+		if val := s.device.cachedSysLocation.Load(); val != nil {
+			return val.(string)
+		}
+		return s.device.sysLocation // Fallback
 	}
-	
-	// Handle dynamic sysName OID
+
+	// Handle dynamic sysName OID - lock-free access
 	if oid == "1.3.6.1.2.1.1.5.0" {
-		s.device.mu.RLock()
-		sysName := s.device.sysName
-		s.device.mu.RUnlock()
-		return sysName
+		if val := s.device.cachedSysName.Load(); val != nil {
+			return val.(string)
+		}
+		return s.device.sysName // Fallback
 	}
-	
-	// Fast O(1) lookup using hash map index
-	s.device.mu.RLock()
-	defer s.device.mu.RUnlock()
-	
-	if response, exists := s.device.resources.oidIndex[oid]; exists {
-		return response
+
+	// Fast O(1) lookup using lock-free sync.Map
+	if s.device.resources.oidIndex != nil {
+		if response, exists := s.device.resources.oidIndex.Load(oid); exists {
+			return response.(string)
+		}
 	}
 	return "OID not supported"
 }
@@ -550,30 +549,49 @@ func compareOIDs(oid1, oid2 string) int {
 
 // Find the next OID in lexicographic order for SNMP GetNext requests
 func (s *SNMPServer) findNextOID(currentOID string) (string, string) {
-	// Acquire read lock to safely access device data
-	s.device.mu.RLock()
-	defer s.device.mu.RUnlock()
-	
-	// Dynamic OIDs - check these first
+	// Try pre-computed next OID map first (lock-free)
+	if s.device.resources.oidNextMap != nil {
+		if nextOID, exists := s.device.resources.oidNextMap.Load(currentOID); exists {
+			// Found pre-computed next OID, now get its response
+			if response, exists := s.device.resources.oidIndex.Load(nextOID); exists {
+				return nextOID.(string), response.(string)
+			}
+		}
+	}
+
+	// Dynamic OIDs - check these with lock-free access
 	sysNameOID := "1.3.6.1.2.1.1.5.0"
 	sysLocationOID := "1.3.6.1.2.1.1.6.0"
-	
+
 	var nextOID string
 	var response string
-	
+
+	// Get cached dynamic values (lock-free)
+	var cachedSysName, cachedSysLocation string
+	if val := s.device.cachedSysName.Load(); val != nil {
+		cachedSysName = val.(string)
+	} else {
+		cachedSysName = s.device.sysName
+	}
+	if val := s.device.cachedSysLocation.Load(); val != nil {
+		cachedSysLocation = val.(string)
+	} else {
+		cachedSysLocation = s.device.sysLocation
+	}
+
 	// Use binary search on pre-sorted OIDs for O(log n) performance
 	sortedOIDs := s.device.resources.sortedOIDs
 	if len(sortedOIDs) == 0 {
 		// Fallback to checking only dynamic OIDs
 		if compareOIDs(sysNameOID, currentOID) > 0 {
-			return sysNameOID, s.device.sysName
+			return sysNameOID, cachedSysName
 		}
 		if compareOIDs(sysLocationOID, currentOID) > 0 {
-			return sysLocationOID, s.device.sysLocation
+			return sysLocationOID, cachedSysLocation
 		}
 		return "", "endOfMibView"
 	}
-	
+
 	// Find first OID greater than currentOID using binary search
 	left, right := 0, len(sortedOIDs)
 	for left < right {
@@ -584,40 +602,42 @@ func (s *SNMPServer) findNextOID(currentOID string) (string, string) {
 			right = mid
 		}
 	}
-	
+
 	// Check candidates: next static OID, dynamic sysName, and dynamic sysLocation
 	candidates := make([]struct{ oid, resp string }, 0, 3)
-	
+
 	// Add next static OID if found
 	if left < len(sortedOIDs) {
 		staticOID := sortedOIDs[left]
 		// Skip dynamic OIDs that might be in the sorted list
 		if staticOID != sysNameOID && staticOID != sysLocationOID {
-			candidates = append(candidates, struct{ oid, resp string }{
-				oid:  staticOID,
-				resp: s.device.resources.oidIndex[staticOID],
-			})
+			if respVal, exists := s.device.resources.oidIndex.Load(staticOID); exists {
+				candidates = append(candidates, struct{ oid, resp string }{
+					oid:  staticOID,
+					resp: respVal.(string),
+				})
+			}
 		}
 	}
-	
+
 	// Add dynamic OIDs if they're greater than currentOID
 	if compareOIDs(sysNameOID, currentOID) > 0 {
 		candidates = append(candidates, struct{ oid, resp string }{
 			oid:  sysNameOID,
-			resp: s.device.sysName,
+			resp: cachedSysName,
 		})
 	}
 	if compareOIDs(sysLocationOID, currentOID) > 0 {
 		candidates = append(candidates, struct{ oid, resp string }{
 			oid:  sysLocationOID,
-			resp: s.device.sysLocation,
+			resp: cachedSysLocation,
 		})
 	}
-	
+
 	if len(candidates) == 0 {
 		return "", "endOfMibView"
 	}
-	
+
 	// Find lexicographically smallest candidate
 	nextOID = candidates[0].oid
 	response = candidates[0].resp
@@ -627,7 +647,7 @@ func (s *SNMPServer) findNextOID(currentOID string) (string, string) {
 			response = candidates[i].resp
 		}
 	}
-	
+
 	return nextOID, response
 }
 

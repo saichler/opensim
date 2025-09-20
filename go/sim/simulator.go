@@ -15,6 +15,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 	"unsafe"
@@ -492,21 +493,29 @@ func (sm *SimulatorManager) LoadSpecificResources(filename string) (*DeviceResou
 
 // buildResourceIndexes builds performance optimization indexes for fast OID lookups
 func (sm *SimulatorManager) buildResourceIndexes(resources *DeviceResources) {
-	// Initialize the hash map for O(1) OID lookups
-	resources.oidIndex = make(map[string]string, len(resources.SNMP))
-	
+	// Initialize lock-free sync.Map for O(1) OID lookups
+	resources.oidIndex = &sync.Map{}
+
 	// Initialize sorted OID slice for binary search in GetNext operations
 	resources.sortedOIDs = make([]string, 0, len(resources.SNMP))
-	
-	// Build both indexes from the SNMP resources
-	for _, resource := range resources.SNMP {
-		// Hash map index: OID -> Response
-		resources.oidIndex[resource.OID] = resource.Response
-		
+
+	// Initialize next OID map for pre-computed walk paths
+	resources.oidNextMap = &sync.Map{}
+
+	// Build indexes from the SNMP resources
+	for i, resource := range resources.SNMP {
+		// Lock-free hash map index: OID -> Response
+		resources.oidIndex.Store(resource.OID, resource.Response)
+
 		// Sorted OID list for binary search (resources are already sorted)
 		resources.sortedOIDs = append(resources.sortedOIDs, resource.OID)
+
+		// Pre-compute next OID mapping for walks (except for last OID)
+		if i < len(resources.SNMP)-1 {
+			resources.oidNextMap.Store(resource.OID, resources.SNMP[i+1].OID)
+		}
 	}
-	
+
 	// Note: sortedOIDs should already be in lexicographic order since
 	// resources.SNMP was sorted before calling this function
 }
@@ -637,6 +646,9 @@ func (sm *SimulatorManager) CreateDevices(startIP string, count int, netmask str
 		deviceIP := make(net.IP, len(sm.currentIP))
 		copy(deviceIP, sm.currentIP)
 		
+		sysLocationValue := getRandomCity()
+		sysNameValue := getRandomDeviceName()
+
 		device := &DeviceSimulator{
 			ID:           deviceID,
 			IP:           deviceIP,
@@ -645,9 +657,13 @@ func (sm *SimulatorManager) CreateDevices(startIP string, count int, netmask str
 			tunIface:     tunIface,
 			resources:    resources,
 			resourceFile: resourceFile,
-			sysLocation:  getRandomCity(),     // Assign random city for sysLocation
-			sysName:      getRandomDeviceName(), // Assign random device name for sysName
+			sysLocation:  sysLocationValue,
+			sysName:      sysNameValue,
 		}
+
+		// Cache the dynamic values using atomic for lock-free access
+		device.cachedSysName.Store(sysNameValue)
+		device.cachedSysLocation.Store(sysLocationValue)
 
 		// Create servers with SNMPv3 configuration
 		device.snmpServer = &SNMPServer{

@@ -3,6 +3,7 @@ package main
 import (
 	"net"
 	"sync"
+	"sync/atomic"
 
 	"golang.org/x/crypto/ssh"
 )
@@ -27,10 +28,11 @@ type SSHResource struct {
 type DeviceResources struct {
 	SNMP []SNMPResource `json:"snmp"`
 	SSH  []SSHResource  `json:"ssh"`
-	
+
 	// Performance optimization indexes (not serialized)
-	oidIndex    map[string]string  `json:"-"` // OID -> Response mapping for O(1) lookups
-	sortedOIDs  []string          `json:"-"` // Pre-sorted OID list for GetNext operations
+	oidIndex    *sync.Map  `json:"-"` // Lock-free OID -> Response mapping for O(1) lookups
+	sortedOIDs  []string   `json:"-"` // Pre-sorted OID list for GetNext operations
+	oidNextMap  *sync.Map  `json:"-"` // Pre-computed next OID mapping for walks
 }
 
 // Device simulator represents a single simulated device
@@ -46,6 +48,9 @@ type DeviceSimulator struct {
 	resourceFile string // Track which resource file was used
 	sysLocation  string // Dynamic sysLocation for this device
 	sysName      string // Dynamic sysName for this device
+	// Cached frequently accessed values (lock-free)
+	cachedSysName     atomic.Value // Stores string
+	cachedSysLocation atomic.Value // Stores string
 	running      bool
 	mu           sync.RWMutex
 }
