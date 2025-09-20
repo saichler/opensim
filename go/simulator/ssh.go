@@ -16,21 +16,27 @@ import (
 
 // SSH Server implementation
 func (s *SSHServer) Start() error {
-	// Generate host key
-	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		return err
-	}
+	// Use pre-generated host key if available, otherwise generate one
+	var signer ssh.Signer
+	if s.signer != nil {
+		signer = s.signer
+	} else {
+		// Fallback: generate host key (should rarely happen)
+		privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+		if err != nil {
+			return err
+		}
 
-	privateKeyPEM := &pem.Block{
-		Type:  "RSA PRIVATE KEY",
-		Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
-	}
-	privateKeyBytes := pem.EncodeToMemory(privateKeyPEM)
+		privateKeyPEM := &pem.Block{
+			Type:  "RSA PRIVATE KEY",
+			Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
+		}
+		privateKeyBytes := pem.EncodeToMemory(privateKeyPEM)
 
-	signer, err := ssh.ParsePrivateKey(privateKeyBytes)
-	if err != nil {
-		return err
+		signer, err = ssh.ParsePrivateKey(privateKeyBytes)
+		if err != nil {
+			return err
+		}
 	}
 
 	config := &ssh.ServerConfig{

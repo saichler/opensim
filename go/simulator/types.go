@@ -103,6 +103,7 @@ type SSHServer struct {
 	listener net.Listener
 	config   *ssh.ServerConfig
 	running  bool
+	signer   ssh.Signer // SSH host key signer
 }
 
 // Manager for all simulated devices
@@ -112,6 +113,7 @@ type SimulatorManager struct {
 	nextTunIndex    int
 	deviceResources *DeviceResources
 	resourcesCache  map[string]*DeviceResources // Cache for loaded resource files
+	sharedSSHSigner ssh.Signer                   // Shared SSH host key for all devices
 
 	// TUN interface pre-allocation settings
 	tunPoolSize     int                   // Size of the pre-allocated pool (0 = no pre-allocation)
@@ -143,6 +145,8 @@ type CreateDevicesRequest struct {
 	Netmask      string         `json:"netmask"`
 	ResourceFile string         `json:"resource_file,omitempty"` // Optional resource file selection
 	SNMPv3       *SNMPv3Config  `json:"snmpv3,omitempty"`
+	PreAllocate  bool           `json:"pre_allocate,omitempty"` // Optional: explicitly enable/disable pre-allocation
+	MaxWorkers   int            `json:"max_workers,omitempty"` // Optional: max workers for pre-allocation
 }
 
 type DeviceInfo struct {

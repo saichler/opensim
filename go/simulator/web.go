@@ -27,7 +27,15 @@ func createDevicesHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = manager.CreateDevices(req.StartIP, req.DeviceCount, req.Netmask, req.ResourceFile, req.SNMPv3)
+	// Use CreateDevicesWithOptions if pre-allocation parameters are specified
+	if req.PreAllocate || req.MaxWorkers > 0 {
+		// If PreAllocate is not explicitly set but MaxWorkers is provided, enable pre-allocation
+		preAllocate := req.PreAllocate || req.MaxWorkers > 0
+		err = manager.CreateDevicesWithOptions(req.StartIP, req.DeviceCount, req.Netmask, req.ResourceFile, req.SNMPv3, preAllocate, req.MaxWorkers)
+	} else {
+		// Use default behavior (auto pre-allocates for 10+ devices)
+		err = manager.CreateDevices(req.StartIP, req.DeviceCount, req.Netmask, req.ResourceFile, req.SNMPv3)
+	}
 	if err != nil {
 		sendErrorResponse(w, err.Error(), http.StatusInternalServerError)
 		return

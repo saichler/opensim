@@ -1,13 +1,17 @@
 package main
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
 	"encoding/binary"
 	"encoding/csv"
 	"encoding/json"
+	"encoding/pem"
 	"flag"
 	"fmt"
 	"log"
-	"math/rand"
+	mathrand "math/rand"
 	"net"
 	"net/http"
 	"os"
@@ -19,6 +23,8 @@ import (
 	"syscall"
 	"time"
 	"unsafe"
+
+	"golang.org/x/crypto/ssh"
 )
 
 // SNMP ASN.1 BER/DER type tags (shared constants defined here)
@@ -140,7 +146,7 @@ func loadWorldCities() error {
 
 // getRandomCity returns a random city from the world cities list
 func getRandomCity() string {
-	rand.Seed(time.Now().UnixNano())
+	mathrand.Seed(time.Now().UnixNano())
 	
 	// Ensure cities are loaded
 	if len(worldCities) == 0 {
@@ -155,7 +161,7 @@ func getRandomCity() string {
 		return "Unknown Location"
 	}
 	
-	return worldCities[rand.Intn(len(worldCities))]
+	return worldCities[mathrand.Intn(len(worldCities))]
 }
 
 // Global lists for generating random device names
@@ -198,48 +204,48 @@ func getRandomDeviceName() string {
 	patterns := []func() string{
 		// Pattern 1: PREFIX-TYPE-NUMBER (e.g., CORE-RTR-01)
 		func() string {
-			prefix := devicePrefixes[rand.Intn(len(devicePrefixes))]
-			devType := deviceTypes[rand.Intn(len(deviceTypes))]
-			number := rand.Intn(99) + 1
+			prefix := devicePrefixes[mathrand.Intn(len(devicePrefixes))]
+			devType := deviceTypes[mathrand.Intn(len(deviceTypes))]
+			number := mathrand.Intn(99) + 1
 			return fmt.Sprintf("%s-%s-%02d", prefix, devType, number)
 		},
 		// Pattern 2: LOCATION-PREFIX-NUMBER (e.g., NYC-CORE-03)
 		func() string {
-			location := deviceLocations[rand.Intn(len(deviceLocations))]
-			prefix := devicePrefixes[rand.Intn(len(devicePrefixes))]
-			number := rand.Intn(99) + 1
+			location := deviceLocations[mathrand.Intn(len(deviceLocations))]
+			prefix := devicePrefixes[mathrand.Intn(len(devicePrefixes))]
+			number := mathrand.Intn(99) + 1
 			return fmt.Sprintf("%s-%s-%02d", location, prefix, number)
 		},
 		// Pattern 3: ANIMAL-NUMBER (e.g., WOLF-07)
 		func() string {
-			animal := animalNames[rand.Intn(len(animalNames))]
-			number := rand.Intn(99) + 1
+			animal := animalNames[mathrand.Intn(len(animalNames))]
+			number := mathrand.Intn(99) + 1
 			return fmt.Sprintf("%s-%02d", animal, number)
 		},
 		// Pattern 4: MYTH-LOCATION (e.g., ATLAS-NYC)
 		func() string {
-			myth := mythNames[rand.Intn(len(mythNames))]
-			location := deviceLocations[rand.Intn(len(deviceLocations))]
+			myth := mythNames[mathrand.Intn(len(mythNames))]
+			location := deviceLocations[mathrand.Intn(len(deviceLocations))]
 			return fmt.Sprintf("%s-%s", myth, location)
 		},
 		// Pattern 5: PREFIX-LOCATION-TYPE (e.g., CORE-NYC-SWH)
 		func() string {
-			prefix := devicePrefixes[rand.Intn(len(devicePrefixes))]
-			location := deviceLocations[rand.Intn(len(deviceLocations))]
-			devType := deviceTypes[rand.Intn(len(deviceTypes))]
+			prefix := devicePrefixes[mathrand.Intn(len(devicePrefixes))]
+			location := deviceLocations[mathrand.Intn(len(deviceLocations))]
+			devType := deviceTypes[mathrand.Intn(len(deviceTypes))]
 			return fmt.Sprintf("%s-%s-%s", prefix, location, devType)
 		},
 		// Pattern 6: TYPE-ANIMAL-NUMBER (e.g., RTR-HAWK-12)
 		func() string {
-			devType := deviceTypes[rand.Intn(len(deviceTypes))]
-			animal := animalNames[rand.Intn(len(animalNames))]
-			number := rand.Intn(99) + 1
+			devType := deviceTypes[mathrand.Intn(len(deviceTypes))]
+			animal := animalNames[mathrand.Intn(len(animalNames))]
+			number := mathrand.Intn(99) + 1
 			return fmt.Sprintf("%s-%s-%02d", devType, animal, number)
 		},
 	}
 	
 	// Select a random pattern and generate the name
-	pattern := patterns[rand.Intn(len(patterns))]
+	pattern := patterns[mathrand.Intn(len(patterns))]
 	name := pattern()
 	// log.Printf("Generated device name: %s", name)
 	return name
@@ -401,6 +407,10 @@ func NewSimulatorManager() *SimulatorManager {
 	sm.isCreatingDevices.Store(false)
 	sm.deviceCreateProgress.Store(0)
 	sm.deviceCreateTotal.Store(0)
+
+	// Pre-generate shared SSH host key for all devices
+	sm.generateSharedSSHKey()
+
 	return sm
 }
 
@@ -408,6 +418,34 @@ func (sm *SimulatorManager) getNextTunName() string {
 	name := fmt.Sprintf("%s%d", TUN_DEVICE_PREFIX, sm.nextTunIndex)
 	sm.nextTunIndex++
 	return name
+}
+
+// generateSharedSSHKey generates a single RSA key to be shared by all devices
+func (sm *SimulatorManager) generateSharedSSHKey() {
+	log.Println("Generating shared SSH host key for all devices...")
+	startTime := time.Now()
+
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		log.Printf("WARNING: Failed to generate shared SSH key: %v", err)
+		return
+	}
+
+	privateKeyPEM := &pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
+	}
+	privateKeyBytes := pem.EncodeToMemory(privateKeyPEM)
+
+	signer, err := ssh.ParsePrivateKey(privateKeyBytes)
+	if err != nil {
+		log.Printf("WARNING: Failed to parse shared SSH key: %v", err)
+		return
+	}
+
+	sm.sharedSSHSigner = signer
+	elapsed := time.Since(startTime)
+	log.Printf("✅ Shared SSH host key generated in %v", elapsed)
 }
 
 func (sm *SimulatorManager) LoadResources(filename string) error {
@@ -831,11 +869,43 @@ func (sm *SimulatorManager) incrementIPAddress(ip net.IP) {
 }
 
 func (sm *SimulatorManager) CreateDevices(startIP string, count int, netmask string, resourceFile string, v3Config *SNMPv3Config) error {
+	return sm.CreateDevicesWithOptions(startIP, count, netmask, resourceFile, v3Config, true, 0)
+}
+
+// CreateDevicesWithOptions creates devices with optional pre-allocation control
+func (sm *SimulatorManager) CreateDevicesWithOptions(startIP string, count int, netmask string, resourceFile string, v3Config *SNMPv3Config, preAllocate bool, maxWorkers int) error {
 	// Set device creation status
 	sm.isCreatingDevices.Store(true)
 	sm.deviceCreateProgress.Store(0)
 	sm.deviceCreateTotal.Store(count)
 	defer sm.isCreatingDevices.Store(false)
+
+	// Automatically pre-allocate TUN interfaces if creating many devices
+	// Pre-allocate by default for 10+ devices unless explicitly disabled
+	shouldPreAllocate := preAllocate && count >= 10
+
+	if shouldPreAllocate {
+		ip := net.ParseIP(startIP)
+		if ip != nil {
+			// Use provided maxWorkers or determine optimal count based on device count
+			if maxWorkers == 0 {
+				if count >= 1000 {
+					maxWorkers = 200
+				} else if count >= 500 {
+					maxWorkers = 150
+				} else {
+					maxWorkers = 100
+				}
+			}
+
+			log.Printf("Pre-allocating %d TUN interfaces with %d workers for faster device creation...", count, maxWorkers)
+			err := sm.PreAllocateTunInterfaces(count, maxWorkers, ip, netmask)
+			if err != nil {
+				log.Printf("WARNING: Pre-allocation failed: %v. Falling back to on-demand creation.", err)
+				// Continue with device creation even if pre-allocation fails
+			}
+		}
+	}
 
 	log.Printf("🚀 DEVICE STARTUP TEST: Creating %d devices starting from %s/%s", count, startIP, netmask)
 	log.Printf("📊 Device Creation Parameters:")
@@ -966,7 +1036,7 @@ func (sm *SimulatorManager) CreateDevices(startIP string, count int, netmask str
 			device:   device, 
 			v3Config: v3Config,
 		}
-		device.sshServer = &SSHServer{device: device}
+		device.sshServer = &SSHServer{device: device, signer: sm.sharedSSHSigner}
 
 		// Start device services
 		if err := device.Start(); err != nil {
@@ -1147,7 +1217,7 @@ func (sm *SimulatorManager) createSingleDevice(deviceIndex int, deviceIP net.IP,
 		device:   device,
 		v3Config: v3Config,
 	}
-	device.sshServer = &SSHServer{device: device}
+	device.sshServer = &SSHServer{device: device, signer: sm.sharedSSHSigner}
 
 	// Start device services
 	if err := device.Start(); err != nil {
@@ -1415,8 +1485,6 @@ func main() {
 		autoStartIP      = flag.String("auto-start-ip", "", "Auto-create devices starting from this IP address (e.g., 192.168.100.1)")
 		autoCount        = flag.Int("auto-count", 0, "Number of devices to auto-create (requires -auto-start-ip)")
 		autoNetmask      = flag.String("auto-netmask", "24", "Netmask for auto-created devices (default: 24)")
-		preAllocCount    = flag.Int("pre-alloc", 0, "Number of TUN interfaces to pre-allocate for faster device creation (0 = disable)")
-		maxWorkers       = flag.Int("max-workers", 100, "Maximum number of parallel workers for interface creation (default: 100)")
 		snmpv3EngineID   = flag.String("snmpv3-engine-id", "", "Enable SNMPv3 with specified engine ID (e.g., 800000090300AABBCCDD)")
 		snmpv3AuthProto  = flag.String("snmpv3-auth", "md5", "SNMPv3 authentication protocol: none, md5, sha1 (default: md5)")
 		snmpv3PrivProto  = flag.String("snmpv3-priv", "none", "SNMPv3 privacy protocol: none, des, aes128 (default: none)")
@@ -1440,8 +1508,7 @@ func main() {
 		fmt.Printf("  %s                                                    # Start server only\n", os.Args[0])
 		fmt.Printf("  %s -auto-start-ip 192.168.100.1 -auto-count 5       # Auto-create 5 devices\n", os.Args[0])
 		fmt.Printf("  %s -auto-start-ip 10.10.10.1 -auto-count 3 -port 9090  # Custom port\n", os.Args[0])
-		fmt.Printf("  %s -auto-start-ip 192.168.100.1 -auto-count 10000 \\  # 10K devices with pre-allocation\n", os.Args[0])
-		fmt.Printf("    -pre-alloc 10000 -max-workers 200\n")
+		fmt.Printf("  %s -auto-start-ip 192.168.100.1 -auto-count 10000       # 10K devices\n", os.Args[0])
 		fmt.Printf("  %s -auto-start-ip 192.168.100.1 -auto-count 2 \\      # SNMPv3 with MD5 auth\n", os.Args[0])
 		fmt.Printf("    -snmpv3-engine-id 800000090300AABBCCDD -snmpv3-auth md5\n")
 		fmt.Printf("  %s -auto-start-ip 192.168.100.1 -auto-count 1 \\      # SNMPv3 with privacy\n", os.Args[0])
@@ -1528,21 +1595,6 @@ func main() {
 				}
 				log.Printf("SNMPv3 enabled with engine ID: %s, auth: %s, priv: %s",
 					*snmpv3EngineID, *snmpv3AuthProto, *snmpv3PrivProto)
-			}
-
-			// Pre-allocate TUN interfaces if requested
-			if *preAllocCount > 0 {
-				startIP := net.ParseIP(*autoStartIP)
-				if startIP != nil {
-					log.Printf("Pre-allocating %d TUN interfaces with %d workers...", *preAllocCount, *maxWorkers)
-					err := manager.PreAllocateTunInterfaces(*preAllocCount, *maxWorkers, startIP, *autoNetmask)
-					if err != nil {
-						log.Printf("ERROR: Failed to pre-allocate interfaces: %v", err)
-						log.Printf("Continuing with device creation (will use on-demand interface creation)")
-					}
-				} else {
-					log.Printf("ERROR: Invalid start IP for pre-allocation: %s", *autoStartIP)
-				}
 			}
 
 			err := manager.CreateDevices(*autoStartIP, *autoCount, *autoNetmask, "", v3Config)
