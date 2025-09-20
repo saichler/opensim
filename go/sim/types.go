@@ -111,6 +111,12 @@ type SimulatorManager struct {
 	nextTunIndex    int
 	deviceResources *DeviceResources
 	resourcesCache  map[string]*DeviceResources // Cache for loaded resource files
+
+	// TUN interface pre-allocation pool
+	tunPool         chan *TunInterface    // Pre-allocated TUN interfaces
+	tunPoolSize     int                   // Size of the pre-allocated pool
+	maxWorkers      int                   // Maximum parallel workers for interface creation
+
 	mu              sync.RWMutex
 }
 

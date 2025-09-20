@@ -304,6 +304,25 @@ func (tun *TunInterface) destroy() error {
 	return nil
 }
 
+// reconfigure updates the IP address of an existing TUN interface
+func (tun *TunInterface) reconfigure(newIP net.IP, netmask string) error {
+	// Remove old IP address
+	cmd := exec.Command("ip", "addr", "del", fmt.Sprintf("%s/%s", tun.IP.String(), netmask), "dev", tun.Name)
+	cmd.Run() // Ignore errors in case the IP wasn't set
+
+	// Set new IP address
+	cmd = exec.Command("ip", "addr", "add", fmt.Sprintf("%s/%s", newIP.String(), netmask), "dev", tun.Name)
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to set new IP address %s: %v", newIP.String(), err)
+	}
+
+	// Update the interface IP
+	tun.IP = make(net.IP, len(newIP))
+	copy(tun.IP, newIP)
+
+	return nil
+}
+
 // compareOIDsLexicographically compares two OID strings lexicographically
 // Returns -1 if oid1 < oid2, 0 if equal, 1 if oid1 > oid2
 func compareOIDsLexicographically(oid1, oid2 string) int {
@@ -588,6 +607,145 @@ func getDeviceTypeFromResourceFile(filename string) string {
 	}
 }
 
+// PreAllocateTunInterfaces creates a pool of TUN interfaces in parallel for faster device creation
+func (sm *SimulatorManager) PreAllocateTunInterfaces(poolSize int, maxWorkers int, startIP net.IP, netmask string) error {
+	if poolSize <= 0 {
+		return nil // No pre-allocation requested
+	}
+
+	// Limit maximum workers to prevent resource exhaustion
+	if maxWorkers > 500 {
+		maxWorkers = 500
+		log.Printf("WARNING: Limiting workers to 500 to prevent resource exhaustion")
+	}
+
+	log.Printf("Pre-allocating %d TUN interfaces with %d workers...", poolSize, maxWorkers)
+	startTime := time.Now()
+
+	// Initialize the pool
+	sm.tunPool = make(chan *TunInterface, poolSize)
+	sm.tunPoolSize = poolSize
+	sm.maxWorkers = maxWorkers
+
+	// Worker pool for parallel interface creation
+	sem := make(chan struct{}, maxWorkers) // Limit concurrent workers
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	var errors []error
+
+	// Current IP for allocation (make a copy to avoid modifying the manager's IP)
+	currentIP := make(net.IP, len(startIP))
+	copy(currentIP, startIP)
+
+	for i := 0; i < poolSize; i++ {
+		// Create a unique IP for this interface
+		interfaceIP := make(net.IP, len(currentIP))
+		copy(interfaceIP, currentIP)
+
+		wg.Add(1)
+		go func(interfaceIndex int, ip net.IP) {
+			defer wg.Done()
+
+			// Acquire worker slot
+			sem <- struct{}{}
+			defer func() { <-sem }()
+
+			// Generate unique interface name
+			tunName := fmt.Sprintf("%s%d", TUN_DEVICE_PREFIX, interfaceIndex)
+
+			// Create TUN interface
+			tunIface, err := createTunInterface(tunName, ip, netmask)
+			if err != nil {
+				mu.Lock()
+				errors = append(errors, fmt.Errorf("failed to create interface %s: %v", tunName, err))
+				mu.Unlock()
+				return
+			}
+
+			// Add to pool (non-blocking since pool is pre-sized)
+			sm.tunPool <- tunIface
+
+		}(i, interfaceIP)
+
+		// Increment IP for next interface
+		sm.incrementIPAddress(currentIP)
+	}
+
+	// Wait for all workers to complete with timeout
+	done := make(chan struct{})
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		// All workers completed successfully
+	case <-time.After(5 * time.Minute):
+		log.Printf("WARNING: Pre-allocation timed out after 5 minutes")
+		return fmt.Errorf("pre-allocation timed out")
+	}
+
+	elapsed := time.Since(startTime)
+	created := len(sm.tunPool)
+
+	if len(errors) > 0 {
+		log.Printf("Pre-allocation completed with %d successes and %d errors in %v", created, len(errors), elapsed)
+		// Log first few errors for debugging
+		for i, err := range errors {
+			if i >= 5 { // Limit error output
+				log.Printf("... and %d more errors", len(errors)-5)
+				break
+			}
+			log.Printf("Error %d: %v", i+1, err)
+		}
+	} else {
+		log.Printf("Successfully pre-allocated %d TUN interfaces in %v (%.2fms per interface)",
+			created, elapsed, float64(elapsed.Nanoseconds())/float64(created*1e6))
+	}
+
+	// Update manager's nextTunIndex to continue after pre-allocated interfaces
+	sm.nextTunIndex = poolSize
+
+	// Update the manager's currentIP to continue after pre-allocated interfaces
+	// so that device creation uses the correct starting IP
+	sm.currentIP = make(net.IP, len(currentIP))
+	copy(sm.currentIP, currentIP)
+
+	return nil
+}
+
+// GetTunFromPool retrieves a pre-allocated TUN interface from the pool
+func (sm *SimulatorManager) GetTunFromPool() *TunInterface {
+	if sm.tunPool == nil {
+		return nil
+	}
+
+	select {
+	case tunIface := <-sm.tunPool:
+		return tunIface
+	default:
+		return nil // Pool is empty
+	}
+}
+
+// incrementIPAddress increments an IP address in-place
+func (sm *SimulatorManager) incrementIPAddress(ip net.IP) {
+	ip4 := ip.To4()
+	if ip4 == nil {
+		return // Only support IPv4
+	}
+
+	// Convert to uint32, increment, convert back
+	ipInt := uint32(ip4[0])<<24 + uint32(ip4[1])<<16 + uint32(ip4[2])<<8 + uint32(ip4[3])
+	ipInt++
+
+	ip4[0] = byte(ipInt >> 24)
+	ip4[1] = byte(ipInt >> 16)
+	ip4[2] = byte(ipInt >> 8)
+	ip4[3] = byte(ipInt)
+}
+
 func (sm *SimulatorManager) CreateDevices(startIP string, count int, netmask string, resourceFile string, v3Config *SNMPv3Config) error {
 	sm.mu.Lock()
 	defer sm.mu.Unlock()
@@ -630,16 +788,26 @@ func (sm *SimulatorManager) CreateDevices(startIP string, count int, netmask str
 			continue
 		}
 
-		// Create individual TUN interface for this device (make a copy of the IP)
-		tunName := sm.getNextTunName()
-		tunIP := make(net.IP, len(sm.currentIP))
-		copy(tunIP, sm.currentIP)
-		
-		tunIface, err := createTunInterface(tunName, tunIP, netmask)
-		if err != nil {
-			// log.Printf("Failed to create TUN interface for %s: %v", deviceID, err)
-			sm.incrementIP()
-			continue
+		// Try to get TUN interface from pre-allocated pool first
+		var tunIface *TunInterface
+		var err error
+
+		tunIface = sm.GetTunFromPool()
+		if tunIface == nil {
+			// No pre-allocated interface available, create one on-demand
+			tunName := sm.getNextTunName()
+			tunIP := make(net.IP, len(sm.currentIP))
+			copy(tunIP, sm.currentIP)
+
+			tunIface, err = createTunInterface(tunName, tunIP, netmask)
+			if err != nil {
+				// log.Printf("Failed to create TUN interface for %s: %v", deviceID, err)
+				sm.incrementIP()
+				continue
+			}
+		} else {
+			// Using pre-allocated interface - it already has the correct IP assigned
+			// since pre-allocation used sequential IPs starting from the same range
 		}
 
 		// Create device with default ports (make another copy of the IP for the device)
@@ -902,6 +1070,8 @@ func main() {
 		autoStartIP      = flag.String("auto-start-ip", "", "Auto-create devices starting from this IP address (e.g., 192.168.100.1)")
 		autoCount        = flag.Int("auto-count", 0, "Number of devices to auto-create (requires -auto-start-ip)")
 		autoNetmask      = flag.String("auto-netmask", "24", "Netmask for auto-created devices (default: 24)")
+		preAllocCount    = flag.Int("pre-alloc", 0, "Number of TUN interfaces to pre-allocate for faster device creation (0 = disable)")
+		maxWorkers       = flag.Int("max-workers", 100, "Maximum number of parallel workers for interface creation (default: 100)")
 		snmpv3EngineID   = flag.String("snmpv3-engine-id", "", "Enable SNMPv3 with specified engine ID (e.g., 800000090300AABBCCDD)")
 		snmpv3AuthProto  = flag.String("snmpv3-auth", "md5", "SNMPv3 authentication protocol: none, md5, sha1 (default: md5)")
 		snmpv3PrivProto  = flag.String("snmpv3-priv", "none", "SNMPv3 privacy protocol: none, des, aes128 (default: none)")
@@ -925,6 +1095,8 @@ func main() {
 		fmt.Printf("  %s                                                    # Start server only\n", os.Args[0])
 		fmt.Printf("  %s -auto-start-ip 192.168.100.1 -auto-count 5       # Auto-create 5 devices\n", os.Args[0])
 		fmt.Printf("  %s -auto-start-ip 10.10.10.1 -auto-count 3 -port 9090  # Custom port\n", os.Args[0])
+		fmt.Printf("  %s -auto-start-ip 192.168.100.1 -auto-count 10000 \\  # 10K devices with pre-allocation\n", os.Args[0])
+		fmt.Printf("    -pre-alloc 10000 -max-workers 200\n")
 		fmt.Printf("  %s -auto-start-ip 192.168.100.1 -auto-count 2 \\      # SNMPv3 with MD5 auth\n", os.Args[0])
 		fmt.Printf("    -snmpv3-engine-id 800000090300AABBCCDD -snmpv3-auth md5\n")
 		fmt.Printf("  %s -auto-start-ip 192.168.100.1 -auto-count 1 \\      # SNMPv3 with privacy\n", os.Args[0])
@@ -989,7 +1161,22 @@ func main() {
 			log.Printf("SNMPv3 enabled with engine ID: %s, auth: %s, priv: %s", 
 				*snmpv3EngineID, *snmpv3AuthProto, *snmpv3PrivProto)
 		}
-		
+
+		// Pre-allocate TUN interfaces if requested
+		if *preAllocCount > 0 {
+			startIP := net.ParseIP(*autoStartIP)
+			if startIP != nil {
+				log.Printf("Pre-allocating %d TUN interfaces with %d workers...", *preAllocCount, *maxWorkers)
+				err := manager.PreAllocateTunInterfaces(*preAllocCount, *maxWorkers, startIP, *autoNetmask)
+				if err != nil {
+					log.Printf("ERROR: Failed to pre-allocate interfaces: %v", err)
+					log.Printf("Continuing with device creation (will use on-demand interface creation)")
+				}
+			} else {
+				log.Printf("ERROR: Invalid start IP for pre-allocation: %s", *autoStartIP)
+			}
+		}
+
 		err := manager.CreateDevices(*autoStartIP, *autoCount, *autoNetmask, "", v3Config)
 		if err != nil {
 			log.Printf("Failed to auto-create devices: %v", err)
