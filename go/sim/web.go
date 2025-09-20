@@ -46,6 +46,11 @@ func listResourcesHandler(w http.ResponseWriter, r *http.Request) {
 	sendDataResponse(w, resources)
 }
 
+func statusHandler(w http.ResponseWriter, r *http.Request) {
+	status := manager.GetStatus()
+	sendDataResponse(w, status)
+}
+
 func deleteDeviceHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	deviceID := vars["id"]
@@ -503,6 +508,7 @@ func webUIHandler(w http.ResponseWriter, r *http.Request) {
         const API_BASE = '/api/v1';
         let devices = [];
         let resources = [];
+        let isStatusPolling = false;
         
         // Pagination state
         const DEVICES_PER_PAGE = 50;
@@ -588,6 +594,51 @@ func webUIHandler(w http.ResponseWriter, r *http.Request) {
             }
         }
 
+        async function checkStatus() {
+            try {
+                const response = await apiCall('/status');
+                const status = response.data;
+                updateStatusDisplay(status);
+
+                // Start/stop status polling based on activity
+                if ((status.is_pre_allocating || status.is_creating_devices) && !isStatusPolling) {
+                    startStatusPolling();
+                } else if (!status.is_pre_allocating && !status.is_creating_devices && isStatusPolling) {
+                    stopStatusPolling();
+                    // Refresh devices list when operations complete
+                    await loadDevices();
+                }
+            } catch (error) {
+                console.error('Failed to check status:', error);
+            }
+        }
+
+        function startStatusPolling() {
+            if (isStatusPolling) return;
+            isStatusPolling = true;
+            const pollInterval = setInterval(async () => {
+                if (!isStatusPolling) {
+                    clearInterval(pollInterval);
+                    return;
+                }
+                await checkStatus();
+            }, 1000); // Poll every second during operations
+        }
+
+        function stopStatusPolling() {
+            isStatusPolling = false;
+        }
+
+        function updateStatusDisplay(status) {
+            if (status.is_pre_allocating) {
+                const progress = status.pre_alloc_total > 0 ? Math.round((status.pre_alloc_progress / status.pre_alloc_total) * 100) : 0;
+                showAlert('Pre-allocating TUN interfaces: ' + status.pre_alloc_progress + '/' + status.pre_alloc_total + ' (' + progress + '%)', 'warning');
+            } else if (status.is_creating_devices) {
+                const progress = status.device_create_total > 0 ? Math.round((status.device_create_progress / status.device_create_total) * 100) : 0;
+                showAlert('Creating devices: ' + status.device_create_progress + '/' + status.device_create_total + ' (' + progress + '%)', 'warning');
+            }
+        }
+
         async function loadResources() {
             try {
                 const response = await apiCall('/resources');
@@ -621,17 +672,21 @@ func webUIHandler(w http.ResponseWriter, r *http.Request) {
                     device_count: parseInt(deviceCount),
                     netmask: netmask
                 };
-                
+
                 // Add resource file if selected
                 if (resourceFile) {
                     requestData.resource_file = resourceFile;
                 }
-                
+
                 const response = await apiCall('/devices', {
                     method: 'POST',
                     body: JSON.stringify(requestData)
                 });
                 showAlert(response.message, 'success');
+
+                // Start status polling to track progress
+                startStatusPolling();
+
                 await loadDevices();
             } catch (error) {
                 showAlert('Failed to create devices: ' + error.message, 'error');
@@ -967,6 +1022,7 @@ func webUIHandler(w http.ResponseWriter, r *http.Request) {
         document.addEventListener('DOMContentLoaded', () => {
             loadDevices();
             loadResources();
+            checkStatus(); // Initial status check
             showAlert('Network Device Simulator Web UI loaded successfully!', 'success');
         });
     </script>
@@ -994,6 +1050,7 @@ func setupRoutes() *mux.Router {
 	api.HandleFunc("/devices/{id}", deleteDeviceHandler).Methods("DELETE")
 	api.HandleFunc("/devices", deleteAllDevicesHandler).Methods("DELETE")
 	api.HandleFunc("/resources", listResourcesHandler).Methods("GET")
+	api.HandleFunc("/status", statusHandler).Methods("GET")
 
 	// Static file for logo
 	router.HandleFunc("/cr.gif", func(w http.ResponseWriter, r *http.Request) {

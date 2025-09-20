@@ -112,10 +112,16 @@ type SimulatorManager struct {
 	deviceResources *DeviceResources
 	resourcesCache  map[string]*DeviceResources // Cache for loaded resource files
 
-	// TUN interface pre-allocation pool
-	tunPool         chan *TunInterface    // Pre-allocated TUN interfaces
-	tunPoolSize     int                   // Size of the pre-allocated pool
+	// TUN interface pre-allocation settings
+	tunPoolSize     int                   // Size of the pre-allocated pool (0 = no pre-allocation)
 	maxWorkers      int                   // Maximum parallel workers for interface creation
+
+	// Status tracking for pre-allocation and device creation
+	isPreAllocating      atomic.Value      // bool - true when pre-allocation is in progress
+	preAllocProgress     atomic.Value      // int - number of interfaces pre-allocated so far
+	isCreatingDevices    atomic.Value      // bool - true when device creation is in progress
+	deviceCreateProgress atomic.Value      // int - number of devices created so far
+	deviceCreateTotal    atomic.Value      // int - total number of devices to create
 
 	mu              sync.RWMutex
 }
@@ -150,4 +156,15 @@ type APIResponse struct {
 	Success bool        `json:"success"`
 	Message string      `json:"message"`
 	Data    interface{} `json:"data,omitempty"`
+}
+
+type ManagerStatus struct {
+	IsPreAllocating      bool `json:"is_pre_allocating"`
+	PreAllocProgress     int  `json:"pre_alloc_progress"`
+	PreAllocTotal        int  `json:"pre_alloc_total"`
+	IsCreatingDevices    bool `json:"is_creating_devices"`
+	DeviceCreateProgress int  `json:"device_create_progress"`
+	DeviceCreateTotal    int  `json:"device_create_total"`
+	TotalDevices         int  `json:"total_devices"`
+	RunningDevices       int  `json:"running_devices"`
 }

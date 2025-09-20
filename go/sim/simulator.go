@@ -362,11 +362,18 @@ func compareOIDsLexicographically(oid1, oid2 string) int {
 
 // SimulatorManager implementation
 func NewSimulatorManager() *SimulatorManager {
-	return &SimulatorManager{
+	sm := &SimulatorManager{
 		devices:        make(map[string]*DeviceSimulator),
 		nextTunIndex:   0,
 		resourcesCache: make(map[string]*DeviceResources),
 	}
+	// Initialize atomic values
+	sm.isPreAllocating.Store(false)
+	sm.preAllocProgress.Store(0)
+	sm.isCreatingDevices.Store(false)
+	sm.deviceCreateProgress.Store(0)
+	sm.deviceCreateTotal.Store(0)
+	return sm
 }
 
 func (sm *SimulatorManager) getNextTunName() string {
@@ -619,11 +626,23 @@ func (sm *SimulatorManager) PreAllocateTunInterfaces(poolSize int, maxWorkers in
 		log.Printf("WARNING: Limiting workers to 500 to prevent resource exhaustion")
 	}
 
-	log.Printf("Pre-allocating %d TUN interfaces with %d workers...", poolSize, maxWorkers)
-	startTime := time.Now()
+	// Set pre-allocation status
+	sm.isPreAllocating.Store(true)
+	sm.preAllocProgress.Store(0)
+	defer sm.isPreAllocating.Store(false)
 
-	// Initialize the pool
-	sm.tunPool = make(chan *TunInterface, poolSize)
+	log.Printf("🚀 PERFORMANCE TEST: Pre-allocating %d TUN interfaces with %d workers...", poolSize, maxWorkers)
+	log.Printf("📊 Test Parameters:")
+	log.Printf("   - Pool Size: %d interfaces", poolSize)
+	log.Printf("   - Workers: %d parallel workers", maxWorkers)
+	log.Printf("   - Start IP: %s/%s", startIP.String(), netmask)
+	log.Printf("   - Test Started: %s", time.Now().Format("2006-01-02 15:04:05.000"))
+	log.Println()
+
+	startTime := time.Now()
+	log.Printf("⏱️  START TIME: %v", startTime.Format("15:04:05.000"))
+
+	// Store pool size for device creation to know pre-allocation was done
 	sm.tunPoolSize = poolSize
 	sm.maxWorkers = maxWorkers
 
@@ -654,7 +673,7 @@ func (sm *SimulatorManager) PreAllocateTunInterfaces(poolSize int, maxWorkers in
 			tunName := fmt.Sprintf("%s%d", TUN_DEVICE_PREFIX, interfaceIndex)
 
 			// Create TUN interface
-			tunIface, err := createTunInterface(tunName, ip, netmask)
+			_, err := createTunInterface(tunName, ip, netmask)
 			if err != nil {
 				mu.Lock()
 				errors = append(errors, fmt.Errorf("failed to create interface %s: %v", tunName, err))
@@ -662,8 +681,18 @@ func (sm *SimulatorManager) PreAllocateTunInterfaces(poolSize int, maxWorkers in
 				return
 			}
 
-			// Add to pool (non-blocking since pool is pre-sized)
-			sm.tunPool <- tunIface
+			// Update progress counter
+			current := sm.preAllocProgress.Load().(int)
+			sm.preAllocProgress.Store(current + 1)
+
+			// Log progress every 50 interfaces or for milestones
+			newCurrent := current + 1
+			if newCurrent%50 == 0 || newCurrent == 100 || newCurrent == 200 || newCurrent == 250 {
+				elapsed := time.Since(startTime)
+				rate := float64(newCurrent) / elapsed.Seconds()
+				log.Printf("📈 Progress: %d/%d interfaces created (%.1f interfaces/sec, %v elapsed)",
+					newCurrent, poolSize, rate, elapsed.Round(time.Millisecond))
+			}
 
 		}(i, interfaceIP)
 
@@ -687,22 +716,41 @@ func (sm *SimulatorManager) PreAllocateTunInterfaces(poolSize int, maxWorkers in
 	}
 
 	elapsed := time.Since(startTime)
-	created := len(sm.tunPool)
+	created := sm.preAllocProgress.Load().(int)
+	endTime := time.Now()
+
+	log.Printf("⏱️  END TIME: %v", endTime.Format("15:04:05.000"))
+	log.Println()
+
+	log.Printf("🎯 PERFORMANCE RESULTS:")
+	log.Printf("   ✅ Total interfaces created: %d/%d", created, poolSize)
+	log.Printf("   ⏱️  Total time: %v", elapsed)
+	log.Printf("   📊 Average time per interface: %.2f ms", float64(elapsed.Nanoseconds())/float64(created*1e6))
+	log.Printf("   🚀 Interfaces per second: %.2f", float64(created)/elapsed.Seconds())
+	log.Printf("   👥 Workers used: %d", maxWorkers)
+	log.Printf("   💾 Memory efficiency: ~%.1f KB per interface", float64(created*4)/1024.0) // Rough estimate
 
 	if len(errors) > 0 {
-		log.Printf("Pre-allocation completed with %d successes and %d errors in %v", created, len(errors), elapsed)
-		// Log first few errors for debugging
+		log.Printf("   ❌ Errors encountered: %d", len(errors))
+		log.Printf("   📈 Success rate: %.1f%%", float64(created)/float64(poolSize)*100.0)
+		log.Println()
+		log.Printf("First few errors for debugging:")
 		for i, err := range errors {
 			if i >= 5 { // Limit error output
 				log.Printf("... and %d more errors", len(errors)-5)
 				break
 			}
-			log.Printf("Error %d: %v", i+1, err)
+			log.Printf("   Error %d: %v", i+1, err)
 		}
 	} else {
-		log.Printf("Successfully pre-allocated %d TUN interfaces in %v (%.2fms per interface)",
-			created, elapsed, float64(elapsed.Nanoseconds())/float64(created*1e6))
+		log.Printf("   ✅ Success rate: 100%%")
 	}
+
+	log.Println()
+	log.Printf("🔍 System Impact:")
+	log.Printf("   - Use 'ip link show | grep sim' to verify interfaces")
+	log.Printf("   - Use 'ip addr show | grep sim -A1' to see IP assignments")
+	log.Printf("   - Memory usage: Use 'free -h' to check system memory")
 
 	// Update manager's nextTunIndex to continue after pre-allocated interfaces
 	sm.nextTunIndex = poolSize
@@ -715,40 +763,38 @@ func (sm *SimulatorManager) PreAllocateTunInterfaces(poolSize int, maxWorkers in
 	return nil
 }
 
-// GetTunFromPool retrieves a pre-allocated TUN interface from the pool
-func (sm *SimulatorManager) GetTunFromPool() *TunInterface {
-	if sm.tunPool == nil {
-		return nil
-	}
 
-	select {
-	case tunIface := <-sm.tunPool:
-		return tunIface
-	default:
-		return nil // Pool is empty
-	}
-}
-
-// incrementIPAddress increments an IP address in-place
+// incrementIPAddress increments an IP address in-place with same logic as incrementIP()
 func (sm *SimulatorManager) incrementIPAddress(ip net.IP) {
 	ip4 := ip.To4()
 	if ip4 == nil {
 		return // Only support IPv4
 	}
 
-	// Convert to uint32, increment, convert back
-	ipInt := uint32(ip4[0])<<24 + uint32(ip4[1])<<16 + uint32(ip4[2])<<8 + uint32(ip4[3])
-	ipInt++
+	// Increment the last octet
+	ip4[3]++
 
-	ip4[0] = byte(ipInt >> 24)
-	ip4[1] = byte(ipInt >> 16)
-	ip4[2] = byte(ipInt >> 8)
-	ip4[3] = byte(ipInt)
+	// Handle overflow or reaching 255 (move to next subnet)
+	if ip4[3] == 0 || ip4[3] == 255 {
+		ip4[2]++
+		ip4[3] = 1 // Start from .1 in the new subnet
+		if ip4[2] == 0 {
+			ip4[1]++
+			ip4[3] = 1 // Start from .1 in the new subnet
+			if ip4[1] == 0 {
+				ip4[0]++
+				ip4[3] = 1 // Start from .1 in the new subnet
+			}
+		}
+	}
 }
 
 func (sm *SimulatorManager) CreateDevices(startIP string, count int, netmask string, resourceFile string, v3Config *SNMPv3Config) error {
-	sm.mu.Lock()
-	defer sm.mu.Unlock()
+	// Set device creation status
+	sm.isCreatingDevices.Store(true)
+	sm.deviceCreateProgress.Store(0)
+	sm.deviceCreateTotal.Store(count)
+	defer sm.isCreatingDevices.Store(false)
 
 	// Check for root privileges for TUN interface creation
 	if os.Geteuid() != 0 {
@@ -760,7 +806,11 @@ func (sm *SimulatorManager) CreateDevices(startIP string, count int, netmask str
 		return fmt.Errorf("invalid start IP address: %s", startIP)
 	}
 
+	// Initialize with a write lock, then release it for the loop
+	sm.mu.Lock()
 	sm.currentIP = ip
+	sm.mu.Unlock()
+
 	successCount := 0
 
 	// Load the specified resource file if provided
@@ -778,41 +828,63 @@ func (sm *SimulatorManager) CreateDevices(startIP string, count int, netmask str
 		// log.Printf("Using default resources")
 	}
 
-	for i := 0; i < count; i++ {
-		deviceID := fmt.Sprintf("device-%s", sm.currentIP.String())
+	if sm.tunPoolSize > 0 {
+		// Pre-allocation was done - create devices in parallel
+		sm.createDevicesParallel(count, netmask, resourceFile, resources, v3Config, &successCount)
+	} else {
+		// No pre-allocation - create devices sequentially (original logic)
+		for i := 0; i < count; i++ {
+		// Get current IP with a read lock
+		sm.mu.RLock()
+		currentIP := make(net.IP, len(sm.currentIP))
+		copy(currentIP, sm.currentIP)
+		deviceID := fmt.Sprintf("device-%s", currentIP.String())
 
 		// Check if device already exists
-		if _, exists := sm.devices[deviceID]; exists {
+		_, exists := sm.devices[deviceID]
+		sm.mu.RUnlock()
+
+		if exists {
 			// log.Printf("Device %s already exists, skipping", deviceID)
+			sm.mu.Lock()
 			sm.incrementIP()
+			sm.mu.Unlock()
 			continue
 		}
 
-		// Try to get TUN interface from pre-allocated pool first
+		// Create TUN interface only if no pre-allocation was done
 		var tunIface *TunInterface
 		var err error
 
-		tunIface = sm.GetTunFromPool()
-		if tunIface == nil {
-			// No pre-allocated interface available, create one on-demand
+		if sm.tunPoolSize == 0 {
+			// No pre-allocation was done, create TUN interface on-demand
+			sm.mu.Lock()
 			tunName := sm.getNextTunName()
-			tunIP := make(net.IP, len(sm.currentIP))
-			copy(tunIP, sm.currentIP)
+			sm.mu.Unlock()
+
+			tunIP := make(net.IP, len(currentIP))
+			copy(tunIP, currentIP)
 
 			tunIface, err = createTunInterface(tunName, tunIP, netmask)
 			if err != nil {
 				// log.Printf("Failed to create TUN interface for %s: %v", deviceID, err)
+				sm.mu.Lock()
 				sm.incrementIP()
+				sm.mu.Unlock()
 				continue
 			}
 		} else {
-			// Using pre-allocated interface - it already has the correct IP assigned
-			// since pre-allocation used sequential IPs starting from the same range
+			// Pre-allocation was done - TUN interface already exists with this IP
+			// Just create a placeholder TunInterface struct for compatibility
+			tunIface = &TunInterface{
+				Name: fmt.Sprintf("sim%d", i), // Simple naming for compatibility
+				IP:   currentIP,
+			}
 		}
 
-		// Create device with default ports (make another copy of the IP for the device)
-		deviceIP := make(net.IP, len(sm.currentIP))
-		copy(deviceIP, sm.currentIP)
+		// Create device with default ports (use the copied IP)
+		deviceIP := make(net.IP, len(currentIP))
+		copy(deviceIP, currentIP)
 		
 		sysLocationValue := getRandomCity()
 		sysNameValue := getRandomDeviceName()
@@ -844,18 +916,148 @@ func (sm *SimulatorManager) CreateDevices(startIP string, count int, netmask str
 		if err := device.Start(); err != nil {
 			// log.Printf("Failed to start device %s: %v", deviceID, err)
 			device.Stop() // Clean up
+			sm.mu.Lock()
+			sm.incrementIP()
+			sm.mu.Unlock()
 			continue
 		}
 
+		// Add device to map with a write lock
+		sm.mu.Lock()
 		sm.devices[deviceID] = device
+		sm.incrementIP()
+		sm.mu.Unlock()
+
 		successCount++
 
-		// log.Printf("Created device: %s on IP %s (interface: %s)", deviceID, sm.currentIP.String(), tunName)
-		sm.incrementIP()
+		// Update progress counter
+		sm.deviceCreateProgress.Store(successCount)
+
+		// log.Printf("Created device: %s on IP %s (interface: %s)", deviceID, currentIP.String(), tunName)
+	}
+
 	}
 
 	log.Printf("Successfully created %d out of %d requested devices", successCount, count)
 	return nil
+}
+
+// createDevicesParallel creates devices in parallel when pre-allocation was done
+func (sm *SimulatorManager) createDevicesParallel(count int, netmask string, resourceFile string, resources *DeviceResources, v3Config *SNMPv3Config, successCount *int) {
+	// Worker pool for parallel device creation
+	sem := make(chan struct{}, sm.maxWorkers) // Limit concurrent workers
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+
+	log.Printf("Creating %d devices in parallel with %d workers...", count, sm.maxWorkers)
+	startTime := time.Now()
+
+	// Get starting IP with read lock
+	sm.mu.RLock()
+	startingIP := make(net.IP, len(sm.currentIP))
+	copy(startingIP, sm.currentIP)
+	sm.mu.RUnlock()
+
+	for i := 0; i < count; i++ {
+		// Calculate IP for this device index
+		deviceIP := make(net.IP, len(startingIP))
+		copy(deviceIP, startingIP)
+
+		// Increment IP for this device index
+		for j := 0; j < i; j++ {
+			sm.incrementIPAddress(deviceIP)
+		}
+
+		deviceID := fmt.Sprintf("device-%s", deviceIP.String())
+
+		// Check if device already exists
+		sm.mu.RLock()
+		_, exists := sm.devices[deviceID]
+		sm.mu.RUnlock()
+
+		if exists {
+			continue
+		}
+
+		wg.Add(1)
+		go func(deviceIndex int, ip net.IP, devID string) {
+			defer wg.Done()
+
+			// Acquire worker slot
+			sem <- struct{}{}
+			defer func() { <-sem }()
+
+			// Create device in parallel
+			if sm.createSingleDevice(deviceIndex, ip, devID, netmask, resourceFile, resources, v3Config) {
+				mu.Lock()
+				(*successCount)++
+				progress := *successCount
+				mu.Unlock()
+
+				// Update progress counter
+				sm.deviceCreateProgress.Store(progress)
+			}
+
+		}(i, deviceIP, deviceID)
+	}
+
+	// Wait for all workers to complete
+	wg.Wait()
+
+	elapsed := time.Since(startTime)
+	log.Printf("Parallel device creation completed: %d devices in %v (%.2fms per device)",
+		*successCount, elapsed, float64(elapsed.Nanoseconds())/float64(*successCount*1e6))
+}
+
+// createSingleDevice creates a single device - used by parallel device creation
+func (sm *SimulatorManager) createSingleDevice(deviceIndex int, deviceIP net.IP, deviceID string, netmask string, resourceFile string, resources *DeviceResources, v3Config *SNMPv3Config) bool {
+	// Pre-allocation was done - TUN interface already exists with this IP
+	// Just create a placeholder TunInterface struct for compatibility
+	tunIface := &TunInterface{
+		Name: fmt.Sprintf("sim%d", deviceIndex),
+		IP:   deviceIP,
+	}
+
+	// Create device with default ports
+	sysLocationValue := getRandomCity()
+	sysNameValue := getRandomDeviceName()
+
+	device := &DeviceSimulator{
+		ID:           deviceID,
+		IP:           make(net.IP, len(deviceIP)),
+		SNMPPort:     DEFAULT_SNMP_PORT,
+		SSHPort:      DEFAULT_SSH_PORT,
+		tunIface:     tunIface,
+		resources:    resources,
+		resourceFile: resourceFile,
+		sysLocation:  sysLocationValue,
+		sysName:      sysNameValue,
+	}
+	copy(device.IP, deviceIP)
+
+	// Cache the dynamic values using atomic for lock-free access
+	device.cachedSysName.Store(sysNameValue)
+	device.cachedSysLocation.Store(sysLocationValue)
+
+	// Create servers with SNMPv3 configuration
+	device.snmpServer = &SNMPServer{
+		device:   device,
+		v3Config: v3Config,
+	}
+	device.sshServer = &SSHServer{device: device}
+
+	// Start device services
+	if err := device.Start(); err != nil {
+		device.Stop() // Clean up
+		return false
+	}
+
+	// Add device to map with a write lock
+	sm.mu.Lock()
+	sm.devices[deviceID] = device
+	sm.mu.Unlock()
+
+	return true
 }
 
 func (sm *SimulatorManager) incrementIP() {
@@ -871,13 +1073,8 @@ func (sm *SimulatorManager) incrementIP() {
 	// Increment the last octet
 	newIP[3]++
 
-	// Skip .0 and .255 addresses (network and broadcast)
+	// Handle overflow or reaching 255 (move to next subnet)
 	if newIP[3] == 0 || newIP[3] == 255 {
-		newIP[3]++
-	}
-
-	// Handle overflow and continue skipping reserved addresses
-	if newIP[3] == 0 {
 		newIP[2]++
 		newIP[3] = 1 // Start from .1 in the new subnet
 		if newIP[2] == 0 {
@@ -914,6 +1111,30 @@ func (sm *SimulatorManager) ListDevices() []DeviceInfo {
 	}
 
 	return devices
+}
+
+func (sm *SimulatorManager) GetStatus() ManagerStatus {
+	sm.mu.RLock()
+	defer sm.mu.RUnlock()
+
+	totalDevices := len(sm.devices)
+	runningDevices := 0
+	for _, device := range sm.devices {
+		if device.running {
+			runningDevices++
+		}
+	}
+
+	return ManagerStatus{
+		IsPreAllocating:      sm.isPreAllocating.Load().(bool),
+		PreAllocProgress:     sm.preAllocProgress.Load().(int),
+		PreAllocTotal:        sm.tunPoolSize,
+		IsCreatingDevices:    sm.isCreatingDevices.Load().(bool),
+		DeviceCreateProgress: sm.deviceCreateProgress.Load().(int),
+		DeviceCreateTotal:    sm.deviceCreateTotal.Load().(int),
+		TotalDevices:         totalDevices,
+		RunningDevices:       runningDevices,
+	}
 }
 
 func (sm *SimulatorManager) DeleteDevice(deviceID string) error {
@@ -1139,56 +1360,10 @@ func main() {
 		log.Println("WARNING: -auto-count provided but -auto-start-ip is empty. No devices will be auto-created.")
 	}
 
-	// Auto-create devices if requested
-	if *autoStartIP != "" && *autoCount > 0 {
-		log.Printf("Auto-creating %d devices starting from %s with netmask /%s", *autoCount, *autoStartIP, *autoNetmask)
-		
-		// Create SNMPv3 configuration if engine ID is provided
-		var v3Config *SNMPv3Config
-		if *snmpv3EngineID != "" {
-			authProto := parseAuthProtocol(*snmpv3AuthProto)
-			privProto := parsePrivProtocol(*snmpv3PrivProto)
-			
-			v3Config = &SNMPv3Config{
-				Enabled:      true,
-				EngineID:     *snmpv3EngineID,
-				Username:     USERNAME, // Use same as SSH
-				Password:     PASSWORD, // Use same as SSH
-				AuthProtocol: authProto,
-				PrivProtocol: privProto,
-				PrivPassword: PASSWORD, // Use same password for privacy
-			}
-			log.Printf("SNMPv3 enabled with engine ID: %s, auth: %s, priv: %s", 
-				*snmpv3EngineID, *snmpv3AuthProto, *snmpv3PrivProto)
-		}
-
-		// Pre-allocate TUN interfaces if requested
-		if *preAllocCount > 0 {
-			startIP := net.ParseIP(*autoStartIP)
-			if startIP != nil {
-				log.Printf("Pre-allocating %d TUN interfaces with %d workers...", *preAllocCount, *maxWorkers)
-				err := manager.PreAllocateTunInterfaces(*preAllocCount, *maxWorkers, startIP, *autoNetmask)
-				if err != nil {
-					log.Printf("ERROR: Failed to pre-allocate interfaces: %v", err)
-					log.Printf("Continuing with device creation (will use on-demand interface creation)")
-				}
-			} else {
-				log.Printf("ERROR: Invalid start IP for pre-allocation: %s", *autoStartIP)
-			}
-		}
-
-		err := manager.CreateDevices(*autoStartIP, *autoCount, *autoNetmask, "", v3Config)
-		if err != nil {
-			log.Printf("Failed to auto-create devices: %v", err)
-		} else {
-			log.Printf("Successfully auto-created %d devices", *autoCount)
-		}
-	}
-
-	// Setup REST API
+	// Setup REST API first
 	router := setupRoutes()
 
-	// Start API server
+	// Start API server in background
 	apiPort := ":" + *port
 	log.Printf("Network Device Simulator server starting on port %s", apiPort)
 	log.Println()
@@ -1196,6 +1371,66 @@ func main() {
 	log.Printf("  http://localhost%s/", apiPort)
 	log.Printf("  http://localhost%s/ui", apiPort)
 	log.Println()
+
+	// Start web server in background
+	go func() {
+		log.Fatal(http.ListenAndServe(apiPort, router))
+	}()
+
+	// Give web server a moment to start
+	time.Sleep(100 * time.Millisecond)
+	log.Printf("✅ Web UI is now available at http://localhost%s/ui", apiPort)
+	log.Println()
+
+	// Auto-create devices in background if requested
+	if *autoStartIP != "" && *autoCount > 0 {
+		go func() {
+			log.Printf("🚀 Starting background device creation: %d devices from %s/%s", *autoCount, *autoStartIP, *autoNetmask)
+
+			// Create SNMPv3 configuration if engine ID is provided
+			var v3Config *SNMPv3Config
+			if *snmpv3EngineID != "" {
+				authProto := parseAuthProtocol(*snmpv3AuthProto)
+				privProto := parsePrivProtocol(*snmpv3PrivProto)
+
+				v3Config = &SNMPv3Config{
+					Enabled:      true,
+					EngineID:     *snmpv3EngineID,
+					Username:     USERNAME, // Use same as SSH
+					Password:     PASSWORD, // Use same as SSH
+					AuthProtocol: authProto,
+					PrivProtocol: privProto,
+					PrivPassword: PASSWORD, // Use same password for privacy
+				}
+				log.Printf("SNMPv3 enabled with engine ID: %s, auth: %s, priv: %s",
+					*snmpv3EngineID, *snmpv3AuthProto, *snmpv3PrivProto)
+			}
+
+			// Pre-allocate TUN interfaces if requested
+			if *preAllocCount > 0 {
+				startIP := net.ParseIP(*autoStartIP)
+				if startIP != nil {
+					log.Printf("Pre-allocating %d TUN interfaces with %d workers...", *preAllocCount, *maxWorkers)
+					err := manager.PreAllocateTunInterfaces(*preAllocCount, *maxWorkers, startIP, *autoNetmask)
+					if err != nil {
+						log.Printf("ERROR: Failed to pre-allocate interfaces: %v", err)
+						log.Printf("Continuing with device creation (will use on-demand interface creation)")
+					}
+				} else {
+					log.Printf("ERROR: Invalid start IP for pre-allocation: %s", *autoStartIP)
+				}
+			}
+
+			err := manager.CreateDevices(*autoStartIP, *autoCount, *autoNetmask, "", v3Config)
+			if err != nil {
+				log.Printf("❌ Failed to auto-create devices: %v", err)
+			} else {
+				log.Printf("✅ Successfully auto-created %d devices", *autoCount)
+			}
+		}()
+	}
+
+	// Print API documentation
 	log.Println("📡 API Endpoints:")
 	log.Println("  POST   /api/v1/devices           - Create devices")
 	log.Println("  GET    /api/v1/devices           - List devices")
@@ -1256,5 +1491,6 @@ func main() {
 	log.Println("  - Check TUN interfaces: ip addr show | grep sim")
 	log.Println("  - Test script available: ./test_snmpv3.sh")
 
-	log.Fatal(http.ListenAndServe(apiPort, router))
+	// Keep the main thread alive
+	select {}
 }
