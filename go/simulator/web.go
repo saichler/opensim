@@ -168,12 +168,12 @@ exit 1
 # Enhanced Static Route Configuration Script for Network Device Simulator
 # Generated on: ` + time.Now().Format("2006-01-02 15:04:05") + `
 #
-# This script supports both temporary and permanent route installation
-# Usage: ./add_simulator_routes.sh <SIMULATOR_HOST_IP> [--permanent]
+# This script creates PERMANENT routes by default (persist after reboot)
+# Usage: ./add_simulator_routes.sh <SIMULATOR_HOST_IP> [--temporary]
 #
 # Examples:
-#   ./add_simulator_routes.sh 192.168.1.100              # Temporary routes (default)
-#   ./add_simulator_routes.sh 192.168.1.100 --permanent  # Persistent routes
+#   ./add_simulator_routes.sh 192.168.1.100              # Permanent routes (DEFAULT)
+#   ./add_simulator_routes.sh 192.168.1.100 --temporary  # Temporary routes (until reboot)
 #
 
 # Colors for output
@@ -185,14 +185,15 @@ NC='\033[0m' # No Color
 
 # Function to show usage
 show_usage() {
-    echo "Usage: $0 <SIMULATOR_HOST_IP> [--permanent]"
+    echo "Usage: $0 <SIMULATOR_HOST_IP> [--temporary]"
     echo ""
     echo "Options:"
-    echo "  --permanent    Make routes persistent across reboots"
+    echo "  --temporary    Add routes only until next reboot (optional)"
+    echo "                 DEFAULT: Routes are made permanent"
     echo ""
     echo "Examples:"
-    echo "  $0 192.168.1.100              # Add temporary routes"
-    echo "  $0 192.168.1.100 --permanent  # Add persistent routes"
+    echo "  $0 192.168.1.100              # Add PERMANENT routes (default)"
+    echo "  $0 192.168.1.100 --temporary  # Add temporary routes"
     echo ""
     echo "This script will configure routes for the following subnets:"
 `)
@@ -218,10 +219,11 @@ if [ $# -lt 1 ] || [ $# -gt 2 ]; then
 fi
 
 SIMULATOR_HOST=$1
-PERMANENT=false
+PERMANENT=true  # DEFAULT: Always create permanent routes
 
-if [ "$2" = "--permanent" ]; then
-    PERMANENT=true
+if [ "$2" = "--temporary" ]; then
+    PERMANENT=false
+    echo -e "${YELLOW}⚠️  Using temporary mode - routes will be lost after reboot${NC}"
 fi
 
 # Detect operating system
@@ -693,30 +695,25 @@ echo -e "${BLUE}🚀 Network Device Simulator Route Configuration${NC}"
 echo -e "${BLUE}================================================${NC}"
 echo ""
 
-# Add debug mode support
+# Check for additional flags (--temporary and --debug can be combined)
 DEBUG=false
-if [ "$2" = "--debug" ] || [ "$3" = "--debug" ]; then
-    DEBUG=true
-    echo -e "${YELLOW}🔧 Debug mode enabled${NC}"
-    echo -e "${BLUE}System Information:${NC}"
-    echo "  OS: $(cat /etc/os-release | grep PRETTY_NAME | cut -d= -f2)"
-    echo "  Kernel: $(uname -r)"
-    echo "  Netplan: $(which netplan 2>/dev/null || echo 'not found')"
-    echo "  NetworkManager: $(systemctl is-active NetworkManager 2>/dev/null || echo 'inactive')"
-    echo "  systemd-networkd: $(systemctl is-active systemd-networkd 2>/dev/null || echo 'inactive')"
-    echo ""
-fi
+for arg in "$@"; do
+    if [ "$arg" = "--debug" ]; then
+        DEBUG=true
+        echo -e "${YELLOW}🔧 Debug mode enabled${NC}"
+        echo -e "${BLUE}System Information:${NC}"
+        echo "  OS: $(cat /etc/os-release | grep PRETTY_NAME | cut -d= -f2)"
+        echo "  Kernel: $(uname -r)"
+        echo "  Netplan: $(which netplan 2>/dev/null || echo 'not found')"
+        echo "  NetworkManager: $(systemctl is-active NetworkManager 2>/dev/null || echo 'inactive')"
+        echo "  systemd-networkd: $(systemctl is-active systemd-networkd 2>/dev/null || echo 'inactive')"
+        echo ""
+    fi
+done
 
 if [ "$PERMANENT" = true ]; then
-    echo -e "${YELLOW}⚠️  WARNING: This will add PERMANENT routes that persist after reboot!${NC}"
-    echo -e "${YELLOW}⚠️  Make sure $SIMULATOR_HOST is always reachable, or remove routes manually.${NC}"
-    echo ""
-    read -p "Continue with permanent route installation? (y/N): " -n 1 -r
-    echo ""
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        echo -e "${YELLOW}❌ Operation cancelled${NC}"
-        exit 0
-    fi
+    echo -e "${BLUE}💾 Creating PERMANENT routes that will persist after reboot${NC}"
+    echo -e "${YELLOW}📝 Note: To create temporary routes instead, use --temporary flag${NC}"
     echo ""
     add_permanent_routes
 
@@ -749,11 +746,12 @@ echo ""
 echo -e "${GREEN}🎉 Route configuration complete!${NC}"
 
 if [ "$PERMANENT" = true ]; then
-    echo -e "${BLUE}💡 Permanent routes are now configured and will persist across reboots${NC}"
-    echo -e "${YELLOW}📝 Note: On Ubuntu 24.04, ensure systemd-networkd is enabled:${NC}"
-    echo "   sudo systemctl enable systemd-networkd"
+    echo -e "${GREEN}✅ Permanent routes are now configured and will persist across reboots${NC}"
+    echo -e "${BLUE}💡 On Ubuntu 24.04, systemd-networkd should be enabled (usually is by default)${NC}"
+    echo -e "${YELLOW}📝 To remove these routes later, see the removal instructions above${NC}"
 else
-    echo -e "${BLUE}💡 Temporary routes are active until next reboot${NC}"
+    echo -e "${YELLOW}⚠️  Temporary routes are active only until next reboot${NC}"
+    echo -e "${BLUE}💡 To make routes permanent, run without --temporary flag${NC}"
 fi
 `)
 
@@ -1017,7 +1015,7 @@ func webUIHandler(w http.ResponseWriter, r *http.Request) {
                         📊 Export CSV <span id="exportLoading" class="loading" style="display: none;"></span>
                     </button>
                     <button id="routeScriptBtn" class="btn btn-small">
-                        🛤️ Enhanced Route Script <span id="routeScriptLoading" class="loading" style="display: none;"></span>
+                        🛤️ Permanent Route Script <span id="routeScriptLoading" class="loading" style="display: none;"></span>
                     </button>
                     <button id="refreshBtn" class="btn btn-small">
                         🔄 Refresh <span id="refreshLoading" class="loading" style="display: none;"></span>
@@ -1313,7 +1311,7 @@ func webUIHandler(w http.ResponseWriter, r *http.Request) {
                 link.click();
                 document.body.removeChild(link);
                 
-                showAlert('Enhanced route script downloaded successfully! Now supports both temporary and permanent routes.', 'success');
+                showAlert('Permanent route script downloaded successfully! Routes will persist after reboot.', 'success');
             } catch (error) {
                 showAlert('Failed to download route script: ' + error.message, 'error');
             } finally {
