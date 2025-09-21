@@ -313,9 +313,20 @@ add_permanent_routes() {
 add_permanent_routes_debian() {
     echo -e "${BLUE}🐧 Detected Debian/Ubuntu system${NC}"
 
-    # Check if netplan is being used
-    if [ -d "/etc/netplan" ] && [ "$(ls -A /etc/netplan 2>/dev/null)" ]; then
-        echo -e "${YELLOW}📝 Using netplan configuration${NC}"
+    # Detect Ubuntu version if possible
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        echo -e "${BLUE}📋 System: $NAME $VERSION${NC}"
+    fi
+
+    # For Ubuntu Server 20.04+ and Ubuntu Desktop 18.04+, netplan is the default
+    # Check if netplan is being used (it should be for Ubuntu 24.04)
+    if [ -d "/etc/netplan" ] && [ "$(ls -A /etc/netplan/*.yaml /etc/netplan/*.yml 2>/dev/null)" ]; then
+        echo -e "${YELLOW}📝 Using netplan configuration (recommended for Ubuntu 18.04+)${NC}"
+        add_permanent_routes_netplan
+    elif [ -d "/etc/netplan" ] && [ ! "$(ls -A /etc/netplan 2>/dev/null)" ]; then
+        # Netplan directory exists but is empty - create a new config
+        echo -e "${YELLOW}📝 Netplan directory exists but empty - creating new configuration${NC}"
         add_permanent_routes_netplan
     elif command -v systemctl >/dev/null 2>&1 && systemctl is-enabled systemd-networkd >/dev/null 2>&1; then
         echo -e "${YELLOW}📝 Using systemd-networkd configuration${NC}"
@@ -330,15 +341,54 @@ add_permanent_routes_debian() {
 add_permanent_routes_netplan() {
     local netplan_file="/etc/netplan/99-simulator-routes.yaml"
 
-    echo "# Static routes for Network Device Simulator" | sudo tee "$netplan_file" > /dev/null
-    echo "# Generated on $(date)" | sudo tee -a "$netplan_file" > /dev/null
-    echo "network:" | sudo tee -a "$netplan_file" > /dev/null
-    echo "  version: 2" | sudo tee -a "$netplan_file" > /dev/null
-    echo "  ethernets:" | sudo tee -a "$netplan_file" > /dev/null
+    # First check if there's an existing netplan configuration and detect the renderer
+    local renderer="systemd-networkd"  # Default for Ubuntu Server
+    local existing_netplan=$(ls /etc/netplan/*.yaml /etc/netplan/*.yml 2>/dev/null | head -1)
+
+    if [ -n "$existing_netplan" ]; then
+        # Check if NetworkManager is the renderer
+        if grep -q "renderer.*NetworkManager" "$existing_netplan" 2>/dev/null; then
+            renderer="NetworkManager"
+            echo -e "${YELLOW}📝 Detected NetworkManager as netplan renderer${NC}"
+        elif grep -q "renderer.*networkd" "$existing_netplan" 2>/dev/null; then
+            renderer="systemd-networkd"
+            echo -e "${YELLOW}📝 Detected systemd-networkd as netplan renderer${NC}"
+        else
+            # No explicit renderer, check what's actually running
+            if systemctl is-active NetworkManager >/dev/null 2>&1; then
+                renderer="NetworkManager"
+                echo -e "${YELLOW}📝 NetworkManager is active, using it as renderer${NC}"
+            else
+                renderer="systemd-networkd"
+                echo -e "${YELLOW}📝 Using systemd-networkd as default renderer${NC}"
+            fi
+        fi
+    fi
 
     # Detect primary network interface
     local primary_interface=$(ip route show default | head -1 | awk '{print $5}')
 
+    if [ -z "$primary_interface" ]; then
+        echo -e "${RED}❌ Could not detect primary network interface${NC}"
+        return 1
+    fi
+
+    echo -e "${BLUE}📡 Configuring routes for interface: $primary_interface${NC}"
+
+    # Create the netplan file with proper structure
+    echo "# Static routes for Network Device Simulator" | sudo tee "$netplan_file" > /dev/null
+    echo "# Generated on $(date)" | sudo tee -a "$netplan_file" > /dev/null
+    echo "# Interface: $primary_interface" | sudo tee -a "$netplan_file" > /dev/null
+    echo "network:" | sudo tee -a "$netplan_file" > /dev/null
+    echo "  version: 2" | sudo tee -a "$netplan_file" > /dev/null
+
+    # Add renderer if needed
+    if [ "$renderer" = "NetworkManager" ]; then
+        echo "  renderer: NetworkManager" | sudo tee -a "$netplan_file" > /dev/null
+    fi
+    # systemd-networkd is default, so we don't need to specify it explicitly
+
+    echo "  ethernets:" | sudo tee -a "$netplan_file" > /dev/null
     echo "    $primary_interface:" | sudo tee -a "$netplan_file" > /dev/null
     echo "      routes:" | sudo tee -a "$netplan_file" > /dev/null
 `)
@@ -351,13 +401,36 @@ add_permanent_routes_netplan() {
 
 	script.WriteString(`
     echo -e "${GREEN}✅ Created netplan configuration: $netplan_file${NC}"
-    echo -e "${YELLOW}🔄 Applying netplan configuration...${NC}"
 
-    if sudo netplan apply; then
-        echo -e "${GREEN}✅ Netplan configuration applied successfully${NC}"
+    # Test the configuration first
+    echo -e "${YELLOW}🔍 Testing netplan configuration...${NC}"
+    if sudo netplan generate 2>/dev/null; then
+        echo -e "${GREEN}✅ Configuration syntax is valid${NC}"
+
+        echo -e "${YELLOW}🔄 Applying netplan configuration...${NC}"
+        if sudo netplan apply 2>&1 | grep -q "error\|Error\|ERROR"; then
+            echo -e "${RED}❌ Failed to apply netplan configuration${NC}"
+            echo -e "${YELLOW}💡 Trying alternative approach...${NC}"
+
+            # Try to just restart the network service
+            if [ "$renderer" = "NetworkManager" ]; then
+                sudo systemctl restart NetworkManager
+            else
+                sudo systemctl restart systemd-networkd
+            fi
+        else
+            echo -e "${GREEN}✅ Netplan configuration applied successfully${NC}"
+
+            # For systemd-networkd, we might need to restart it explicitly
+            if [ "$renderer" = "systemd-networkd" ]; then
+                echo -e "${YELLOW}🔄 Ensuring systemd-networkd picks up the changes...${NC}"
+                sudo systemctl restart systemd-networkd
+            fi
+        fi
     else
-        echo -e "${RED}❌ Failed to apply netplan configuration${NC}"
-        echo -e "${YELLOW}💡 You may need to run 'sudo netplan apply' manually${NC}"
+        echo -e "${RED}❌ Configuration syntax check failed${NC}"
+        echo -e "${YELLOW}💡 Please check the generated file: $netplan_file${NC}"
+        echo -e "${YELLOW}💡 You may need to run 'sudo netplan apply' manually after fixing${NC}"
     fi
 }
 
@@ -566,10 +639,73 @@ show_removal_instructions() {
 	script.WriteString(`    fi
 }
 
+# Function to verify persistent configuration
+verify_persistent_configuration() {
+    echo ""
+    echo -e "${BLUE}🔍 Verifying persistent configuration...${NC}"
+
+    local config_found=false
+
+    # Check for netplan configuration
+    if [ -f "/etc/netplan/99-simulator-routes.yaml" ]; then
+        echo -e "${GREEN}✅ Found netplan configuration: /etc/netplan/99-simulator-routes.yaml${NC}"
+        config_found=true
+        echo -e "${YELLOW}📄 Configuration content:${NC}"
+        sudo cat "/etc/netplan/99-simulator-routes.yaml" | head -20
+        echo ""
+    fi
+
+    # Check for systemd-networkd configuration
+    if [ -f "/etc/systemd/network/50-simulator-routes.network" ]; then
+        echo -e "${GREEN}✅ Found systemd-networkd configuration: /etc/systemd/network/50-simulator-routes.network${NC}"
+        config_found=true
+    fi
+
+    # Check for NetworkManager configuration
+    if command -v nmcli >/dev/null 2>&1; then
+        local connection=$(nmcli -t -f NAME con show --active | head -1)
+        if [ -n "$connection" ]; then
+            local routes=$(nmcli -g ipv4.routes con show "$connection" 2>/dev/null)
+            if [ -n "$routes" ]; then
+                echo -e "${GREEN}✅ Found NetworkManager routes in connection: $connection${NC}"
+                config_found=true
+            fi
+        fi
+    fi
+
+    # Check for traditional interfaces file
+    if grep -q "Network Device Simulator" /etc/network/interfaces 2>/dev/null; then
+        echo -e "${GREEN}✅ Found routes in /etc/network/interfaces${NC}"
+        config_found=true
+    fi
+
+    if [ "$config_found" = false ]; then
+        echo -e "${RED}❌ No persistent configuration found!${NC}"
+        echo -e "${YELLOW}💡 Routes may not persist after reboot${NC}"
+        return 1
+    fi
+
+    return 0
+}
+
 # Main execution
 echo -e "${BLUE}🚀 Network Device Simulator Route Configuration${NC}"
 echo -e "${BLUE}================================================${NC}"
 echo ""
+
+# Add debug mode support
+DEBUG=false
+if [ "$2" = "--debug" ] || [ "$3" = "--debug" ]; then
+    DEBUG=true
+    echo -e "${YELLOW}🔧 Debug mode enabled${NC}"
+    echo -e "${BLUE}System Information:${NC}"
+    echo "  OS: $(cat /etc/os-release | grep PRETTY_NAME | cut -d= -f2)"
+    echo "  Kernel: $(uname -r)"
+    echo "  Netplan: $(which netplan 2>/dev/null || echo 'not found')"
+    echo "  NetworkManager: $(systemctl is-active NetworkManager 2>/dev/null || echo 'inactive')"
+    echo "  systemd-networkd: $(systemctl is-active systemd-networkd 2>/dev/null || echo 'inactive')"
+    echo ""
+fi
 
 if [ "$PERMANENT" = true ]; then
     echo -e "${YELLOW}⚠️  WARNING: This will add PERMANENT routes that persist after reboot!${NC}"
@@ -583,12 +719,30 @@ if [ "$PERMANENT" = true ]; then
     fi
     echo ""
     add_permanent_routes
+
+    # Verify the persistent configuration was created
+    verify_persistent_configuration
 else
     add_temporary_routes
 fi
 
 echo ""
 show_current_routes
+
+if [ "$PERMANENT" = true ]; then
+    echo ""
+    echo -e "${BLUE}💡 Testing persistence (for Ubuntu 24.04 Server):${NC}"
+    echo -e "${YELLOW}1. Verify the configuration file exists:${NC}"
+    echo "   ls -la /etc/netplan/99-simulator-routes.yaml"
+    echo -e "${YELLOW}2. Test the configuration:${NC}"
+    echo "   sudo netplan generate"
+    echo "   sudo netplan apply"
+    echo -e "${YELLOW}3. Verify routes are active:${NC}"
+    echo "   ip route | grep $SIMULATOR_HOST"
+    echo -e "${YELLOW}4. After reboot, check if routes persist:${NC}"
+    echo "   ip route | grep $SIMULATOR_HOST"
+fi
+
 show_removal_instructions
 
 echo ""
@@ -596,6 +750,8 @@ echo -e "${GREEN}🎉 Route configuration complete!${NC}"
 
 if [ "$PERMANENT" = true ]; then
     echo -e "${BLUE}💡 Permanent routes are now configured and will persist across reboots${NC}"
+    echo -e "${YELLOW}📝 Note: On Ubuntu 24.04, ensure systemd-networkd is enabled:${NC}"
+    echo "   sudo systemctl enable systemd-networkd"
 else
     echo -e "${BLUE}💡 Temporary routes are active until next reboot${NC}"
 fi
