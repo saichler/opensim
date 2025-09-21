@@ -597,6 +597,11 @@ func (sm *SimulatorManager) buildResourceIndexes(resources *DeviceResources) {
 
 	// Build indexes from the SNMP resources
 	for i, resource := range resources.SNMP {
+		// Skip dynamic OIDs that are handled specially
+		if resource.OID == "1.3.6.1.2.1.1.5.0" || resource.OID == "1.3.6.1.2.1.1.6.0" {
+			continue
+		}
+
 		// Lock-free hash map index: OID -> Response
 		resources.oidIndex.Store(resource.OID, resource.Response)
 
@@ -737,8 +742,8 @@ func (sm *SimulatorManager) PreAllocateTunInterfaces(poolSize int, maxWorkers in
 			sem <- struct{}{}
 			defer func() { <-sem }()
 
-			// Generate unique interface name
-			tunName := fmt.Sprintf("%s%d", TUN_DEVICE_PREFIX, interfaceIndex)
+			// Generate unique interface name using the current nextTunIndex offset
+			tunName := fmt.Sprintf("%s%d", TUN_DEVICE_PREFIX, sm.nextTunIndex+interfaceIndex)
 
 			// Create TUN interface
 			tunIface, err := createTunInterface(tunName, ip, netmask)
@@ -833,7 +838,7 @@ func (sm *SimulatorManager) PreAllocateTunInterfaces(poolSize int, maxWorkers in
 	log.Printf("   - Memory usage: Use 'free -h' to check system memory")
 
 	// Update manager's nextTunIndex to continue after pre-allocated interfaces
-	sm.nextTunIndex = poolSize
+	sm.nextTunIndex += poolSize
 
 	// Update the manager's currentIP to continue after pre-allocated interfaces
 	// so that device creation uses the correct starting IP
@@ -1183,7 +1188,10 @@ func (sm *SimulatorManager) createSingleDevice(deviceIndex int, deviceIP net.IP,
 		tunIface = preAllocated
 	} else {
 		// No pre-allocated interface found, create on-demand
-		tunName := fmt.Sprintf("%s%d", TUN_DEVICE_PREFIX, deviceIndex)
+		// Use getNextTunName to ensure unique interface names
+		sm.mu.Lock()
+		tunName := sm.getNextTunName()
+		sm.mu.Unlock()
 		var err error
 		tunIface, err = createTunInterface(tunName, deviceIP, netmask)
 		if err != nil {
