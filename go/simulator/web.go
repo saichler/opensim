@@ -150,7 +150,7 @@ echo "No devices found in simulator"
 exit 1
 `
 	}
-	
+
 	// Collect unique subnets from devices
 	subnets := make(map[string]bool)
 	for _, device := range devices {
@@ -161,22 +161,40 @@ exit 1
 			subnets[subnet] = true
 		}
 	}
-	
+
 	var script strings.Builder
 	script.WriteString(`#!/bin/bash
 #
-# Static Route Configuration Script for Network Device Simulator
+# Enhanced Static Route Configuration Script for Network Device Simulator
 # Generated on: ` + time.Now().Format("2006-01-02 15:04:05") + `
 #
-# Usage: ./add_simulator_routes.sh <SIMULATOR_HOST_IP>
-# Example: ./add_simulator_routes.sh 192.168.1.100
+# This script supports both temporary and permanent route installation
+# Usage: ./add_simulator_routes.sh <SIMULATOR_HOST_IP> [--permanent]
+#
+# Examples:
+#   ./add_simulator_routes.sh 192.168.1.100              # Temporary routes (default)
+#   ./add_simulator_routes.sh 192.168.1.100 --permanent  # Persistent routes
 #
 
-if [ $# -ne 1 ]; then
-    echo "Usage: $0 <SIMULATOR_HOST_IP>"
-    echo "Example: $0 192.168.1.100"
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# Function to show usage
+show_usage() {
+    echo "Usage: $0 <SIMULATOR_HOST_IP> [--permanent]"
     echo ""
-    echo "This script will add static routes for the following subnets:"
+    echo "Options:"
+    echo "  --permanent    Make routes persistent across reboots"
+    echo ""
+    echo "Examples:"
+    echo "  $0 192.168.1.100              # Add temporary routes"
+    echo "  $0 192.168.1.100 --permanent  # Add persistent routes"
+    echo ""
+    echo "This script will configure routes for the following subnets:"
 `)
 
 	// Add subnet list to help text
@@ -184,36 +202,404 @@ if [ $# -ne 1 ]; then
 		script.WriteString(fmt.Sprintf(`    echo "  - %s"`, subnet))
 		script.WriteString("\n")
 	}
-	
-	script.WriteString(`    exit 1
+
+	script.WriteString(`    echo ""
+    echo "Supported operating systems for persistent routes:"
+    echo "  - Ubuntu/Debian (via /etc/systemd/networkd/ or netplan)"
+    echo "  - RHEL/CentOS/Fedora (via NetworkManager or network-scripts)"
+    echo "  - openSUSE (via wicked)"
+    echo ""
+}
+
+# Parse arguments
+if [ $# -lt 1 ] || [ $# -gt 2 ]; then
+    show_usage
+    exit 1
 fi
 
 SIMULATOR_HOST=$1
+PERMANENT=false
 
-echo "Adding static routes to simulator subnets via $SIMULATOR_HOST"
-echo ""
+if [ "$2" = "--permanent" ]; then
+    PERMANENT=true
+fi
 
+# Detect operating system
+detect_os() {
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        OS=$NAME
+        VERSION=$VERSION_ID
+    else
+        OS=$(uname -s)
+        VERSION=$(uname -r)
+    fi
+
+    # Normalize OS detection
+    case "$OS" in
+        *Ubuntu*|*Debian*)
+            OS_TYPE="debian"
+            ;;
+        *"Red Hat"*|*CentOS*|*Fedora*|*Rocky*|*AlmaLinux*)
+            OS_TYPE="rhel"
+            ;;
+        *openSUSE*|*SUSE*)
+            OS_TYPE="suse"
+            ;;
+        *)
+            OS_TYPE="unknown"
+            ;;
+    esac
+}
+
+# Function to add temporary routes
+add_temporary_routes() {
+    echo -e "${BLUE}📡 Adding temporary static routes to simulator subnets via $SIMULATOR_HOST${NC}"
+    echo ""
 `)
 
-	// Add simple route commands for each subnet
+	// Add temporary route commands for each subnet
 	for subnet := range subnets {
-		script.WriteString(fmt.Sprintf(`# Add route for %s
-echo "Adding route: %s via $SIMULATOR_HOST"
-sudo ip route add %s via $SIMULATOR_HOST 2>/dev/null || echo "Route %s already exists or failed to add"
-
+		script.WriteString(fmt.Sprintf(`    echo -e "${YELLOW}Adding temporary route: %s via $SIMULATOR_HOST${NC}"
+    if sudo ip route add %s via $SIMULATOR_HOST 2>/dev/null; then
+        echo -e "${GREEN}✅ Successfully added route for %s${NC}"
+    else
+        echo -e "${YELLOW}⚠️  Route %s already exists or failed to add${NC}"
+    fi
+    echo ""
 `, subnet, subnet, subnet, subnet))
 	}
-	
-	script.WriteString(`echo ""
-echo "Route configuration complete!"
-echo ""
-echo "To remove these routes later, run:"
+
+	script.WriteString(`}
+
+# Function to add permanent routes
+add_permanent_routes() {
+    echo -e "${BLUE}💾 Adding permanent static routes to simulator subnets via $SIMULATOR_HOST${NC}"
+    echo -e "${YELLOW}⚠️  This requires root privileges and will modify system configuration files${NC}"
+    echo ""
+
+    detect_os
+
+    case "$OS_TYPE" in
+        "debian")
+            add_permanent_routes_debian
+            ;;
+        "rhel")
+            add_permanent_routes_rhel
+            ;;
+        "suse")
+            add_permanent_routes_suse
+            ;;
+        *)
+            echo -e "${RED}❌ Unsupported OS for permanent routes: $OS${NC}"
+            echo -e "${YELLOW}💡 Falling back to temporary routes...${NC}"
+            add_temporary_routes
+            echo ""
+            echo -e "${BLUE}📋 Manual permanent route configuration:${NC}"
+            echo -e "${YELLOW}For your OS ($OS), manually add these routes to your system configuration:${NC}"
 `)
 
 	for subnet := range subnets {
-		script.WriteString(fmt.Sprintf(`echo "  sudo ip route del %s"`, subnet))
+		script.WriteString(fmt.Sprintf(`            echo "  Route: %s via $SIMULATOR_HOST"`, subnet))
 		script.WriteString("\n")
 	}
+
+	script.WriteString(`            return
+            ;;
+    esac
+}
+
+# Function to add permanent routes on Debian/Ubuntu systems
+add_permanent_routes_debian() {
+    echo -e "${BLUE}🐧 Detected Debian/Ubuntu system${NC}"
+
+    # Check if netplan is being used
+    if [ -d "/etc/netplan" ] && [ "$(ls -A /etc/netplan 2>/dev/null)" ]; then
+        echo -e "${YELLOW}📝 Using netplan configuration${NC}"
+        add_permanent_routes_netplan
+    elif command -v systemctl >/dev/null 2>&1 && systemctl is-enabled systemd-networkd >/dev/null 2>&1; then
+        echo -e "${YELLOW}📝 Using systemd-networkd configuration${NC}"
+        add_permanent_routes_systemd_networkd
+    else
+        echo -e "${YELLOW}📝 Using traditional network interfaces${NC}"
+        add_permanent_routes_interfaces
+    fi
+}
+
+# Function for netplan-based systems (Ubuntu 18.04+)
+add_permanent_routes_netplan() {
+    local netplan_file="/etc/netplan/99-simulator-routes.yaml"
+
+    echo "# Static routes for Network Device Simulator" | sudo tee "$netplan_file" > /dev/null
+    echo "# Generated on $(date)" | sudo tee -a "$netplan_file" > /dev/null
+    echo "network:" | sudo tee -a "$netplan_file" > /dev/null
+    echo "  version: 2" | sudo tee -a "$netplan_file" > /dev/null
+    echo "  ethernets:" | sudo tee -a "$netplan_file" > /dev/null
+
+    # Detect primary network interface
+    local primary_interface=$(ip route show default | head -1 | awk '{print $5}')
+
+    echo "    $primary_interface:" | sudo tee -a "$netplan_file" > /dev/null
+    echo "      routes:" | sudo tee -a "$netplan_file" > /dev/null
+`)
+
+	for subnet := range subnets {
+		script.WriteString(fmt.Sprintf(`    echo "        - to: %s" | sudo tee -a "$netplan_file" > /dev/null
+    echo "          via: $SIMULATOR_HOST" | sudo tee -a "$netplan_file" > /dev/null
+`, subnet))
+	}
+
+	script.WriteString(`
+    echo -e "${GREEN}✅ Created netplan configuration: $netplan_file${NC}"
+    echo -e "${YELLOW}🔄 Applying netplan configuration...${NC}"
+
+    if sudo netplan apply; then
+        echo -e "${GREEN}✅ Netplan configuration applied successfully${NC}"
+    else
+        echo -e "${RED}❌ Failed to apply netplan configuration${NC}"
+        echo -e "${YELLOW}💡 You may need to run 'sudo netplan apply' manually${NC}"
+    fi
+}
+
+# Function for systemd-networkd systems
+add_permanent_routes_systemd_networkd() {
+    local networkd_dir="/etc/systemd/network"
+    local route_file="$networkd_dir/50-simulator-routes.network"
+
+    # Create the networkd directory if it doesn't exist
+    sudo mkdir -p "$networkd_dir"
+
+    # Detect primary network interface
+    local primary_interface=$(ip route show default | head -1 | awk '{print $5}')
+
+    echo "# Static routes for Network Device Simulator" | sudo tee "$route_file" > /dev/null
+    echo "# Generated on $(date)" | sudo tee -a "$route_file" > /dev/null
+    echo "[Match]" | sudo tee -a "$route_file" > /dev/null
+    echo "Name=$primary_interface" | sudo tee -a "$route_file" > /dev/null
+    echo "" | sudo tee -a "$route_file" > /dev/null
+    echo "[Network]" | sudo tee -a "$route_file" > /dev/null
+`)
+
+	for subnet := range subnets {
+		script.WriteString(fmt.Sprintf(`    echo "Route=%s,$SIMULATOR_HOST" | sudo tee -a "$route_file" > /dev/null
+`, subnet))
+	}
+
+	script.WriteString(`
+    echo -e "${GREEN}✅ Created systemd-networkd configuration: $route_file${NC}"
+    echo -e "${YELLOW}🔄 Restarting systemd-networkd...${NC}"
+
+    sudo systemctl restart systemd-networkd
+    echo -e "${GREEN}✅ systemd-networkd restarted${NC}"
+}
+
+# Function for traditional /etc/network/interfaces
+add_permanent_routes_interfaces() {
+    local interfaces_file="/etc/network/interfaces"
+    local backup_file="/etc/network/interfaces.backup.$(date +%Y%m%d_%H%M%S)"
+
+    # Backup original file
+    sudo cp "$interfaces_file" "$backup_file"
+    echo -e "${GREEN}✅ Backed up interfaces file to $backup_file${NC}"
+
+    # Add routes to interfaces file
+    echo "" | sudo tee -a "$interfaces_file" > /dev/null
+    echo "# Static routes for Network Device Simulator - Added $(date)" | sudo tee -a "$interfaces_file" > /dev/null
+`)
+
+	for subnet := range subnets {
+		script.WriteString(fmt.Sprintf(`    echo "up ip route add %s via $SIMULATOR_HOST" | sudo tee -a "$interfaces_file" > /dev/null
+    echo "down ip route del %s via $SIMULATOR_HOST" | sudo tee -a "$interfaces_file" > /dev/null
+`, subnet, subnet))
+	}
+
+	script.WriteString(`
+    echo -e "${GREEN}✅ Added routes to $interfaces_file${NC}"
+    echo -e "${YELLOW}💡 Routes will be active after next network restart or reboot${NC}"
+}
+
+# Function to add permanent routes on RHEL/CentOS/Fedora systems
+add_permanent_routes_rhel() {
+    echo -e "${BLUE}🎩 Detected RHEL/CentOS/Fedora system${NC}"
+
+    # Check if NetworkManager is being used
+    if command -v nmcli >/dev/null 2>&1 && systemctl is-active NetworkManager >/dev/null 2>&1; then
+        echo -e "${YELLOW}📝 Using NetworkManager configuration${NC}"
+        add_permanent_routes_networkmanager
+    else
+        echo -e "${YELLOW}📝 Using traditional network-scripts${NC}"
+        add_permanent_routes_network_scripts
+    fi
+}
+
+# Function for NetworkManager-based systems
+add_permanent_routes_networkmanager() {
+    # Get the active connection name
+    local connection=$(nmcli -t -f NAME con show --active | head -1)
+
+    if [ -z "$connection" ]; then
+        echo -e "${RED}❌ No active NetworkManager connection found${NC}"
+        return 1
+    fi
+
+    echo -e "${BLUE}📡 Adding routes to NetworkManager connection: $connection${NC}"
+`)
+
+	for subnet := range subnets {
+		script.WriteString(fmt.Sprintf(`    if sudo nmcli con modify "$connection" +ipv4.routes "%s $SIMULATOR_HOST"; then
+        echo -e "${GREEN}✅ Added route for %s${NC}"
+    else
+        echo -e "${RED}❌ Failed to add route for %s${NC}"
+    fi
+`, subnet, subnet, subnet))
+	}
+
+	script.WriteString(`
+    echo -e "${YELLOW}🔄 Reactivating NetworkManager connection...${NC}"
+    sudo nmcli con up "$connection"
+    echo -e "${GREEN}✅ NetworkManager configuration applied${NC}"
+}
+
+# Function for traditional network-scripts
+add_permanent_routes_network_scripts() {
+    local route_file="/etc/sysconfig/network-scripts/route-$(ip route show default | head -1 | awk '{print $5}')"
+
+    echo "# Static routes for Network Device Simulator" | sudo tee "$route_file" > /dev/null
+    echo "# Generated on $(date)" | sudo tee -a "$route_file" > /dev/null
+`)
+
+	for subnet := range subnets {
+		script.WriteString(fmt.Sprintf(`    echo "%s via $SIMULATOR_HOST" | sudo tee -a "$route_file" > /dev/null
+`, subnet))
+	}
+
+	script.WriteString(`
+    echo -e "${GREEN}✅ Created route file: $route_file${NC}"
+    echo -e "${YELLOW}💡 Routes will be active after next network restart or reboot${NC}"
+}
+
+# Function to add permanent routes on openSUSE/SUSE systems
+add_permanent_routes_suse() {
+    echo -e "${BLUE}🦎 Detected openSUSE/SUSE system${NC}"
+
+    local route_file="/etc/sysconfig/network/routes"
+    local backup_file="/etc/sysconfig/network/routes.backup.$(date +%Y%m%d_%H%M%S)"
+
+    # Backup original file if it exists
+    if [ -f "$route_file" ]; then
+        sudo cp "$route_file" "$backup_file"
+        echo -e "${GREEN}✅ Backed up routes file to $backup_file${NC}"
+    fi
+
+    # Add routes
+    echo "# Static routes for Network Device Simulator - Added $(date)" | sudo tee -a "$route_file" > /dev/null
+`)
+
+	for subnet := range subnets {
+		script.WriteString(fmt.Sprintf(`    echo "%s $SIMULATOR_HOST - -" | sudo tee -a "$route_file" > /dev/null
+`, subnet))
+	}
+
+	script.WriteString(`
+    echo -e "${GREEN}✅ Added routes to $route_file${NC}"
+    echo -e "${YELLOW}🔄 Restarting network service...${NC}"
+
+    if sudo systemctl restart wicked; then
+        echo -e "${GREEN}✅ Network service restarted${NC}"
+    else
+        echo -e "${YELLOW}⚠️  Network service restart failed, routes will be active after reboot${NC}"
+    fi
+}
+
+# Function to show current routes
+show_current_routes() {
+    echo -e "${BLUE}📋 Current simulator routes:${NC}"
+`)
+
+	for subnet := range subnets {
+		script.WriteString(fmt.Sprintf(`    if ip route show %s >/dev/null 2>&1; then
+        echo -e "${GREEN}✅ %s: $(ip route show %s)${NC}"
+    else
+        echo -e "${RED}❌ %s: No route found${NC}"
+    fi
+`, subnet, subnet, subnet, subnet))
+	}
+
+	script.WriteString(`}
+
+# Function to show removal instructions
+show_removal_instructions() {
+    echo ""
+    echo -e "${BLUE}🗑️  Route Removal Instructions:${NC}"
+    echo ""
+
+    if [ "$PERMANENT" = true ]; then
+        echo -e "${YELLOW}For permanent routes, you need to:${NC}"
+        echo -e "${YELLOW}1. Remove the configuration files created by this script${NC}"
+        echo -e "${YELLOW}2. Restart the network service${NC}"
+        echo ""
+        echo -e "${BLUE}Configuration files to remove:${NC}"
+        case "$OS_TYPE" in
+            "debian")
+                echo "  - /etc/netplan/99-simulator-routes.yaml (if using netplan)"
+                echo "  - /etc/systemd/network/50-simulator-routes.network (if using systemd-networkd)"
+                echo "  - Lines in /etc/network/interfaces (if using traditional interfaces)"
+                ;;
+            "rhel")
+                echo "  - NetworkManager connection routes (use nmcli con modify)"
+                echo "  - /etc/sysconfig/network-scripts/route-* files"
+                ;;
+            "suse")
+                echo "  - Lines in /etc/sysconfig/network/routes"
+                ;;
+        esac
+        echo ""
+    else
+        echo -e "${YELLOW}For temporary routes, run these commands:${NC}"
+`)
+
+	for subnet := range subnets {
+		script.WriteString(fmt.Sprintf(`        echo "  sudo ip route del %s"`, subnet))
+		script.WriteString("\n")
+	}
+
+	script.WriteString(`    fi
+}
+
+# Main execution
+echo -e "${BLUE}🚀 Network Device Simulator Route Configuration${NC}"
+echo -e "${BLUE}================================================${NC}"
+echo ""
+
+if [ "$PERMANENT" = true ]; then
+    echo -e "${YELLOW}⚠️  WARNING: This will add PERMANENT routes that persist after reboot!${NC}"
+    echo -e "${YELLOW}⚠️  Make sure $SIMULATOR_HOST is always reachable, or remove routes manually.${NC}"
+    echo ""
+    read -p "Continue with permanent route installation? (y/N): " -n 1 -r
+    echo ""
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo -e "${YELLOW}❌ Operation cancelled${NC}"
+        exit 0
+    fi
+    echo ""
+    add_permanent_routes
+else
+    add_temporary_routes
+fi
+
+echo ""
+show_current_routes
+show_removal_instructions
+
+echo ""
+echo -e "${GREEN}🎉 Route configuration complete!${NC}"
+
+if [ "$PERMANENT" = true ]; then
+    echo -e "${BLUE}💡 Permanent routes are now configured and will persist across reboots${NC}"
+else
+    echo -e "${BLUE}💡 Temporary routes are active until next reboot${NC}"
+fi
+`)
 
 	return script.String()
 }
@@ -475,7 +861,7 @@ func webUIHandler(w http.ResponseWriter, r *http.Request) {
                         📊 Export CSV <span id="exportLoading" class="loading" style="display: none;"></span>
                     </button>
                     <button id="routeScriptBtn" class="btn btn-small">
-                        🛤️ Route Script <span id="routeScriptLoading" class="loading" style="display: none;"></span>
+                        🛤️ Enhanced Route Script <span id="routeScriptLoading" class="loading" style="display: none;"></span>
                     </button>
                     <button id="refreshBtn" class="btn btn-small">
                         🔄 Refresh <span id="refreshLoading" class="loading" style="display: none;"></span>
@@ -771,7 +1157,7 @@ func webUIHandler(w http.ResponseWriter, r *http.Request) {
                 link.click();
                 document.body.removeChild(link);
                 
-                showAlert('Route configuration script downloaded successfully', 'success');
+                showAlert('Enhanced route script downloaded successfully! Now supports both temporary and permanent routes.', 'success');
             } catch (error) {
                 showAlert('Failed to download route script: ' + error.message, 'error');
             } finally {
