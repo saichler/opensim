@@ -66,19 +66,46 @@ cleanup_port() {
     fi
 }
 
-# Cleanup TUN interfaces
+# Cleanup TUN interfaces using optimized bulk deletion
 cleanup_tun_interfaces() {
     echo -e "${YELLOW}🔧 Cleaning up TUN interfaces...${NC}"
-    
-    # Find and delete simulator TUN interfaces
+
+    # Find simulator TUN interfaces
     local tun_interfaces=$(ip link show | grep -o 'sim[0-9]*:' | tr -d ':' 2>/dev/null || true)
-    
+
     if [ -n "$tun_interfaces" ]; then
+        local interface_count=$(echo "$tun_interfaces" | wc -w)
+        echo -e "${BLUE}  Found $interface_count TUN interfaces to delete${NC}"
+
+        # Create temporary batch file for bulk deletion
+        local batch_file=$(mktemp /tmp/tun_cleanup_XXXXXX.txt)
+
+        # Write deletion commands to batch file
         for interface in $tun_interfaces; do
-            echo -e "${BLUE}  Deleting TUN interface: $interface${NC}"
-            sudo ip link delete "$interface" 2>/dev/null || true
+            echo "link delete $interface" >> "$batch_file"
         done
-        echo -e "${GREEN}✅ TUN interfaces cleaned up${NC}"
+
+        # Execute bulk deletion
+        echo -e "${BLUE}🗑️  Performing bulk deletion of $interface_count interfaces...${NC}"
+        local start_time=$(date +%s%N)
+
+        if sudo ip -batch "$batch_file" 2>/dev/null; then
+            local end_time=$(date +%s%N)
+            local elapsed_ms=$(( (end_time - start_time) / 1000000 ))
+            local per_interface_ms=$(( elapsed_ms * 1000 / interface_count ))
+            echo -e "${GREEN}✅ Bulk deleted $interface_count TUN interfaces in ${elapsed_ms}ms (${per_interface_ms}μs per interface)${NC}"
+        else
+            echo -e "${YELLOW}⚠️  Batch deletion failed, falling back to individual deletion...${NC}"
+            # Fallback to individual deletion
+            for interface in $tun_interfaces; do
+                echo -e "${BLUE}  Deleting TUN interface: $interface${NC}"
+                sudo ip link delete "$interface" 2>/dev/null || true
+            done
+            echo -e "${GREEN}✅ TUN interfaces cleaned up (individual deletion)${NC}"
+        fi
+
+        # Clean up batch file
+        rm -f "$batch_file"
     else
         echo -e "${GREEN}✅ No TUN interfaces to clean up${NC}"
     fi

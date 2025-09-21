@@ -1343,10 +1343,23 @@ func (sm *SimulatorManager) DeleteAllDevices() error {
 	defer sm.mu.Unlock()
 
 	var errors []string
+	var tunInterfaces []string
 
+	// Collect all TUN interface names for bulk deletion
 	for deviceID, device := range sm.devices {
 		if err := device.Stop(); err != nil {
 			errors = append(errors, fmt.Sprintf("%s: %v", deviceID, err))
+		}
+		// Collect TUN interface names for bulk deletion
+		if device.tunIface != nil && !device.tunIface.PreAllocated {
+			tunInterfaces = append(tunInterfaces, device.tunIface.Name)
+		}
+	}
+
+	// Bulk delete TUN interfaces for better performance
+	if len(tunInterfaces) > 0 {
+		if err := sm.bulkDeleteTunInterfaces(tunInterfaces); err != nil {
+			errors = append(errors, fmt.Sprintf("bulk TUN deletion: %v", err))
 		}
 	}
 
@@ -1360,22 +1373,118 @@ func (sm *SimulatorManager) DeleteAllDevices() error {
 	return nil
 }
 
+// bulkDeleteTunInterfaces deletes multiple TUN interfaces efficiently using batch commands
+func (sm *SimulatorManager) bulkDeleteTunInterfaces(interfaceNames []string) error {
+	if len(interfaceNames) == 0 {
+		return nil
+	}
+
+	log.Printf("🗑️ Bulk deleting %d TUN interfaces...", len(interfaceNames))
+	startTime := time.Now()
+
+	// Method 1: Use iproute2 batch mode for maximum efficiency
+	if err := sm.deleteTunInterfacesBatch(interfaceNames); err == nil {
+		elapsed := time.Since(startTime)
+		log.Printf("✅ Bulk deleted %d TUN interfaces in %v (%.3f ms per interface)",
+			len(interfaceNames), elapsed, float64(elapsed.Nanoseconds())/float64(len(interfaceNames)*1e6))
+		return nil
+	}
+
+	// Method 2: Fallback to parallel deletion if batch fails
+	log.Printf("⚠️ Batch deletion failed, falling back to parallel deletion")
+	return sm.deleteTunInterfacesParallel(interfaceNames)
+}
+
+// deleteTunInterfacesBatch uses iproute2 batch mode for optimal performance
+func (sm *SimulatorManager) deleteTunInterfacesBatch(interfaceNames []string) error {
+	// Create a temporary batch file with deletion commands
+	batchFile, err := os.CreateTemp("", "tun_delete_batch_*.txt")
+	if err != nil {
+		return fmt.Errorf("failed to create batch file: %v", err)
+	}
+	defer os.Remove(batchFile.Name())
+	defer batchFile.Close()
+
+	// Write all deletion commands to the batch file
+	for _, ifName := range interfaceNames {
+		if _, err := fmt.Fprintf(batchFile, "link delete %s\n", ifName); err != nil {
+			return fmt.Errorf("failed to write to batch file: %v", err)
+		}
+	}
+	batchFile.Sync()
+
+	// Execute the batch file with ip command
+	cmd := exec.Command("ip", "-batch", batchFile.Name())
+	if output, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("batch deletion failed: %v, output: %s", err, string(output))
+	}
+
+	return nil
+}
+
+// deleteTunInterfacesParallel deletes interfaces in parallel as fallback
+func (sm *SimulatorManager) deleteTunInterfacesParallel(interfaceNames []string) error {
+	const maxWorkers = 50 // Limit concurrent deletions to avoid overwhelming the system
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	var errors []string
+
+	// Worker pool for parallel deletion
+	sem := make(chan struct{}, maxWorkers)
+
+	for _, ifName := range interfaceNames {
+		wg.Add(1)
+		go func(interfaceName string) {
+			defer wg.Done()
+
+			// Acquire worker slot
+			sem <- struct{}{}
+			defer func() { <-sem }()
+
+			// Delete the interface
+			cmd := exec.Command("ip", "link", "delete", interfaceName)
+			if err := cmd.Run(); err != nil {
+				mu.Lock()
+				errors = append(errors, fmt.Sprintf("%s: %v", interfaceName, err))
+				mu.Unlock()
+			}
+		}(ifName)
+	}
+
+	wg.Wait()
+
+	if len(errors) > 0 {
+		return fmt.Errorf("parallel deletion errors: %s", strings.Join(errors, ", "))
+	}
+	return nil
+}
+
 // CleanupPreAllocatedInterfaces destroys all pre-allocated TUN interfaces
 func (sm *SimulatorManager) CleanupPreAllocatedInterfaces() {
 	sm.tunPoolMutex.Lock()
 	defer sm.tunPoolMutex.Unlock()
 
+	var interfaceNames []string
+
+	// Collect interface names for bulk deletion
 	for _, tunIface := range sm.tunInterfacePool {
 		if tunIface != nil && tunIface.PreAllocated {
-			tunIface.destroy()
-			// log.Printf("Cleaned up pre-allocated interface %s", tunIface.Name)
+			interfaceNames = append(interfaceNames, tunIface.Name)
+			tunIface.destroy() // Close file descriptors
+		}
+	}
+
+	// Bulk delete the interfaces
+	if len(interfaceNames) > 0 {
+		if err := sm.bulkDeleteTunInterfaces(interfaceNames); err != nil {
+			log.Printf("Warning: bulk cleanup failed, some interfaces may remain: %v", err)
 		}
 	}
 
 	// Clear the pool
 	sm.tunInterfacePool = make(map[string]*TunInterface)
 	sm.tunPoolSize = 0
-	log.Printf("Cleaned up all pre-allocated interfaces")
+	log.Printf("Cleaned up all %d pre-allocated interfaces", len(interfaceNames))
 }
 
 // DeviceSimulator implementation
@@ -1435,9 +1544,11 @@ func (d *DeviceSimulator) Stop() error {
 		}
 	}
 
-	// Only destroy TUN interface if it's not pre-allocated
+	// Only destroy TUN interface if it's not pre-allocated and not part of bulk deletion
+	// Individual device stops will close the file descriptor but not delete the interface
+	// Bulk deletion handles the actual interface removal
 	if d.tunIface != nil && !d.tunIface.PreAllocated {
-		d.tunIface.destroy()
+		d.tunIface.destroy() // Only closes the file descriptor
 	}
 	// Pre-allocated interfaces remain available for reuse
 
