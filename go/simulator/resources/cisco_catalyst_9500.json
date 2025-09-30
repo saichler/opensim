@@ -4705,6 +4705,18 @@
     {
       "command": "show platform hardware memory brief",
       "response": "Memory Information:\n\nSupervisor Memory:\n  Type: DDR4\n  Size: 16 GB\n  Frequency: 2400 MHz\n  Utilization: 45%\n  Status: OK\n\nLine Card Memory:\n  Type: DDR3\n  Size: 4 GB\n  Frequency: 1600 MHz\n  Utilization: 28%\n  Status: OK\n\nTotal System Memory: 20 GB\nOverall Utilization: 45%"
+    },
+    {
+      "command": "show cdp neighbors",
+      "response": "Capability Codes: R - Router, T - Trans Bridge, B - Source Route Bridge\n                  S - Switch, H - Host, I - IGMP, r - Repeater, P - Phone\n\nDevice ID        Local Intrfce     Holdtme    Capability  Platform  Port ID\nDist-SW-01       Gi1/0/1           142        S I         C9300-48P Gi1/0/48\nAccess-SW-02     Gi1/0/2           158        S I         C2960X-48 Gi0/24\nCore-RTR-01      Gi1/0/24          165        R           ASR1001-X Gi0/0/0\nBackup-SW-01     Gi1/0/25          135        S I         C9500-48Y Gi1/0/25\n\nTotal cdp entries displayed: 4"
+    },
+    {
+      "command": "show cdp neighbors detail",
+      "response": "-------------------------\nDevice ID: Dist-SW-01\nEntry address(es):\n  IP address: 10.1.10.2\nPlatform: cisco WS-C9300-48P,  Capabilities: Switch IGMP\nInterface: GigabitEthernet1/0/1,  Port ID (outgoing port): GigabitEthernet1/0/48\nHoldtime : 142 sec\n\nVersion :\nCisco IOS Software, Catalyst L3 Switch Software (CAT9K_IOSXE), Version 16.12.03\n\n-------------------------\nDevice ID: Access-SW-02\nEntry address(es):\n  IP address: 10.1.20.5\nPlatform: cisco WS-C2960X-48FPS-L,  Capabilities: Switch IGMP\nInterface: GigabitEthernet1/0/2,  Port ID (outgoing port): GigabitEthernet0/24\nHoldtime : 158 sec\n\nVersion :\nCisco IOS Software, C2960X Software (C2960X-UNIVERSALK9-M), Version 15.2(7)E3\n\n-------------------------\nDevice ID: Core-RTR-01\nEntry address(es):\n  IP address: 10.0.1.1\nPlatform: Cisco ASR1001-X,  Capabilities: Router\nInterface: GigabitEthernet1/0/24,  Port ID (outgoing port): GigabitEthernet0/0/0\nHoldtime : 165 sec\n\nVersion :\nCisco IOS XE Software, Version 17.03.04\n\n-------------------------\nDevice ID: Backup-SW-01\nEntry address(es):\n  IP address: 10.1.1.20\nPlatform: cisco C9500-48Y4C,  Capabilities: Switch IGMP\nInterface: GigabitEthernet1/0/25,  Port ID (outgoing port): GigabitEthernet1/0/25\nHoldtime : 135 sec\n\nVersion :\nCisco IOS Software, Catalyst L3 Switch Software (CAT9K_IOSXE), Version 16.12.04"
+    },
+    {
+      "command": "show lldp neighbors",
+      "response": "Capability codes:\n    (R) Router, (B) Bridge, (T) Telephone, (C) DOCSIS Cable Device\n    (W) WLAN Access Point, (P) Repeater, (S) Station, (O) Other\n\nDevice ID           Local Intf     Hold-time  Capability      Port ID\nDist-SW-01          Gi1/0/1        120        B               GigabitEthernet1/0/48\nAccess-SW-02        Gi1/0/2        120        B               GigabitEthernet0/24\nCore-RTR-01         Gi1/0/24       120        R               GigabitEthernet0/0/0\nBackup-SW-01        Gi1/0/25       120        B               GigabitEthernet1/0/25\n\nTotal entries displayed: 4"
     }
   ]
 }

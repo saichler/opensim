@@ -385,6 +385,18 @@
     {
       "command": "show environment temperatures",
       "response": "Location     Temp(C)  Status\\n-----------  -------  ------\\nCPU DIE        44      Normal\\nINLET          32      Normal\\nOUTLET         38      Normal\\nFAN TRAY 1     35      Normal\\nFAN TRAY 2     34      Normal"
+    },
+    {
+      "command": "show cdp neighbors",
+      "response": "Capability Codes: R - Router, T - Trans Bridge, B - Source Route Bridge\\n                  S - Switch, H - Host, I - IGMP, r - Repeater\\n\\nDevice ID        Local Intrfce     Holdtme    Capability  Platform  Port ID\\nCore-RTR-02      Gi0/0/0/1         165        R           CRS-16/S  Gi0/0/0/24\\nAgg-SW-01        Te0/1/0/1         142        S I         ASR-9910  Te0/0/0/1\\nEdge-RTR-01      Te0/1/0/10        158        R           ASR-9006  Te0/2/0/5\\n\\nTotal cdp entries displayed: 3"
+    },
+    {
+      "command": "show cdp neighbors detail",
+      "response": "-------------------------\\nDevice ID: Core-RTR-02\\nEntry address(es):\\n  IP address: 10.0.1.2\\nPlatform: Cisco CRS-16/S,  Capabilities: Router\\nInterface: GigabitEthernet0/0/0/1,  Port ID (outgoing port): GigabitEthernet0/0/0/24\\nHoldtime : 165 sec\\n\\nVersion :\\nCisco IOS XR Software, Version 6.7.3\\n\\n-------------------------\\nDevice ID: Agg-SW-01\\nEntry address(es):\\n  IP address: 10.1.10.5\\nPlatform: Cisco ASR-9910,  Capabilities: Switch IGMP\\nInterface: TenGigE0/1/0/1,  Port ID (outgoing port): TenGigE0/0/0/1\\nHoldtime : 142 sec\\n\\nVersion :\\nCisco IOS XR Software, Version 7.3.2\\n\\n-------------------------\\nDevice ID: Edge-RTR-01\\nEntry address(es):\\n  IP address: 10.2.1.1\\nPlatform: Cisco ASR-9006,  Capabilities: Router\\nInterface: TenGigE0/1/0/10,  Port ID (outgoing port): TenGigE0/2/0/5\\nHoldtime : 158 sec\\n\\nVersion :\\nCisco IOS XR Software, Version 7.2.1"
+    },
+    {
+      "command": "show lldp neighbors",
+      "response": "Capability codes:\\n    (R) Router, (B) Bridge, (T) Telephone, (C) DOCSIS Cable Device\\n    (W) WLAN Access Point, (P) Repeater, (S) Station, (O) Other\\n\\nDevice ID           Local Intf     Hold-time  Capability      Port ID\\nCore-RTR-02         Gi0/0/0/1      120        R               GigabitEthernet0/0/0/24\\nAgg-SW-01           Te0/1/0/1      120        R               TenGigE0/0/0/1\\nEdge-RTR-01         Te0/1/0/10     120        R               TenGigE0/2/0/5\\n\\nTotal entries displayed: 3"
     }
   ]
 }
