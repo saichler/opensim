@@ -62,6 +62,7 @@ const (
 const (
 	DEFAULT_SNMP_PORT = 161
 	DEFAULT_SSH_PORT  = 22
+	DEFAULT_API_PORT  = 8443 // HTTPS API port for storage devices
 	USERNAME          = "simadmin"
 	PASSWORD          = "simadmin"
 	TUN_DEVICE_PREFIX = "sim"
@@ -1026,6 +1027,7 @@ func (sm *SimulatorManager) CreateDevicesWithOptions(startIP string, count int, 
 			IP:           deviceIP,
 			SNMPPort:     DEFAULT_SNMP_PORT,
 			SSHPort:      DEFAULT_SSH_PORT,
+			APIPort:      DEFAULT_API_PORT,
 			tunIface:     tunIface,
 			resources:    resources,
 			resourceFile: resourceFile,
@@ -1039,10 +1041,11 @@ func (sm *SimulatorManager) CreateDevicesWithOptions(startIP string, count int, 
 
 		// Create servers with SNMPv3 configuration
 		device.snmpServer = &SNMPServer{
-			device:   device, 
+			device:   device,
 			v3Config: v3Config,
 		}
 		device.sshServer = &SSHServer{device: device, signer: sm.sharedSSHSigner}
+		device.apiServer = &APIServer{device: device}
 
 		// Start device services
 		if err := device.Start(); err != nil {
@@ -1209,6 +1212,7 @@ func (sm *SimulatorManager) createSingleDevice(deviceIndex int, deviceIP net.IP,
 		IP:           make(net.IP, len(deviceIP)),
 		SNMPPort:     DEFAULT_SNMP_PORT,
 		SSHPort:      DEFAULT_SSH_PORT,
+		APIPort:      DEFAULT_API_PORT,
 		tunIface:     tunIface,
 		resources:    resources,
 		resourceFile: resourceFile,
@@ -1227,6 +1231,7 @@ func (sm *SimulatorManager) createSingleDevice(deviceIndex int, deviceIP net.IP,
 		v3Config: v3Config,
 	}
 	device.sshServer = &SSHServer{device: device, signer: sm.sharedSSHSigner}
+	device.apiServer = &APIServer{device: device}
 
 	// Start device services
 	if err := device.Start(); err != nil {
@@ -1508,10 +1513,20 @@ func (d *DeviceSimulator) Start() error {
 		errors = append(errors, fmt.Sprintf("SSH: %v", err))
 	}
 
+	// Start API server (if device has API resources)
+	if d.apiServer != nil && len(d.resources.API) > 0 {
+		if err := d.apiServer.Start(); err != nil {
+			errors = append(errors, fmt.Sprintf("API: %v", err))
+		}
+	}
+
 	if len(errors) > 0 {
 		// Stop any services that did start
 		d.snmpServer.Stop()
 		d.sshServer.Stop()
+		if d.apiServer != nil {
+			d.apiServer.Stop()
+		}
 		return fmt.Errorf("failed to start services: %s", strings.Join(errors, ", "))
 	}
 
@@ -1541,6 +1556,12 @@ func (d *DeviceSimulator) Stop() error {
 	if d.sshServer != nil {
 		if err := d.sshServer.Stop(); err != nil {
 			errors = append(errors, fmt.Sprintf("SSH: %v", err))
+		}
+	}
+
+	if d.apiServer != nil {
+		if err := d.apiServer.Stop(); err != nil {
+			errors = append(errors, fmt.Sprintf("API: %v", err))
 		}
 	}
 

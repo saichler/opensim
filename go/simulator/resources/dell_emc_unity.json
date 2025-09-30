@@ -1,0 +1,242 @@
+{
+  "snmp": [
+    {
+      "oid": "1.3.6.1.2.1.1.1.0",
+      "response": "Dell EMC Unity 400 Storage System"
+    },
+    {
+      "oid": "1.3.6.1.2.1.1.2.0",
+      "response": "1.3.6.1.4.1.1139"
+    },
+    {
+      "oid": "1.3.6.1.2.1.1.5.0",
+      "response": "Unity-Storage-01"
+    },
+    {
+      "oid": "1.3.6.1.2.1.1.6.0",
+      "response": "Storage Room A"
+    }
+  ],
+  "ssh": [
+    {
+      "command": "show /system/general",
+      "response": "System Information:\n  Name: Unity-400\n  Model: Unity 400\n  Serial Number: FCNCH123456789\n  Software Version: 5.2.1.0.5.123\n  API Version: 12.0"
+    },
+    {
+      "command": "show /stor/config/pool",
+      "response": "Pool_1:\n  ID: pool_1\n  Name: Pool_1\n  Total Size: 50.0 TB\n  Used Size: 32.5 TB\n  Available: 17.5 TB\n  Health: OK (5)\n  Type: Dynamic"
+    }
+  ],
+  "api": [
+    {
+      "method": "GET",
+      "path": "/api/types/system/instances",
+      "response": {
+        "entries": [
+          {
+            "content": {
+              "id": "0",
+              "model": "Unity 400",
+              "name": "Unity-400",
+              "softwareVersion": "5.2.1.0.5.123",
+              "apiVersion": "12.0",
+              "earliestApiVersion": "4.0",
+              "serialNumber": "FCNCH123456789",
+              "platform": "Unity 400",
+              "macAddress": "00:60:16:5E:A1:B2",
+              "isEULAAccepted": true,
+              "isUpgradeComplete": true,
+              "isAutoFailbackEnabled": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/types/pool/instances",
+      "response": {
+        "entries": [
+          {
+            "content": {
+              "id": "pool_1",
+              "name": "Pool_1",
+              "health": {
+                "value": 5,
+                "descriptionIds": ["ALRT_POOL_OK"],
+                "descriptions": ["The pool is operating normally."]
+              },
+              "type": 1,
+              "sizeTotal": 54975581388800,
+              "sizeFree": 19215953100800,
+              "sizeUsed": 35759628288000,
+              "sizeSubscribed": 43980465111040,
+              "alertThreshold": 70,
+              "isFASTCacheEnabled": false,
+              "tieringPolicy": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/types/lun/instances",
+      "response": {
+        "entries": [
+          {
+            "content": {
+              "id": "sv_1",
+              "name": "prod_lun_01",
+              "type": 2,
+              "sizeTotal": 1099511627776,
+              "sizeAllocated": 549755813888,
+              "perTierSizeUsed": [549755813888, 0, 0],
+              "isThinEnabled": true,
+              "health": {
+                "value": 5
+              },
+              "pool": {
+                "id": "pool_1"
+              },
+              "hostAccess": [
+                {
+                  "host": {
+                    "id": "Host_1"
+                  },
+                  "accessMask": 1
+                }
+              ]
+            }
+          },
+          {
+            "content": {
+              "id": "sv_2",
+              "name": "dev_lun_01",
+              "type": 2,
+              "sizeTotal": 2199023255552,
+              "sizeAllocated": 1099511627776,
+              "perTierSizeUsed": [1099511627776, 0, 0],
+              "isThinEnabled": true,
+              "health": {
+                "value": 5
+              },
+              "pool": {
+                "id": "pool_1"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/types/filesystem/instances",
+      "response": {
+        "entries": [
+          {
+            "content": {
+              "id": "fs_1",
+              "name": "prod_fs_01",
+              "type": 1,
+              "sizeTotal": 5497558138880,
+              "sizeUsed": 2748779069440,
+              "sizeAllocated": 3298534883328,
+              "isThinEnabled": true,
+              "health": {
+                "value": 5
+              },
+              "pool": {
+                "id": "pool_1"
+              },
+              "nasServer": {
+                "id": "nas_1"
+              },
+              "supportedProtocols": 6
+            }
+          }
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/types/host/instances",
+      "response": {
+        "entries": [
+          {
+            "content": {
+              "id": "Host_1",
+              "name": "ESX-Host-01",
+              "type": 1,
+              "osType": "VMware ESXi",
+              "health": {
+                "value": 5
+              },
+              "hostIPPorts": [
+                {
+                  "id": "HostNetworkAddress_1"
+                }
+              ],
+              "fcHostInitiators": [
+                {
+                  "id": "HostInitiator_1"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/types/lun/instances",
+      "request": {
+        "name": "new_lun",
+        "pool": {
+          "id": "pool_1"
+        },
+        "size": 1099511627776,
+        "isThinEnabled": true,
+        "lunParameters": {
+          "isThinEnabled": true
+        }
+      },
+      "response": {
+        "content": {
+          "id": "sv_3"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/types/storageResource/instances",
+      "request": {
+        "name": "new_volume",
+        "type": 2,
+        "lunParameters": {
+          "pool": {
+            "id": "pool_1"
+          },
+          "size": 2199023255552,
+          "isThinEnabled": true
+        }
+      },
+      "response": {
+        "content": {
+          "storageResource": {
+            "id": "res_3"
+          }
+        }
+      }
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/instances/lun/{id}",
+      "response": {
+        "content": {
+          "message": "LUN deleted successfully"
+        }
+      }
+    }
+  ]
+}

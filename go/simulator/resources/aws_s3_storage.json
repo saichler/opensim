@@ -1,0 +1,200 @@
+{
+  "snmp": [
+    {
+      "oid": "1.3.6.1.2.1.1.1.0",
+      "response": "AWS S3 Compatible Object Storage Gateway"
+    },
+    {
+      "oid": "1.3.6.1.2.1.1.2.0",
+      "response": "1.3.6.1.4.1.9999"
+    },
+    {
+      "oid": "1.3.6.1.2.1.1.5.0",
+      "response": "S3-Gateway-01"
+    },
+    {
+      "oid": "1.3.6.1.2.1.1.6.0",
+      "response": "Cloud Storage"
+    }
+  ],
+  "ssh": [
+    {
+      "command": "aws s3 ls",
+      "response": "2024-01-15 10:30:00 production-data\n2024-02-20 14:22:00 development-data\n2024-03-10 09:15:00 backup-data\n2024-04-05 16:45:00 analytics-data"
+    },
+    {
+      "command": "aws s3 ls s3://production-data/ --summarize",
+      "response": "2024-01-15 10:30:15    1048576 file1.dat\n2024-01-16 11:22:30    2097152 file2.dat\n2024-01-17 09:45:10    4194304 file3.dat\n\nTotal Objects: 1247\nTotal Size: 10737418240"
+    }
+  ],
+  "api": [
+    {
+      "method": "GET",
+      "path": "/",
+      "response": {
+        "ListAllMyBucketsResult": {
+          "Owner": {
+            "ID": "550e8400e29b41d4a716446655440000",
+            "DisplayName": "storage-admin"
+          },
+          "Buckets": {
+            "Bucket": [
+              {
+                "Name": "production-data",
+                "CreationDate": "2024-01-15T10:30:00.000Z"
+              },
+              {
+                "Name": "development-data",
+                "CreationDate": "2024-02-20T14:22:00.000Z"
+              },
+              {
+                "Name": "backup-data",
+                "CreationDate": "2024-03-10T09:15:00.000Z"
+              },
+              {
+                "Name": "analytics-data",
+                "CreationDate": "2024-04-05T16:45:00.000Z"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/production-data",
+      "response": {
+        "ListBucketResult": {
+          "Name": "production-data",
+          "Prefix": "",
+          "Marker": "",
+          "MaxKeys": 1000,
+          "IsTruncated": false,
+          "Contents": [
+            {
+              "Key": "data/file1.dat",
+              "LastModified": "2024-01-15T10:30:15.000Z",
+              "ETag": "\"d41d8cd98f00b204e9800998ecf8427e\"",
+              "Size": 1048576,
+              "StorageClass": "STANDARD",
+              "Owner": {
+                "ID": "550e8400e29b41d4a716446655440000",
+                "DisplayName": "storage-admin"
+              }
+            },
+            {
+              "Key": "data/file2.dat",
+              "LastModified": "2024-01-16T11:22:30.000Z",
+              "ETag": "\"098f6bcd4621d373cade4e832627b4f6\"",
+              "Size": 2097152,
+              "StorageClass": "STANDARD",
+              "Owner": {
+                "ID": "550e8400e29b41d4a716446655440000",
+                "DisplayName": "storage-admin"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "method": "HEAD",
+      "path": "/production-data/data/file1.dat",
+      "response": {
+        "x-amz-id-2": "LriYPLdmOdAiIfgSm/F13Db55LTjy24ENPHbWVvqnfOdUl3h+4A7sA==",
+        "x-amz-request-id": "F2A8CCCA2C782C2D",
+        "Date": "Mon, 15 Jan 2024 10:30:15 GMT",
+        "Last-Modified": "Mon, 15 Jan 2024 10:30:15 GMT",
+        "ETag": "\"d41d8cd98f00b204e9800998ecf8427e\"",
+        "Accept-Ranges": "bytes",
+        "Content-Type": "application/octet-stream",
+        "Content-Length": "1048576",
+        "Server": "S3-Gateway"
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/new-bucket",
+      "response": {
+        "Location": "/new-bucket"
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/production-data/data/newfile.dat",
+      "request": {
+        "headers": {
+          "Content-Type": "application/octet-stream",
+          "Content-Length": "1048576"
+        }
+      },
+      "response": {
+        "ETag": "\"1b2cf535f27731c974343645a3985328\"",
+        "x-amz-request-id": "A8F9D1234ABCD5678",
+        "x-amz-version-id": "null"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/production-data",
+      "request": {
+        "uploads": ""
+      },
+      "response": {
+        "InitiateMultipartUploadResult": {
+          "Bucket": "production-data",
+          "Key": "large-file.dat",
+          "UploadId": "VXBsb2FkIElEIGZvciA2aWWpbmcncyBteS1tb3ZpZS5tMnRzIHVwbG9hZA"
+        }
+      }
+    },
+    {
+      "method": "DELETE",
+      "path": "/production-data/data/file1.dat",
+      "response": {
+        "x-amz-request-id": "D9F8A2345BCDE6789",
+        "x-amz-id-2": "3+3h4j5k6l7m8n9o0p1q2r3s4t5u6v7w8x9y0z==",
+        "Date": "Mon, 15 Jan 2024 11:00:00 GMT"
+      }
+    },
+    {
+      "method": "DELETE",
+      "path": "/old-bucket",
+      "response": {
+        "x-amz-request-id": "E0G9B3456CDEF7890"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/production-data?versioning",
+      "response": {
+        "VersioningConfiguration": {
+          "Status": "Enabled",
+          "MfaDelete": "Disabled"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/production-data?lifecycle",
+      "response": {
+        "LifecycleConfiguration": {
+          "Rule": [
+            {
+              "ID": "archive-old-data",
+              "Status": "Enabled",
+              "Prefix": "logs/",
+              "Transition": {
+                "Days": 30,
+                "StorageClass": "GLACIER"
+              },
+              "Expiration": {
+                "Days": 365
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

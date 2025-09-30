@@ -26,9 +26,17 @@ type SSHResource struct {
 	Response string `json:"response"`
 }
 
+type APIResource struct {
+	Method   string      `json:"method"`             // HTTP method: GET, POST, PUT, DELETE, PATCH
+	Path     string      `json:"path"`               // API endpoint path
+	Request  interface{} `json:"request,omitempty"`  // Optional request body for POST/PUT
+	Response interface{} `json:"response"`           // Response body
+}
+
 type DeviceResources struct {
 	SNMP []SNMPResource `json:"snmp"`
 	SSH  []SSHResource  `json:"ssh"`
+	API  []APIResource  `json:"api,omitempty"` // Optional API endpoints for storage devices
 
 	// Performance optimization indexes (not serialized)
 	oidIndex    *sync.Map  `json:"-"` // Lock-free OID -> Response mapping for O(1) lookups
@@ -42,9 +50,11 @@ type DeviceSimulator struct {
 	IP           net.IP
 	SNMPPort     int
 	SSHPort      int
+	APIPort      int            // HTTP API port for storage devices
 	tunIface     *TunInterface
 	snmpServer   *SNMPServer
 	sshServer    *SSHServer
+	apiServer    *APIServer     // HTTP API server for storage devices
 	resources    *DeviceResources
 	resourceFile string // Track which resource file was used
 	sysLocation  string // Dynamic sysLocation for this device
@@ -104,6 +114,12 @@ type SSHServer struct {
 	config   *ssh.ServerConfig
 	running  bool
 	signer   ssh.Signer // SSH host key signer
+}
+
+type APIServer struct {
+	device   *DeviceSimulator
+	listener net.Listener
+	running  bool
 }
 
 // Manager for all simulated devices

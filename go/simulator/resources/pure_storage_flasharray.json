@@ -1,0 +1,277 @@
+{
+  "snmp": [
+    {
+      "oid": "1.3.6.1.2.1.1.1.0",
+      "response": "Pure Storage FlashArray//X70 R3, Purity//FA 6.3.4"
+    },
+    {
+      "oid": "1.3.6.1.2.1.1.2.0",
+      "response": "1.3.6.1.4.1.40482"
+    },
+    {
+      "oid": "1.3.6.1.2.1.1.5.0",
+      "response": "FlashArray-01"
+    },
+    {
+      "oid": "1.3.6.1.2.1.1.6.0",
+      "response": "Primary Data Center"
+    }
+  ],
+  "ssh": [
+    {
+      "command": "purevol list",
+      "response": "Name                 Size      Created                  Serial\nprod-vol-01          10.0T     2024-01-15 10:30:00 PST  485A06DE31FB2B8A0001\ndev-vol-01           5.0T      2024-02-20 14:22:00 PST  485A06DE31FB2B8A0002\ntest-vol-01          2.0T      2024-03-10 09:15:00 PST  485A06DE31FB2B8A0003"
+    },
+    {
+      "command": "purearray list",
+      "response": "Name            ID                                   Version    Model\nFlashArray-01   550e8400-e29b-41d4-a716-446655440000 6.3.4      //X70 R3"
+    }
+  ],
+  "api": [
+    {
+      "method": "GET",
+      "path": "/api/2.14/arrays",
+      "response": {
+        "items": [
+          {
+            "id": "550e8400-e29b-41d4-a716-446655440000",
+            "name": "FlashArray-01",
+            "os": "Purity//FA",
+            "version": "6.3.4",
+            "model": "//X70 R3",
+            "revision": "202309121500"
+          }
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/2.14/arrays/space",
+      "response": {
+        "items": [
+          {
+            "capacity": 229501073817600,
+            "space": {
+              "data_reduction": 3.2,
+              "shared": 35184372088832,
+              "snapshots": 10737418240000,
+              "system": 5497558138880,
+              "total_physical": 51419348467712,
+              "total_provisioned": 164561476091904,
+              "unique": 5497558138880,
+              "virtual": 164561476091904,
+              "replication": 2199023255552,
+              "shared_effective": 112742891642880,
+              "snapshots_effective": 34359738368000,
+              "total_effective": 527252801249280,
+              "unique_effective": 17592186044416
+            }
+          }
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/2.14/volumes",
+      "response": {
+        "items": [
+          {
+            "id": "vol-uuid-001",
+            "name": "prod-vol-01",
+            "created": 1705340400000,
+            "serial": "485A06DE31FB2B8A0001",
+            "provisioned": 10995116277760,
+            "space": {
+              "data_reduction": 3.5,
+              "shared": 1099511627776,
+              "snapshots": 549755813888,
+              "system": 0,
+              "total_physical": 1649267441664,
+              "total_provisioned": 10995116277760,
+              "unique": 1099511627776,
+              "virtual": 5497558138880
+            },
+            "connection_count": 4,
+            "pod": {
+              "id": "pod-uuid-001",
+              "name": "prod-pod-01"
+            },
+            "qos": {
+              "bandwidth_limit": 524288000,
+              "iops_limit": 100000
+            },
+            "destroyed": false
+          },
+          {
+            "id": "vol-uuid-002",
+            "name": "dev-vol-01",
+            "created": 1708444920000,
+            "serial": "485A06DE31FB2B8A0002",
+            "provisioned": 5497558138880,
+            "space": {
+              "data_reduction": 2.8,
+              "shared": 549755813888,
+              "snapshots": 274877906944,
+              "system": 0,
+              "total_physical": 824633720832,
+              "total_provisioned": 5497558138880,
+              "unique": 549755813888,
+              "virtual": 2748779069440
+            },
+            "connection_count": 2,
+            "destroyed": false
+          }
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/2.14/hosts",
+      "response": {
+        "items": [
+          {
+            "id": "host-uuid-001",
+            "name": "esx-host-01",
+            "iqns": ["iqn.1998-01.com.vmware:esx-host-01-12345678"],
+            "wwns": ["21:00:00:24:FF:12:34:56"],
+            "host_group": {
+              "id": "hostgroup-uuid-001",
+              "name": "production-cluster"
+            },
+            "space": {
+              "data_reduction": 3.1,
+              "total_physical": 3298534883328
+            }
+          },
+          {
+            "id": "host-uuid-002",
+            "name": "linux-host-01",
+            "iqns": ["iqn.1994-05.com.redhat:linux-host-01"],
+            "wwns": [],
+            "space": {
+              "data_reduction": 2.5,
+              "total_physical": 1099511627776
+            }
+          }
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/2.14/pods",
+      "response": {
+        "items": [
+          {
+            "id": "pod-uuid-001",
+            "name": "prod-pod-01",
+            "source": {
+              "id": "550e8400-e29b-41d4-a716-446655440000",
+              "name": "FlashArray-01"
+            },
+            "space": {
+              "data_reduction": 3.3,
+              "shared": 5497558138880,
+              "snapshots": 2199023255552,
+              "total_physical": 7696581394432,
+              "unique": 2748779069440
+            },
+            "arrays": [
+              {
+                "id": "550e8400-e29b-41d4-a716-446655440000",
+                "name": "FlashArray-01",
+                "status": "online"
+              }
+            ],
+            "destroyed": false
+          }
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/2.14/volumes",
+      "request": {
+        "names": ["new-volume"],
+        "provisioned": 1099511627776
+      },
+      "response": {
+        "items": [
+          {
+            "id": "vol-uuid-new",
+            "name": "new-volume",
+            "created": 1709567890000,
+            "serial": "485A06DE31FB2B8A0010",
+            "provisioned": 1099511627776,
+            "destroyed": false
+          }
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/2.14/volumes/{name}/host",
+      "request": {
+        "host": {
+          "name": "esx-host-01"
+        }
+      },
+      "response": {
+        "items": [
+          {
+            "host": {
+              "id": "host-uuid-001",
+              "name": "esx-host-01"
+            },
+            "lun": 1,
+            "volume": {
+              "id": "vol-uuid-001",
+              "name": "prod-vol-01"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/2.14/volumes/{name}",
+      "response": {
+        "items": [
+          {
+            "id": "vol-uuid-001",
+            "name": "prod-vol-01",
+            "destroyed": true,
+            "time_remaining": 86400000
+          }
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/2.14/hardware",
+      "response": {
+        "items": [
+          {
+            "index": 0,
+            "name": "CT0",
+            "status": "ok",
+            "type": "controller",
+            "model": "//X70 R3",
+            "serial": "PCTFL123456789",
+            "slot": 0,
+            "temperature": 32.5
+          },
+          {
+            "index": 1,
+            "name": "CT1",
+            "status": "ok",
+            "type": "controller",
+            "model": "//X70 R3",
+            "serial": "PCTFL123456790",
+            "slot": 1,
+            "temperature": 33.2
+          }
+        ]
+      }
+    }
+  ]
+}
