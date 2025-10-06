@@ -1,0 +1,125 @@
+{
+  "snmp": [],
+  "ssh": [
+    {
+      "command": "uname -a",
+      "response": "Linux server-01 6.8.0-45-generic #45-Ubuntu SMP PREEMPT_DYNAMIC Fri Aug 30 12:02:04 UTC 2024 x86_64 x86_64 x86_64 GNU/Linux"
+    },
+    {
+      "command": "hostnamectl",
+      "response": " Static hostname: server-01\n       Icon name: computer-server\n         Chassis: server\n      Machine ID: a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6\n         Boot ID: 1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d\nOperating System: Ubuntu 24.04.1 LTS\n          Kernel: Linux 6.8.0-45-generic\n    Architecture: x86-64\n Hardware Vendor: Dell Inc.\n  Hardware Model: PowerEdge R750\n Firmware Version: 2.15.2"
+    },
+    {
+      "command": "uptime",
+      "response": " 14:32:15 up 45 days,  3:22,  2 users,  load average: 0.45, 0.38, 0.35"
+    },
+    {
+      "command": "cat /etc/os-release",
+      "response": "PRETTY_NAME=\"Ubuntu 24.04.1 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"24.04\"\nVERSION=\"24.04.1 LTS (Noble Numbat)\"\nVERSION_CODENAME=noble\nID=ubuntu\nID_LIKE=debian\nHOME_URL=\"https://www.ubuntu.com/\"\nSUPPORT_URL=\"https://help.ubuntu.com/\"\nBUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/\"\nPRIVACY_POLICY_URL=\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"\nUBUNTU_CODENAME=noble\nLOGO=ubuntu-logo"
+    },
+    {
+      "command": "lscpu",
+      "response": "Architecture:             x86_64\n  CPU op-mode(s):         32-bit, 64-bit\n  Address sizes:          46 bits physical, 48 bits virtual\n  Byte Order:             Little Endian\nCPU(s):                   32\n  On-line CPU(s) list:    0-31\nVendor ID:                GenuineIntel\n  Model name:             Intel(R) Xeon(R) Gold 6348 CPU @ 2.60GHz\n    CPU family:           6\n    Model:                106\n    Thread(s) per core:   2\n    Core(s) per socket:   16\n    Socket(s):            1\n    Stepping:             6\n    CPU max MHz:          3500.0000\n    CPU min MHz:          800.0000\n    BogoMIPS:             5200.00\nVirtualization features:\n  Virtualization:         VT-x\nCaches (sum of all):\n  L1d:                    768 KiB (16 instances)\n  L1i:                    512 KiB (16 instances)\n  L2:                     20 MiB (16 instances)\n  L3:                     42 MiB (1 instance)"
+    },
+    {
+      "command": "free -h",
+      "response": "               total        used        free      shared  buff/cache   available\nMem:           125Gi        42Gi        35Gi       1.2Gi        48Gi        81Gi\nSwap:          8.0Gi          0B       8.0Gi"
+    },
+    {
+      "command": "df -h",
+      "response": "Filesystem      Size  Used Avail Use% Mounted on\ntmpfs           6.2G  2.1M  6.2G   1% /run\n/dev/sda2       457G  125G  309G  29% /\ntmpfs            31G     0   31G   0% /dev/shm\ntmpfs           5.0M     0  5.0M   0% /run/lock\n/dev/sda1       511M  6.1M  505M   2% /boot/efi\n/dev/sdb1       1.8T  892G  850G  52% /data\n/dev/sdc1       3.6T  1.2T  2.2T  36% /backup\ntmpfs           6.2G  4.0K  6.2G   1% /run/user/1000"
+    },
+    {
+      "command": "lsblk",
+      "response": "NAME   MAJ:MIN RM   SIZE RO TYPE MOUNTPOINTS\nsda      8:0    0 465.8G  0 disk\n├─sda1   8:1    0   512M  0 part /boot/efi\n└─sda2   8:2    0 465.3G  0 part /\nsdb      8:16   0   1.8T  0 disk\n└─sdb1   8:17   0   1.8T  0 part /data\nsdc      8:32   0   3.6T  0 disk\n└─sdc1   8:33   0   3.6T  0 part /backup\nsr0     11:0    1  1024M  0 rom"
+    },
+    {
+      "command": "ip addr show",
+      "response": "1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000\n    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00\n    inet 127.0.0.1/8 scope host lo\n       valid_lft forever preferred_lft forever\n    inet6 ::1/128 scope host\n       valid_lft forever preferred_lft forever\n2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP group default qlen 1000\n    link/ether 52:54:00:12:34:56 brd ff:ff:ff:ff:ff:ff\n    inet 192.168.1.100/24 brd 192.168.1.255 scope global eth0\n       valid_lft forever preferred_lft forever\n    inet6 fe80::5054:ff:fe12:3456/64 scope link\n       valid_lft forever preferred_lft forever\n3: eth1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP group default qlen 1000\n    link/ether 52:54:00:12:34:57 brd ff:ff:ff:ff:ff:ff\n    inet 10.10.10.100/24 brd 10.10.10.255 scope global eth1\n       valid_lft forever preferred_lft forever\n    inet6 fe80::5054:ff:fe12:3457/64 scope link\n       valid_lft forever preferred_lft forever"
+    },
+    {
+      "command": "ip route show",
+      "response": "default via 192.168.1.1 dev eth0 proto static\n10.10.10.0/24 dev eth1 proto kernel scope link src 10.10.10.100\n192.168.1.0/24 dev eth0 proto kernel scope link src 192.168.1.100"
+    },
+    {
+      "command": "ss -tulnp",
+      "response": "Netid  State   Recv-Q  Send-Q   Local Address:Port    Peer Address:Port  Process\nudp    UNCONN  0       0              0.0.0.0:68           0.0.0.0:*      users:((\"dhclient\",pid=1234,fd=6))\ntcp    LISTEN  0       128            0.0.0.0:22           0.0.0.0:*      users:((\"sshd\",pid=1001,fd=3))\ntcp    LISTEN  0       511            0.0.0.0:80           0.0.0.0:*      users:((\"nginx\",pid=2345,fd=6))\ntcp    LISTEN  0       511            0.0.0.0:443          0.0.0.0:*      users:((\"nginx\",pid=2345,fd=7))\ntcp    LISTEN  0       128            0.0.0.0:3306         0.0.0.0:*      users:((\"mysqld\",pid=3456,fd=10))\ntcp    LISTEN  0       128            0.0.0.0:5432         0.0.0.0:*      users:((\"postgres\",pid=4567,fd=5))\ntcp    LISTEN  0       128            0.0.0.0:9090         0.0.0.0:*      users:((\"prometheus\",pid=5678,fd=3))\ntcp    LISTEN  0       128         [::]:22              [::]:*         users:((\"sshd\",pid=1001,fd=4))"
+    },
+    {
+      "command": "netstat -i",
+      "response": "Kernel Interface table\nIface      MTU    RX-OK RX-ERR RX-DRP RX-OVR    TX-OK TX-ERR TX-DRP TX-OVR Flg\neth0      1500 28459234      0      0 0      15234567      0      0      0 BMRU\neth1      1500  8234567      0      0 0       5678901      0      0      0 BMRU\nlo       65536  1234567      0      0 0       1234567      0      0      0 LRU"
+    },
+    {
+      "command": "ps aux",
+      "response": "USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND\nroot           1  0.0  0.1 169640 13456 ?        Ss   Aug15   2:34 /sbin/init\nroot           2  0.0  0.0      0     0 ?        S    Aug15   0:00 [kthreadd]\nroot        1001  0.0  0.1  15232  8456 ?        Ss   Aug15   0:45 /usr/sbin/sshd -D\nroot        2345  0.1  0.3 125456 42345 ?        Ss   Aug15  45:23 nginx: master process\nwww-data    2346  0.2  0.5 156789 67890 ?        S    Aug15  89:12 nginx: worker process\nmysql       3456  1.2  8.3 2345678 1023456 ?    Ssl  Aug15 523:45 /usr/sbin/mysqld\npostgres    4567  0.8  3.2 1234567 456789 ?      Ss   Aug15 345:12 /usr/lib/postgresql/14/bin/postgres\nprometheus  5678  0.3  1.2 234567 145678 ?       Ssl  Aug15 125:34 /usr/bin/prometheus"
+    },
+    {
+      "command": "top -bn1 | head -20",
+      "response": "top - 14:32:15 up 45 days,  3:22,  2 users,  load average: 0.45, 0.38, 0.35\nTasks: 234 total,   1 running, 233 sleeping,   0 stopped,   0 zombie\n%Cpu(s):  8.3 us,  2.1 sy,  0.0 ni, 89.2 id,  0.3 wa,  0.0 hi,  0.1 si,  0.0 st\nMiB Mem : 128000.0 total,  35840.0 free,  43008.0 used,  49152.0 buff/cache\nMiB Swap:   8192.0 total,   8192.0 free,      0.0 used.  82944.0 avail Mem\n\n    PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND\n   3456 mysql     20   0 2345678 1023456  45678 S  12.3   8.3 523:45.12 mysqld\n   4567 postgres  20   0 1234567 456789  23456 S   8.1   3.2 345:12.34 postgres\n   2346 www-data  20   0  156789  67890  12345 S   4.2   0.5  89:12.56 nginx\n   5678 promethe+ 20   0  234567 145678  23456 S   3.1   1.2 125:34.78 prometheus\n   6789 root      20   0   45678  12345   4567 S   2.3   0.1  23:45.67 python3\n   7890 app       20   0  123456  56789   8901 S   1.8   0.4  67:89.01 java\n      1 root      20   0  169640  13456   8901 S   0.0   0.1   2:34.56 systemd\n   1001 root      20   0   15232   8456   6789 S   0.0   0.1   0:45.67 sshd"
+    },
+    {
+      "command": "systemctl list-units --type=service --state=running",
+      "response": "  UNIT                               LOAD   ACTIVE SUB     DESCRIPTION\n  accounts-daemon.service            loaded active running Accounts Service\n  cron.service                       loaded active running Regular background program processing daemon\n  dbus.service                       loaded active running D-Bus System Message Bus\n  docker.service                     loaded active running Docker Application Container Engine\n  getty@tty1.service                 loaded active running Getty on tty1\n  mysql.service                      loaded active running MySQL Community Server\n  networking.service                 loaded active exited  Raise network interfaces\n  nginx.service                      loaded active running A high performance web server and a reverse proxy server\n  postgresql.service                 loaded active running PostgreSQL RDBMS\n  prometheus.service                 loaded active running Prometheus monitoring system\n  ssh.service                        loaded active running OpenBSD Secure Shell server\n  systemd-journald.service           loaded active running Journal Service\n  systemd-logind.service             loaded active running User Login Management\n  systemd-networkd.service           loaded active running Network Configuration\n  systemd-resolved.service           loaded active running Network Name Resolution\n  systemd-timesyncd.service          loaded active running Network Time Synchronization\n  systemd-udevd.service              loaded active running Rule-based Manager for Device Events and Files\n  unattended-upgrades.service        loaded active running Unattended Upgrades Shutdown\n  user@1000.service                  loaded active running User Manager for UID 1000\n\nLOAD   = Reflects whether the unit definition was properly loaded.\nACTIVE = The high-level unit activation state, i.e. generalization of SUB.\nSUB    = The low-level unit activation state, values depend on unit type.\n19 loaded units listed."
+    },
+    {
+      "command": "docker ps",
+      "response": "CONTAINER ID   IMAGE                    COMMAND                  CREATED        STATUS        PORTS                    NAMES\na1b2c3d4e5f6   nginx:latest            \"/docker-entrypoint.…\"   2 weeks ago    Up 2 weeks    0.0.0.0:8080->80/tcp     web-app\nb2c3d4e5f6a7   postgres:14             \"docker-entrypoint.s…\"   3 weeks ago    Up 3 weeks    0.0.0.0:5433->5432/tcp   postgres-db\nc3d4e5f6a7b8   redis:7-alpine          \"docker-entrypoint.s…\"   3 weeks ago    Up 3 weeks    0.0.0.0:6379->6379/tcp   redis-cache\nd4e5f6a7b8c9   grafana/grafana:latest  \"/run.sh\"                 4 weeks ago    Up 4 weeks    0.0.0.0:3000->3000/tcp   monitoring-grafana"
+    },
+    {
+      "command": "docker images",
+      "response": "REPOSITORY          TAG        IMAGE ID       CREATED        SIZE\nnginx               latest     a72860cb95fd   2 weeks ago    188MB\npostgres            14         2b3c4d5e6f7a   3 weeks ago    376MB\nredis               7-alpine   3c4d5e6f7a8b   3 weeks ago    28MB\ngrafana/grafana     latest     4d5e6f7a8b9c   4 weeks ago    298MB\nubuntu              24.04      5e6f7a8b9c0d   5 weeks ago    77MB\npython              3.12       6f7a8b9c0d1e   6 weeks ago    1.02GB"
+    },
+    {
+      "command": "last -n 10",
+      "response": "simadmin pts/0        192.168.1.50     Mon Sep 30 14:15   still logged in\nroot     pts/1        192.168.1.25     Mon Sep 30 09:30 - 12:45  (03:15)\nadmin    pts/0        10.10.10.50      Sun Sep 29 16:20 - 18:30  (02:10)\nsimadmin pts/2        192.168.1.50     Sun Sep 29 11:00 - 15:30  (04:30)\nroot     tty1                          Sat Sep 28 08:00 - 08:15  (00:15)\nadmin    pts/0        10.10.10.51      Fri Sep 27 14:30 - 17:45  (03:15)\nsimadmin pts/1        192.168.1.50     Fri Sep 27 10:00 - 16:00  (06:00)\nroot     pts/0        192.168.1.1      Thu Sep 26 09:00 - 11:30  (02:30)\n\nwtmp begins Thu Sep 26 09:00:00 2024"
+    },
+    {
+      "command": "who",
+      "response": "simadmin pts/0        2024-09-30 14:15 (192.168.1.50)\nroot     pts/1        2024-09-30 14:30 (192.168.1.25)"
+    },
+    {
+      "command": "w",
+      "response": " 14:32:15 up 45 days,  3:22,  2 users,  load average: 0.45, 0.38, 0.35\nUSER     TTY      FROM             LOGIN@   IDLE   JCPU   PCPU WHAT\nsimadmin pts/0    192.168.1.50     14:15    0.00s  0.12s  0.01s w\nroot     pts/1    192.168.1.25     14:30    1:45   0.08s  0.08s -bash"
+    },
+    {
+      "command": "journalctl -n 20 --no-pager",
+      "response": "Sep 30 14:30:15 server-01 systemd[1]: Started Session 456 of user root.\nSep 30 14:25:10 server-01 CRON[12345]: (root) CMD (test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.daily ))\nSep 30 14:20:05 server-01 systemd[1]: Starting Clean up any mess left by 0anacron...\nSep 30 14:15:42 server-01 sshd[11234]: Accepted publickey for simadmin from 192.168.1.50 port 54321 ssh2: RSA SHA256:abc123def456\nSep 30 14:15:42 server-01 systemd[1]: Started Session 455 of user simadmin.\nSep 30 14:10:01 server-01 CRON[11111]: (root) CMD (/usr/local/bin/backup-script.sh)\nSep 30 14:00:01 server-01 prometheus[5678]: ts=2024-09-30T14:00:01.234Z caller=main.go:123 level=info msg=\"Completed loading of configuration file\" filename=/etc/prometheus/prometheus.yml\nSep 30 13:55:30 server-01 mysqld[3456]: [Note] InnoDB: Buffer pool size: 8192MB\nSep 30 13:50:15 server-01 nginx[2345]: 192.168.1.100 - - [30/Sep/2024:13:50:15 +0000] \"GET /api/health HTTP/1.1\" 200 45\nSep 30 13:45:00 server-01 systemd[1]: Started Daily apt download activities."
+    },
+    {
+      "command": "dmesg | tail -20",
+      "response": "[3942234.567890] eth0: link up, 1000Mbps, full-duplex, lpa 0x45E1\n[3942234.567891] IPv6: ADDRCONF(NETDEV_CHANGE): eth0: link becomes ready\n[3942235.123456] EXT4-fs (sda2): mounted filesystem with ordered data mode. Quota mode: none.\n[3942236.234567] systemd[1]: Started Network Manager.\n[3942237.345678] docker0: port 1(veth12ab34) entered blocking state\n[3942237.345679] docker0: port 1(veth12ab34) entered forwarding state\n[3942238.456789] device veth12ab34 entered promiscuous mode\n[3942239.567890] eth0: renamed from veth0\n[3942240.678901] IPv6: ADDRCONF(NETDEV_CHANGE): veth12ab34: link becomes ready\n[3942241.789012] docker0: port 1(veth12ab34) entered disabled state\n[3942242.890123] device veth12ab34 left promiscuous mode\n[3942243.901234] docker0: port 1(veth12ab34) entered disabled state\n[3942244.012345] audit: type=1400 audit(1696081234.567:890): apparmor=\"ALLOWED\" operation=\"open\" profile=\"docker-default\" name=\"/etc/passwd\" pid=12345 comm=\"nginx\" requested_mask=\"r\" denied_mask=\"\" fsuid=33 ouid=0\n[3942245.123456] Bluetooth: BNEP (Ethernet Emulation) ver 1.3\n[3942246.234567] Bluetooth: BNEP socket layer initialized"
+    },
+    {
+      "command": "lsof -i -P -n | head -20",
+      "response": "COMMAND     PID     USER   FD   TYPE DEVICE SIZE/OFF NODE NAME\nsystemd       1     root   35u  IPv4  12345      0t0  TCP *:22 (LISTEN)\nsystemd       1     root   36u  IPv6  12346      0t0  TCP *:22 (LISTEN)\nsshd       1001     root    3u  IPv4  23456      0t0  TCP *:22 (LISTEN)\nsshd       1001     root    4u  IPv6  23457      0t0  TCP *:22 (LISTEN)\nsshd      11234     root    3u  IPv4  34567      0t0  TCP 192.168.1.100:22->192.168.1.50:54321 (ESTABLISHED)\nnginx      2345     root    6u  IPv4  45678      0t0  TCP *:80 (LISTEN)\nnginx      2345     root    7u  IPv4  45679      0t0  TCP *:443 (LISTEN)\nnginx      2346 www-data    6u  IPv4  45678      0t0  TCP *:80 (LISTEN)\nnginx      2346 www-data    7u  IPv4  45679      0t0  TCP *:443 (LISTEN)\nmysqld     3456    mysql   10u  IPv4  56789      0t0  TCP *:3306 (LISTEN)\nmysqld     3456    mysql   25u  IPv4  56790      0t0  TCP 192.168.1.100:3306->192.168.1.200:45678 (ESTABLISHED)\npostgres   4567 postgres    5u  IPv4  67890      0t0  TCP *:5432 (LISTEN)\nprometheus 5678 prometheus  3u  IPv4  78901      0t0  TCP *:9090 (LISTEN)"
+    },
+    {
+      "command": "iostat -x 1 2",
+      "response": "Linux 6.8.0-45-generic (server-01)     09/30/2024      _x86_64_        (32 CPU)\n\navg-cpu:  %user   %nice %system %iowait  %steal   %idle\n           8.32    0.00    2.15    0.35    0.00   89.18\n\nDevice            r/s     w/s     rkB/s     wkB/s   rrqm/s   wrqm/s  %rrqm  %wrqm r_await w_await aqu-sz rareq-sz wareq-sz  svctm  %util\nsda             12.34   45.67    234.56    567.89     0.12     1.23   0.96   2.62    2.34    5.67   0.12    19.01    12.43   0.45   2.34\nsdb             23.45   12.34    456.78    123.45     0.23     0.12   0.97   0.96    1.23    4.56   0.08    19.48    10.01   0.38   1.45\nsdc              8.90    5.67     89.01     67.89     0.09     0.05   1.00   0.87    1.89    3.45   0.05    10.00     9.00   0.28   0.89"
+    },
+    {
+      "command": "vmstat 1 3",
+      "response": "procs -----------memory---------- ---swap-- -----io---- -system-- ------cpu-----\n r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st\n 1  0      0 36700160 5242880 45088768    0    0   123   456 1234 2345  8  2 90  0  0\n 0  0      0 36702208 5242880 45088768    0    0     0   128 1567 2891  7  2 91  0  0\n 1  0      0 36699136 5242880 45089792    0    0     0   256 1423 2678  8  2 90  0  0"
+    },
+    {
+      "command": "sar -u 1 3",
+      "response": "Linux 6.8.0-45-generic (server-01)     09/30/2024      _x86_64_        (32 CPU)\n\n02:32:15 PM     CPU     %user     %nice   %system   %iowait    %steal     %idle\n02:32:16 PM     all      8.25      0.00      2.12      0.34      0.00     89.29\n02:32:17 PM     all      8.31      0.00      2.18      0.28      0.00     89.23\n02:32:18 PM     all      8.28      0.00      2.15      0.31      0.00     89.26\nAverage:        all      8.28      0.00      2.15      0.31      0.00     89.26"
+    },
+    {
+      "command": "cat /proc/meminfo | head -20",
+      "response": "MemTotal:       131072000 kB\nMemFree:        36700160 kB\nMemAvailable:   84934656 kB\nBuffers:         5242880 kB\nCached:         40845888 kB\nSwapCached:            0 kB\nActive:         52428800 kB\nInactive:       28311552 kB\nActive(anon):   34603008 kB\nInactive(anon):  2097152 kB\nActive(file):   17825792 kB\nInactive(file): 26214400 kB\nUnevictable:     1048576 kB\nMlocked:               0 kB\nSwapTotal:       8388608 kB\nSwapFree:        8388608 kB\nDirty:             12288 kB\nWriteback:             0 kB\nAnonPages:      33554432 kB\nMapped:          4194304 kB"
+    },
+    {
+      "command": "cat /proc/cpuinfo | grep -E 'processor|model name|cpu MHz' | head -12",
+      "response": "processor\t: 0\nmodel name\t: Intel(R) Xeon(R) Gold 6348 CPU @ 2.60GHz\ncpu MHz\t\t: 2594.156\nprocessor\t: 1\nmodel name\t: Intel(R) Xeon(R) Gold 6348 CPU @ 2.60GHz\ncpu MHz\t\t: 2598.234\nprocessor\t: 2\nmodel name\t: Intel(R) Xeon(R) Gold 6348 CPU @ 2.60GHz\ncpu MHz\t\t: 2601.345\nprocessor\t: 3\nmodel name\t: Intel(R) Xeon(R) Gold 6348 CPU @ 2.60GHz\ncpu MHz\t\t: 2595.678"
+    },
+    {
+      "command": "cat /proc/loadavg",
+      "response": "0.45 0.38 0.35 2/456 12345"
+    },
+    {
+      "command": "env",
+      "response": "SHELL=/bin/bash\nPWD=/home/simadmin\nLOGNAME=simadmin\nHOME=/home/simadmin\nLANG=en_US.UTF-8\nLS_COLORS=rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=30;41:tw=30;42:ow=34;42:st=37;44:ex=01;32:\nSSH_CONNECTION=192.168.1.50 54321 192.168.1.100 22\nLESSCLOSE=/usr/bin/lesspipe %s %s\nTERM=xterm-256color\nLESSOPEN=| /usr/bin/lesspipe %s\nUSER=simadmin\nSSHD_DISPLAY=192.168.1.50:54321\nSSH_TTY=/dev/pts/0\nPATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin\nMAIL=/var/mail/simadmin\n_=/usr/bin/env"
+    }
+  ]
+}
