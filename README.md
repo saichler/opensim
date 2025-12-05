@@ -2,21 +2,24 @@
 
 ![OpenSim Logo](opensim.png)
 
-A powerful, scalable network device simulator that provides realistic SNMP and SSH interfaces for testing network management applications, monitoring systems, and automation tools. OpenSim can simulate thousands of network devices with dedicated IP addresses using TUN/TAP interfaces.
+A powerful, scalable network and infrastructure simulator that provides realistic SNMP, SSH, and REST API interfaces for testing network management applications, monitoring systems, and automation tools. OpenSim can simulate thousands of network devices, storage systems, and Linux servers with dedicated IP addresses using TUN/TAP interfaces.
 
 ## 🌟 Features
 
-- **Multi-Protocol Support**: SNMP v2c and SSH protocol simulation
+- **Multi-Protocol Support**: SNMP v2c, SSH, and REST API simulation
 - **Scalable Architecture**: Support for 10,000+ simulated devices
-- **Realistic Device Behavior**: Configurable SNMP OIDs and SSH command responses
+- **Realistic Device Behavior**: Configurable SNMP OIDs, SSH commands, and API responses
 - **TUN/TAP Integration**: Each device gets its own IP address via TUN interfaces
 - **Web Management UI**: Beautiful web interface for device management
 - **RESTful API**: Complete REST API for programmatic control
 - **High Performance**: Optimized for minimal resource usage
 - **Device Export**: Export device configurations to CSV and routing scripts
-- **Customizable Resources**: JSON-based configuration for SNMP and SSH responses
+- **Customizable Resources**: JSON-based configuration for SNMP, SSH, and API responses
 - **Enhanced Polling System**: Comprehensive OID coverage for network monitoring applications
 - **Robust SNMP Engine**: Improved stability with proper ASN.1 encoding and error handling
+- **Storage System Simulation**: AWS S3, Pure Storage, NetApp ONTAP, Dell EMC Unity with REST APIs
+- **Linux Server Simulation**: Comprehensive Ubuntu server with 36+ SSH commands
+- **CDP & LLDP Support**: Cisco Discovery Protocol and LLDP for network topology discovery
 
 ## 🚀 Quick Start
 
@@ -160,6 +163,104 @@ snmpget -v2c -c public 192.168.100.1 1.3.6.1.2.1.1.1.0
 snmpwalk -v2c -c public 192.168.100.1 1.3.6.1.2.1.2.2.1
 ```
 
+### Linux Server Commands
+```bash
+# Connect to a Linux server device
+ssh simadmin@192.168.100.1
+
+# Available commands include:
+uname -a              # System information
+cat /etc/os-release   # OS details
+lscpu                 # CPU information
+free -h               # Memory usage
+df -h                 # Disk space
+ip addr show          # Network interfaces
+ps aux                # Running processes
+docker ps             # Container status
+systemctl list-units  # Running services
+```
+
+### CDP & LLDP Discovery
+```bash
+# On Cisco devices, view network neighbors
+ssh simadmin@192.168.100.1
+
+show cdp neighbors           # Brief neighbor list
+show cdp neighbors detail    # Detailed neighbor info
+show lldp neighbors          # LLDP neighbor discovery
+```
+
+## 💾 Storage System Simulation
+
+OpenSim supports enterprise storage system simulation with REST API endpoints on port 8443.
+
+### Supported Storage Systems
+
+| System | Protocols | Key Features |
+|--------|-----------|--------------|
+| AWS S3 | SNMP, SSH, REST | Bucket operations, object management, versioning |
+| Pure Storage FlashArray | SNMP, SSH, REST | Volumes, hosts, pods, data reduction metrics |
+| NetApp ONTAP | SNMP, SSH, REST | Aggregates, volumes, NFS/CIFS/iSCSI protocols |
+| Dell EMC Unity | SNMP, SSH, REST | Pools, LUNs, filesystems, health monitoring |
+
+### Storage API Examples
+
+**Pure Storage FlashArray:**
+```bash
+# List volumes
+curl -k https://192.168.100.1:8443/api/2.14/volumes
+
+# Get array information
+curl -k https://192.168.100.1:8443/api/2.14/arrays
+
+# Space analytics
+curl -k https://192.168.100.1:8443/api/2.14/arrays/space
+```
+
+**NetApp ONTAP:**
+```bash
+# Cluster info
+curl -k https://192.168.100.1:8443/api/cluster
+
+# List volumes
+curl -k https://192.168.100.1:8443/api/storage/volumes
+
+# Aggregates
+curl -k https://192.168.100.1:8443/api/storage/aggregates
+```
+
+**AWS S3:**
+```bash
+# List buckets
+curl http://192.168.100.1:8443/
+
+# Bucket contents
+curl http://192.168.100.1:8443/my-bucket
+```
+
+### Creating Storage Devices
+```bash
+# Create a Pure Storage device
+curl -X POST http://localhost:8080/api/v1/devices \
+  -H "Content-Type: application/json" \
+  -d '{
+    "start_ip": "192.168.100.1",
+    "device_count": 1,
+    "netmask": "24",
+    "resource_file": "pure_storage_flasharray.json"
+  }'
+
+# Create a NetApp device
+curl -X POST http://localhost:8080/api/v1/devices \
+  -H "Content-Type: application/json" \
+  -d '{
+    "start_ip": "192.168.100.2",
+    "device_count": 1,
+    "netmask": "24",
+    "resource_file": "netapp_ontap.json"
+  }'
+```
+
 ## ⚙️ Configuration
 
 ### Device Resources
@@ -167,14 +268,23 @@ snmpwalk -v2c -c public 192.168.100.1 1.3.6.1.2.1.2.2.1
 The simulator uses JSON files to define SNMP OIDs and SSH command responses with comprehensive coverage:
 
 **Available Device Types:**
-- Cisco: ASR9K, Catalyst 9500, ISR 4331, Nexus 9000
+
+*Network Devices:*
+- Cisco: ASR9K, Catalyst 9500, ISR 4331, Nexus 9000, CRS-X (with CDP & LLDP)
 - Juniper: MX240, SRX300, EX4300
 - Palo Alto: PA-3220
-- F5: BIG-IP i4800  
-- HPE: ProLiant servers
+- F5: BIG-IP i4800
 - Arista: 7050X switches
 - Fortinet: FortiGate firewalls
-- And more...
+
+*Storage Systems:*
+- AWS S3 Storage
+- Pure Storage FlashArray
+- NetApp ONTAP
+- Dell EMC Unity
+
+*Servers:*
+- Linux Server (Ubuntu 24.04 LTS)
 
 **Enhanced Features:**
 - Complete physical inventory monitoring (chassis, power supplies, fans, temperatures)
@@ -182,7 +292,7 @@ The simulator uses JSON files to define SNMP OIDs and SSH command responses with
 - System information and hardware details
 - Vendor-specific OID implementations
 
-### Example SNMP Resource
+### Example Resource Configuration
 ```json
 {
   "snmp": [
@@ -196,9 +306,19 @@ The simulator uses JSON files to define SNMP OIDs and SSH command responses with
       "command": "show version",
       "response": "Cisco IOS Software, Router Version 15.1\\nDevice Simulator v1.0"
     }
+  ],
+  "api": [
+    {
+      "method": "GET",
+      "path": "/api/v1/system",
+      "status": 200,
+      "response": "{\"name\": \"device-01\", \"status\": \"healthy\"}"
+    }
   ]
 }
 ```
+
+*Note: The `api` section is optional and used primarily for storage device simulation.*
 
 ## 📁 Project Structure
 
@@ -300,6 +420,9 @@ go test ./sim
 - **Load Testing**: Simulate large network topologies
 - **Training**: Network management skill development
 - **CI/CD Testing**: Automated testing of network applications
+- **Storage Management Testing**: Validate storage monitoring and provisioning tools
+- **Infrastructure Monitoring**: Test Linux server monitoring and metrics collection
+- **Topology Discovery**: Validate CDP/LLDP-based network mapping tools
 
 ## 📄 License
 
