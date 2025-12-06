@@ -1,0 +1,173 @@
+package main
+
+import (
+	"log"
+	"net"
+)
+
+// Helper function for minimum of two integers
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+// SNMP Server implementation
+func (s *SNMPServer) Start() error {
+	addr := &net.UDPAddr{
+		IP:   s.device.IP,
+		Port: s.device.SNMPPort,
+	}
+
+	listener, err := net.ListenUDP("udp", addr)
+	if err != nil {
+		return err
+	}
+
+	s.listener = listener
+	s.running = true
+
+	go s.handleRequests()
+	return nil
+}
+
+func (s *SNMPServer) Stop() error {
+	if s.listener != nil {
+		s.running = false
+		return s.listener.Close()
+	}
+	return nil
+}
+
+func (s *SNMPServer) handleRequests() {
+	for {
+		if !s.running || s.listener == nil {
+			break
+		}
+
+		buffer := make([]byte, 1024)
+		n, clientAddr, err := s.listener.ReadFromUDP(buffer)
+		if err != nil {
+			if s.running {
+				log.Printf("SNMP server error reading UDP: %v", err)
+			}
+			continue
+		}
+
+		// Handle each request concurrently to avoid blocking
+		go s.handleSingleRequest(buffer[:n], clientAddr)
+	}
+}
+
+// handleSingleRequest processes a single SNMP request in its own goroutine
+func (s *SNMPServer) handleSingleRequest(requestData []byte, clientAddr *net.UDPAddr) {
+	var responsePacket []byte
+
+	// Check if this is SNMPv3 request
+	if isSNMPv3Request(requestData) {
+		responsePacket = s.handleSNMPv3Request(requestData)
+	} else {
+		responsePacket = s.handleSNMPv2cRequest(requestData)
+	}
+
+	// Send response
+	if len(responsePacket) > 0 {
+		if s.listener != nil {
+			_, err := s.listener.WriteToUDP(responsePacket, clientAddr)
+			if err != nil {
+				log.Printf("Error sending SNMP response: %v", err)
+			}
+		}
+	}
+}
+
+// handleSNMPv2cRequest handles traditional SNMP v1/v2c requests
+func (s *SNMPServer) handleSNMPv2cRequest(requestData []byte) []byte {
+	// Parse SNMP request to get OID and request type
+	req := s.parseIncomingRequest(requestData)
+	oid := req.OID
+	var response string
+	var responseOID string
+
+	// Determine PDU type from request data
+	pduType := s.getPDUType(requestData)
+	// log.Printf("SNMP %s: Detected PDU type: 0x%02X for OID: %s", s.device.ID, pduType, oid)
+
+	if pduType == ASN1_GET_NEXT {
+		// Handle GetNext request for SNMP walk
+		responseOID, response = s.findNextOID(oid)
+		if responseOID == "" {
+			// End of MIB view - use a special response
+			responseOID = oid
+			response = "endOfMibView"
+		}
+		// log.Printf("SNMP %s: GetNext %s -> %s = %s", s.device.ID, oid, responseOID, response)
+	} else if pduType == ASN1_GET_BULK {
+		// Handle GetBulk request - return multiple OIDs
+		// log.Printf("SNMP %s: Processing GetBulk request for OID: %s", s.device.ID, oid)
+		return s.handleGetBulk(oid, requestData)
+	} else {
+		// Handle regular Get request
+		responseOID = oid
+		response = s.findResponse(oid)
+		// log.Printf("SNMP %s: Get %s -> %s", s.device.ID, oid, response)
+	}
+
+	// Create proper SNMP response (pass the request data)
+	responseBytes := s.createSNMPResponse(responseOID, response, requestData)
+	// log.Printf("SNMP %s: Created response for %s, length: %d bytes", s.device.ID, responseOID, len(responseBytes))
+	return responseBytes
+}
+
+// Extract PDU type from SNMP request
+func (s *SNMPServer) getPDUType(data []byte) byte {
+	if len(data) < 10 {
+		return ASN1_GET_REQUEST // Default
+	}
+
+	pos := 0
+
+	// Skip SEQUENCE tag and length
+	if data[pos] != ASN1_SEQUENCE {
+		return ASN1_GET_REQUEST
+	}
+	pos++
+	pos += s.skipLength(data[pos:])
+
+	// Skip version
+	if pos < len(data) && data[pos] == ASN1_INTEGER {
+		pos++
+		pos += s.skipLength(data[pos:])
+		pos++ // skip version value
+	}
+
+	// Skip community
+	if pos < len(data) && data[pos] == ASN1_OCTET_STRING {
+		pos++
+		communityLen := int(data[pos])
+		pos++
+		pos += communityLen
+	}
+
+	// Get PDU type
+	if pos < len(data) {
+		return data[pos]
+	}
+
+	return ASN1_GET_REQUEST
+}
+
+// Helper to skip length bytes
+func (s *SNMPServer) skipLength(data []byte) int {
+	if len(data) == 0 {
+		return 0
+	}
+
+	if data[0] < 0x80 {
+		return 1
+	}
+
+	lengthBytes := int(data[0] & 0x7f)
+	return 1 + lengthBytes
+}

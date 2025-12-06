@@ -1,0 +1,293 @@
+package main
+
+import (
+	"strconv"
+	"strings"
+)
+
+func (s *SNMPServer) findResponse(oid string) string {
+	// Handle dynamic sysLocation OID - lock-free access
+	if oid == "1.3.6.1.2.1.1.6.0" {
+		if val := s.device.cachedSysLocation.Load(); val != nil {
+			return val.(string)
+		}
+		return s.device.sysLocation // Fallback
+	}
+
+	// Handle dynamic sysName OID - lock-free access
+	if oid == "1.3.6.1.2.1.1.5.0" {
+		if val := s.device.cachedSysName.Load(); val != nil {
+			return val.(string)
+		}
+		return s.device.sysName // Fallback
+	}
+
+	// Fast O(1) lookup using lock-free sync.Map
+	if s.device.resources.oidIndex != nil {
+		if response, exists := s.device.resources.oidIndex.Load(oid); exists {
+			return response.(string)
+		}
+	}
+	return "OID not supported"
+}
+
+// Compare two OIDs lexicographically
+func compareOIDs(oid1, oid2 string) int {
+	parts1 := strings.Split(oid1, ".")
+	parts2 := strings.Split(oid2, ".")
+
+	maxLen := len(parts1)
+	if len(parts2) > maxLen {
+		maxLen = len(parts2)
+	}
+
+	for i := 0; i < maxLen; i++ {
+		var val1, val2 int
+
+		if i < len(parts1) {
+			val1, _ = strconv.Atoi(parts1[i])
+		}
+		if i < len(parts2) {
+			val2, _ = strconv.Atoi(parts2[i])
+		}
+
+		if val1 < val2 {
+			return -1
+		} else if val1 > val2 {
+			return 1
+		}
+	}
+
+	if len(parts1) < len(parts2) {
+		return -1
+	} else if len(parts1) > len(parts2) {
+		return 1
+	}
+
+	return 0
+}
+
+// Find the next OID in lexicographic order for SNMP GetNext requests
+func (s *SNMPServer) findNextOID(currentOID string) (string, string) {
+	// Try pre-computed next OID map first (lock-free)
+	if s.device.resources.oidNextMap != nil {
+		if nextOID, exists := s.device.resources.oidNextMap.Load(currentOID); exists {
+			// Found pre-computed next OID, now get its response
+			if response, exists := s.device.resources.oidIndex.Load(nextOID); exists {
+				return nextOID.(string), response.(string)
+			}
+		}
+	}
+
+	// Dynamic OIDs - check these with lock-free access
+	sysNameOID := "1.3.6.1.2.1.1.5.0"
+	sysLocationOID := "1.3.6.1.2.1.1.6.0"
+
+	var nextOID string
+	var response string
+
+	// Get cached dynamic values (lock-free)
+	var cachedSysName, cachedSysLocation string
+	if val := s.device.cachedSysName.Load(); val != nil {
+		cachedSysName = val.(string)
+	} else {
+		cachedSysName = s.device.sysName
+	}
+	if val := s.device.cachedSysLocation.Load(); val != nil {
+		cachedSysLocation = val.(string)
+	} else {
+		cachedSysLocation = s.device.sysLocation
+	}
+
+	// Use binary search on pre-sorted OIDs for O(log n) performance
+	sortedOIDs := s.device.resources.sortedOIDs
+	if len(sortedOIDs) == 0 {
+		// Fallback to checking only dynamic OIDs
+		if compareOIDs(sysNameOID, currentOID) > 0 {
+			return sysNameOID, cachedSysName
+		}
+		if compareOIDs(sysLocationOID, currentOID) > 0 {
+			return sysLocationOID, cachedSysLocation
+		}
+		return "", "endOfMibView"
+	}
+
+	// Find first OID greater than currentOID using binary search
+	left, right := 0, len(sortedOIDs)
+	for left < right {
+		mid := (left + right) / 2
+		if compareOIDs(sortedOIDs[mid], currentOID) <= 0 {
+			left = mid + 1
+		} else {
+			right = mid
+		}
+	}
+
+	// Check candidates: next static OID, dynamic sysName, and dynamic sysLocation
+	candidates := make([]struct{ oid, resp string }, 0, 3)
+
+	// Add next static OID if found
+	if left < len(sortedOIDs) {
+		staticOID := sortedOIDs[left]
+		// Skip dynamic OIDs that might be in the sorted list
+		if staticOID != sysNameOID && staticOID != sysLocationOID {
+			if respVal, exists := s.device.resources.oidIndex.Load(staticOID); exists {
+				candidates = append(candidates, struct{ oid, resp string }{
+					oid:  staticOID,
+					resp: respVal.(string),
+				})
+			}
+		}
+	}
+
+	// Add dynamic OIDs if they're greater than currentOID
+	if compareOIDs(sysNameOID, currentOID) > 0 {
+		candidates = append(candidates, struct{ oid, resp string }{
+			oid:  sysNameOID,
+			resp: cachedSysName,
+		})
+	}
+	if compareOIDs(sysLocationOID, currentOID) > 0 {
+		candidates = append(candidates, struct{ oid, resp string }{
+			oid:  sysLocationOID,
+			resp: cachedSysLocation,
+		})
+	}
+
+	if len(candidates) == 0 {
+		return "", "endOfMibView"
+	}
+
+	// Find lexicographically smallest candidate
+	nextOID = candidates[0].oid
+	response = candidates[0].resp
+	for i := 1; i < len(candidates); i++ {
+		if compareOIDs(candidates[i].oid, nextOID) < 0 {
+			nextOID = candidates[i].oid
+			response = candidates[i].resp
+		}
+	}
+
+	return nextOID, response
+}
+
+// handleGetBulk processes SNMP GetBulk requests
+func (s *SNMPServer) handleGetBulk(startOID string, requestData []byte) []byte {
+	// Parse GetBulk parameters (non-repeaters and max-repetitions)
+	_, maxRepetitions := s.parseGetBulkParams(requestData)
+
+	// log.Printf("SNMP %s: GetBulk parameters - maxRepetitions: %d", s.device.ID, maxRepetitions)
+
+	// For simplicity, we'll return up to maxRepetitions OIDs starting from startOID
+	// In a real implementation, you'd handle non-repeaters properly
+
+	var oids []string
+	var responses []string
+
+	currentOID := startOID
+	count := 0
+
+	// Collect up to maxRepetitions OIDs
+	for count < maxRepetitions {
+		nextOID, response := s.findNextOID(currentOID)
+		// log.Printf("SNMP %s: GetBulk iteration %d - currentOID: %s, nextOID: %s, response: %s",
+		//	s.device.ID, count, currentOID, nextOID, response)
+
+		if nextOID == "" || response == "endOfMibView" {
+			// log.Printf("SNMP %s: GetBulk reached end of MIB", s.device.ID)
+			break
+		}
+
+		oids = append(oids, nextOID)
+		responses = append(responses, response)
+		currentOID = nextOID
+		count++
+	}
+
+	// log.Printf("SNMP %s: GetBulk collected %d OIDs", s.device.ID, len(oids))
+
+	// Create GetBulk response with multiple variable bindings
+	responseBytes := s.createGetBulkResponse(oids, responses, requestData)
+	// log.Printf("SNMP %s: GetBulk response created, length: %d bytes", s.device.ID, len(responseBytes))
+	return responseBytes
+}
+
+// parseGetBulkParams extracts non-repeaters and max-repetitions from GetBulk request
+func (s *SNMPServer) parseGetBulkParams(data []byte) (int, int) {
+	// Default values
+	nonRepeaters := 0
+	maxRepetitions := 10
+
+	// Find the GetBulk PDU in the message
+	// Structure: [SEQUENCE][version][community][GetBulk PDU]
+	// GetBulk PDU: [PDU Type][Length][Request-ID][Non-Repeaters][Max-Repetitions][Variable Bindings]
+
+	pos := 0
+	// Skip outer SEQUENCE
+	if pos >= len(data) || data[pos] != ASN1_SEQUENCE {
+		return nonRepeaters, maxRepetitions
+	}
+	pos++
+	_, newPos := parseLength(data, pos)
+	pos = newPos
+
+	// Skip version
+	if pos >= len(data) || data[pos] != ASN1_INTEGER {
+		return nonRepeaters, maxRepetitions
+	}
+	pos++
+	verLen, newPos := parseLength(data, pos)
+	pos = newPos + verLen
+
+	// Skip community
+	if pos >= len(data) || data[pos] != ASN1_OCTET_STRING {
+		return nonRepeaters, maxRepetitions
+	}
+	pos++
+	commLen, newPos := parseLength(data, pos)
+	pos = newPos + commLen
+
+	// Now we're at the GetBulk PDU
+	if pos >= len(data) || data[pos] != ASN1_GET_BULK {
+		return nonRepeaters, maxRepetitions
+	}
+	pos++
+	_, newPos = parseLength(data, pos)
+	pos = newPos
+
+	// Skip request-id
+	if pos >= len(data) || data[pos] != ASN1_INTEGER {
+		return nonRepeaters, maxRepetitions
+	}
+	pos++
+	reqIdLen, newPos := parseLength(data, pos)
+	pos = newPos + reqIdLen
+
+	// Parse non-repeaters
+	if pos >= len(data) || data[pos] != ASN1_INTEGER {
+		return nonRepeaters, maxRepetitions
+	}
+	pos++
+	nonRepLen, newPos := parseLength(data, pos)
+	pos = newPos
+	if nonRepLen == 1 && pos < len(data) {
+		nonRepeaters = int(data[pos])
+	}
+	pos += nonRepLen
+
+	// Parse max-repetitions
+	if pos >= len(data) || data[pos] != ASN1_INTEGER {
+		return nonRepeaters, maxRepetitions
+	}
+	pos++
+	maxRepLen, newPos := parseLength(data, pos)
+	pos = newPos
+	if maxRepLen == 1 && pos < len(data) {
+		maxRepetitions = int(data[pos])
+	}
+
+	// log.Printf("SNMP %s: GetBulk parsed parameters - nonRepeaters: %d, maxRepetitions: %d",
+	//	s.device.ID, nonRepeaters, maxRepetitions)
+
+	return nonRepeaters, maxRepetitions
+}
