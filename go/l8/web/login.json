@@ -1,0 +1,18 @@
+{
+    "login": {
+        "appTitle": "OpenSim",
+        "appDescription": "Find and Connect With Businesses",
+        "authEndpoint": "/auth",
+        "redirectUrl": "/",
+        "showRememberMe": true,
+        "showRegister": true,
+        "sessionTimeout": 30,
+        "tfaEnabled": true
+    },
+    "api": {
+        "prefix": "/opensim",
+        "usersPath": "/73/users",
+        "rolesPath": "/74/roles",
+        "registryPath": "/registry"
+    }
+}

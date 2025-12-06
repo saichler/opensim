@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: opensim
+  labels:
+    name: opensim
+
+---
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  namespace: opensim
+  name: opensim
+  labels:
+    app: opensim
+spec:
+  serviceName: opensim-net
+  replicas: 1
+  selector:
+    matchLabels:
+      app: opensim
+  template:
+    metadata:
+      labels:
+        app: opensim
+    spec:
+      hostNetwork: true
+      containers:
+        - name: opensim
+          image: saichler/opensim-web:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 22623
+          volumeMounts:
+            - name: hdata
+              mountPath: /data
+      volumes:
+        - name: hdata
+          hostPath:
+            path: /data
+            type: DirectoryOrCreate

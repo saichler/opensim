@@ -6,24 +6,24 @@
     <title>OpenSim - Network Device Simulator</title>
     <meta name="description" content="OpenSim: A powerful, scalable network device simulator providing realistic SNMP and SSH interfaces for testing network management applications.">
     <meta name="keywords" content="network simulator, SNMP, SSH, network testing, device simulation, TUN/TAP, network management">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌐</text></svg>">
+    <link rel="icon" href="/logo2.png" type="image/png">
     
     <style>
         /* CSS Variables for consistent theming */
         :root {
-            --primary-color: #667eea;
-            --secondary-color: #764ba2;
-            --accent-color: #f093fb;
-            --text-dark: #2c3e50;
-            --text-light: #34495e;
-            --text-muted: #95a5a6;
-            --bg-light: #f8f9fa;
+            --primary-color: #1e3a5f;
+            --secondary-color: #0f2744;
+            --accent-color: #3b82f6;
+            --text-dark: #0f172a;
+            --text-light: #1e293b;
+            --text-muted: #475569;
+            --bg-light: #f8fafc;
             --bg-white: #ffffff;
-            --border-light: #e9ecef;
+            --border-light: #e2e8f0;
             --shadow-light: rgba(0, 0, 0, 0.1);
             --shadow-medium: rgba(0, 0, 0, 0.15);
             --gradient-primary: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-            --gradient-accent: linear-gradient(135deg, var(--accent-color) 0%, #f5576c 100%);
+            --gradient-accent: linear-gradient(135deg, var(--accent-color) 0%, #1d4ed8 100%);
             --border-radius: 12px;
             --border-radius-lg: 20px;
             --transition: all 0.3s ease;
@@ -130,7 +130,37 @@
 
         .nav-cta:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 8px 25px rgba(30, 58, 95, 0.3);
+        }
+
+        .nav-auth {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-name {
+            color: var(--text-light);
+            font-weight: 500;
+        }
+
+        .logout-btn {
+            background: transparent;
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+        }
+
+        .logout-btn:hover {
+            background: var(--primary-color);
+            color: white;
         }
 
         /* Hero Section */
@@ -534,7 +564,7 @@
 
         .mockup-content {
             height: 300px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #1e3a5f 0%, #0f2744 100%);
             border-radius: var(--border-radius);
             display: flex;
             align-items: center;
@@ -757,7 +787,7 @@
     <nav class="navbar" id="navbar">
         <div class="nav-container">
             <a href="#home" class="nav-logo">
-                🌐 OpenSim
+                <img src="/logo2.png" alt="Logo" style="height: 1.5rem; vertical-align: middle;"> OpenSim
             </a>
             <ul class="nav-menu">
                 <li><a href="#features" class="nav-link">Features</a></li>
@@ -765,7 +795,13 @@
                 <li><a href="#demo" class="nav-link">Demo</a></li>
                 <li><a href="#documentation" class="nav-link">Docs</a></li>
             </ul>
-            <a href="#getting-started" class="nav-cta">Start Simulating</a>
+            <div class="nav-auth">
+                <a href="/login/" id="login-btn" class="nav-cta">Login</a>
+                <div id="user-menu" class="user-menu" style="display: none;">
+                    <span id="user-name" class="user-name"></span>
+                    <button id="logout-btn" class="nav-cta logout-btn">Logout</button>
+                </div>
+            </div>
         </div>
     </nav>
 
@@ -789,7 +825,7 @@
 
             <div class="hero-stats">
                 <div class="stat-card fade-in-up">
-                    <div class="stat-number">10,000+</div>
+                    <div class="stat-number">20,000+</div>
                     <div class="stat-label">Concurrent Devices</div>
                 </div>
                 <div class="stat-card fade-in-up">
@@ -831,7 +867,7 @@
                     <div class="feature-icon">📈</div>
                     <h3 class="feature-title">Massive Scalability</h3>
                     <p class="feature-description">
-                        Simulate up to 10,000+ concurrent devices with optimized resource usage and shared TUN interfaces.
+                        Simulate up to 20,000+ concurrent devices with optimized resource usage and shared TUN interfaces.
                     </p>
                 </div>
 
@@ -1263,6 +1299,64 @@ curl -X POST http://localhost:8080/api/v1/devices \
                 statsObserver.observe(heroStats);
             }
         });
+
+        // Authentication state management
+        function checkAuthState() {
+            const token = localStorage.getItem('bearerToken');
+            const loginBtn = document.getElementById('login-btn');
+            const userMenu = document.getElementById('user-menu');
+            const userName = document.getElementById('user-name');
+
+            if (token) {
+                // User is logged in
+                loginBtn.style.display = 'none';
+                userMenu.style.display = 'flex';
+
+                // Try to get username from localStorage
+                const rememberedUser = localStorage.getItem('rememberedUser');
+                userName.textContent = rememberedUser || 'User';
+            } else {
+                // User is not logged in
+                loginBtn.style.display = 'block';
+                userMenu.style.display = 'none';
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('bearerToken');
+            localStorage.removeItem('rememberedUser');
+            checkAuthState();
+            window.location.reload();
+        }
+
+        // Get bearer token for API calls
+        function getBearerToken() {
+            return localStorage.getItem('bearerToken');
+        }
+
+        // Check if user is logged in
+        function isLoggedIn() {
+            return !!localStorage.getItem('bearerToken');
+        }
+
+        // Initialize auth state on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuthState();
+
+            // Setup logout button
+            const logoutBtn = document.getElementById('logout-btn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', logout);
+            }
+        });
+
+        // Export auth functions for use in other scripts
+        window.OpenSimAuth = {
+            getBearerToken: getBearerToken,
+            isLoggedIn: isLoggedIn,
+            logout: logout,
+            checkAuthState: checkAuthState
+        };
     </script>
 </body>
 </html>
