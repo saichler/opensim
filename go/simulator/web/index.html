@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Device Simulator</title>
+    <link rel="stylesheet" href="/web/styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div style="position: relative; display: flex; align-items: center; justify-content: center;">
+                <img src="/logo.png" alt="Logo" style="position: absolute; left: 0; width: 200px; height: 120px;">
+                <h1 style="margin: 0; text-align: center;">Network Device Simulator</h1>
+            </div>
+            <p>Manage virtual network devices with TUN/TAP interfaces, SNMP, and SSH services</p>
+        </div>
+        <div id="alerts"></div>
+        <div class="controls">
+            <h2>Create New Devices</h2>
+            <form id="createForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="startIp">Start IP Address</label>
+                        <input type="text" id="startIp" placeholder="192.168.100.1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="deviceCount">Number of Devices</label>
+                        <input type="number" id="deviceCount" min="1" value="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="netmask">Netmask</label>
+                        <select id="netmask">
+                            <option value="24">24 (/24 - 255.255.255.0)</option>
+                            <option value="16">16 (/16 - 255.255.0.0)</option>
+                            <option value="8">8 (/8 - 255.0.0.0)</option>
+                            <option value="32">32 (/32 - 255.255.255.255)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="resourceFile">Device Type</label>
+                        <select id="resourceFile">
+                            <option value="">Default (Auto-detect)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <button type="submit" class="btn">
+                            Create Devices
+                            <span id="createLoading" class="loading" style="display: none;"></span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="status">
+            <div class="status-grid">
+                <div class="status-card"><h3 id="totalDevices">0</h3><p>Total Devices</p></div>
+                <div class="status-card"><h3 id="runningDevices">0</h3><p>Running</p></div>
+                <div class="status-card"><h3 id="stoppedDevices">0</h3><p>Stopped</p></div>
+                <div class="status-card"><h3 id="tunInterfaces">0</h3><p>TUN Interfaces</p></div>
+            </div>
+        </div>
+        <div class="devices">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2>Devices</h2>
+                <div style="display: flex; gap: 10px;">
+                    <button id="exportBtn" class="btn btn-small">
+                        📊 Export CSV <span id="exportLoading" class="loading" style="display: none;"></span>
+                    </button>
+                    <button id="routeScriptBtn" class="btn btn-small">
+                        🛤️ Permanent Route Script <span id="routeScriptLoading" class="loading" style="display: none;"></span>
+                    </button>
+                    <button id="refreshBtn" class="btn btn-small">
+                        🔄 Refresh <span id="refreshLoading" class="loading" style="display: none;"></span>
+                    </button>
+                    <button id="deleteAllBtn" class="btn btn-danger btn-small">
+                        🗑️ Delete All <span id="deleteAllLoading" class="loading" style="display: none;"></span>
+                    </button>
+                </div>
+            </div>
+            <div id="deviceList" class="device-table">
+                <div id="filterControls" class="filter-controls">
+                    <table class="filter-table">
+                        <tr class="filter-row">
+                            <th><input type="text" id="filterDeviceId" placeholder="Filter ID..." class="filter-input"></th>
+                            <th><input type="text" id="filterIp" placeholder="Filter IP..." class="filter-input"></th>
+                            <th><input type="text" id="filterInterface" placeholder="Filter interface..." class="filter-input"></th>
+                            <th><input type="text" id="filterDeviceType" placeholder="Filter type..." class="filter-input"></th>
+                            <th><input type="text" id="filterPorts" placeholder="Filter ports..." class="filter-input"></th>
+                            <th><select id="filterStatus" class="filter-input"><option value="">All</option><option value="running">Running</option><option value="stopped">Stopped</option></select></th>
+                            <th><button id="clearFiltersBtn" class="btn btn-small">Clear</button></th>
+                        </tr>
+                    </table>
+                </div>
+                <div id="deviceTable"></div>
+            </div>
+            <div id="paginationControls" class="pagination-controls" style="display: none;">
+                <div class="pagination-info">
+                    <span id="pageInfo">Page 1 of 1 (0 devices)</span>
+                </div>
+                <div class="pagination-buttons">
+                    <button id="prevPageBtn" class="btn btn-small" disabled>‹ Previous</button>
+                    <button id="nextPageBtn" class="btn btn-small" disabled>Next ›</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="/web/app.js"></script>
+</body>
+</html>
