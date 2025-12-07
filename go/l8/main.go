@@ -41,7 +41,7 @@ func StartWebServer(port int, cert string) {
 
 	//Activate the webpoints bservice
 	sla := ifs.NewServiceLevelAgreement(&server.WebService{}, ifs.WebService, 0, false, nil)
-	p, e := proxy.NewWebProxy("127.0.0.1:8080")
+	p, e := proxy.NewWebProxy("192.168.86.223:8080")
 	if e != nil {
 		panic(e)
 	}
