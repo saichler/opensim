@@ -1,0 +1,25 @@
+{
+  "snmp": null,
+  "ssh": [
+    {
+      "command": "show sys-info",
+      "response": "================================================================================\n                             System Info\n================================================================================\nSysName         : MEL-SW-01\nSysContact      : Network Administrator\nSysLocation     : Melbourne, Australia\n\nSystem Up Time  : 124d 16h 52m 33s (1078 hours)\n\nSysDescr        : Extreme Networks VSP 4450GSX-PWR+\n                  VOSS Version:8.10.1.0 GA\n                  Build Date:Oct-20-2022\n\nSysObjectID     : 1.3.6.1.4.1.1916.2.306.1.1.1\nChassisType     : VSP-4450GSX-PWR+\nChassisSerialNum: EX-VSP4450-001\nNumSlots        : 1\nSoftwareVersion : 8.10.1.0\nChassisMAC      : 44:c4:96:12:34:56"
+    },
+    {
+      "command": "show interfaces gigabitethernet name",
+      "response": "================================================================================\n                        Port Interface Status\n================================================================================\nPORT        NAME                            STATUS TYPE     MTU   \n1/1         --                              UP     1000T    1500  \n1/2         --                              UP     1000T    1500  \n1/3         --                              DOWN   1000T    1500  \n1/4         --                              DOWN   1000T    1500  \n1/5         --                              DOWN   1000T    1500  \n1/6         --                              DOWN   1000T    1500  \n1/7         --                              DOWN   1000T    1500  \n1/8         --                              DOWN   1000T    1500  \n1/9         WAN-Link                        UP     1000T    1500  \n1/10        LAN-Link                        UP     1000T    1500"
+    },
+    {
+      "command": "show ip route",
+      "response": "================================================================================\n                                IP Route\n================================================================================\nDEST_ADDR/MASK          NEXT_HOP        COST PREF TYPE/NUM  VRF_NAME  INTERFACE\n0.0.0.0/0               192.168.301.254    1  5   local/0   GlobalRouter mgmt\n192.168.301.0/24        0.0.0.0            0  0   direct/0  GlobalRouter mgmt\n\nTotal number of IP routes: 2"
+    },
+    {
+      "command": "show running-config",
+      "response": "!\n! Configuration of \"MEL-SW-01\" \n!\n! Software Version VOSS 8.10.1.0 GA\n! Build Date: Oct-20-2022\n!\nhostname \"MEL-SW-01\"\n!\ninterface mgmt\n   ip address 192.168.301.1 255.255.255.0\n   exit\n!\ninterface GigabitEthernet 1/1\n   no shutdown\n   exit\n!\ninterface GigabitEthernet 1/2\n   no shutdown\n   exit\n!\nip route 0.0.0.0 0.0.0.0 192.168.301.254\n!\nexit"
+    },
+    {
+      "command": "show chassis",
+      "response": "================================================================================\n                              Chassis Status\n================================================================================\nChassis Model       : VSP-4450GSX-PWR+\nChassis Serial Num  : EX-VSP4450-001\nChassis MAC Address : 44:c4:96:12:34:56\nFan Status          : Normal\nPower Supply Status : Normal\nTemperature Status  : Normal\n\nSlot Module                  State    SerialNum    PartNum         Rev\n---- ----------------------- -------- ------------ --------------- ----\n 1   VSP-4450GSX-PWR+        up       EX-VSP4450   EC2310607-E6    06\n\nFan Status:\nFan 1 : OK (3520 rpm)\nFan 2 : OK (3480 rpm)\nFan 3 : OK (3510 rpm)\n\nPower Supply Status:\nPower Supply 1 : OK (495W)\n\nTemperature:\nCPU Temperature   : 36°C\nBoard Temperature : 32°C"
+    }
+  ]
+}

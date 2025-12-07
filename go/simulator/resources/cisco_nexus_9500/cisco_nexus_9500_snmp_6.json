@@ -1,0 +1,453 @@
+{
+  "snmp": [
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.11.1040",
+      "response": "SN001040"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.11.1041",
+      "response": "SN001041"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.11.1042",
+      "response": "SN001042"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.11.1043",
+      "response": "SN001043"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.11.1044",
+      "response": "SN001044"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.11.1045",
+      "response": "SN001045"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.11.1046",
+      "response": "SN001046"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.11.1047",
+      "response": "SN001047"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.11.1048",
+      "response": "SN001048"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.11.1049",
+      "response": "SN001049"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.11.1050",
+      "response": "SN001050"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.11.1051",
+      "response": "SN001051"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.11.1052",
+      "response": "SN001052"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.11.1053",
+      "response": "SN001053"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.11.1054",
+      "response": "SN001054"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.11.1055",
+      "response": "SN001055"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.11.1056",
+      "response": "SN001056"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.11.1057",
+      "response": "SN001057"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.11.1058",
+      "response": "SN001058"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.11.1059",
+      "response": "SN001059"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.11.1060",
+      "response": "SN001060"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.11.1061",
+      "response": "SN001061"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.11.1062",
+      "response": "SN001062"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.11.1063",
+      "response": "SN001063"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.11.1064",
+      "response": "SN001064"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1001",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1002",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1003",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1004",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1005",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1006",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1007",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1008",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1009",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1010",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1011",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1012",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1013",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1014",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1015",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1016",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1017",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1018",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1019",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1020",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1021",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1022",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1023",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1024",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1025",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1026",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1027",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1028",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1029",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1030",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1031",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1032",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1033",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1034",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1035",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1036",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1037",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1038",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1039",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1040",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1041",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1042",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1043",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1044",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1045",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1046",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1047",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1048",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1049",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1050",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1051",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1052",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1053",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1054",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1055",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1056",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1057",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1058",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1059",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1060",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1061",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1062",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1063",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.12.1064",
+      "response": "Simulation Vendor"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.13",
+      "response": "CiscoNexus9500"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.1",
+      "response": "MODEL123"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.1001",
+      "response": "10GE-PORT"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.1002",
+      "response": "10GE-PORT"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.1003",
+      "response": "10GE-PORT"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.1004",
+      "response": "10GE-PORT"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.1005",
+      "response": "10GE-PORT"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.1006",
+      "response": "10GE-PORT"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.1007",
+      "response": "10GE-PORT"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.1008",
+      "response": "10GE-PORT"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.1009",
+      "response": "10GE-PORT"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.1010",
+      "response": "10GE-PORT"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.1011",
+      "response": "10GE-PORT"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.1012",
+      "response": "10GE-PORT"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.1013",
+      "response": "10GE-PORT"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.1014",
+      "response": "10GE-PORT"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.1015",
+      "response": "10GE-PORT"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.1016",
+      "response": "10GE-PORT"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.1017",
+      "response": "10GE-PORT"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.1018",
+      "response": "10GE-PORT"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.1019",
+      "response": "10GE-PORT"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.1020",
+      "response": "10GE-PORT"
+    },
+    {
+      "oid": "1.3.6.1.2.1.47.1.1.1.1.13.1021",
+      "response": "10GE-PORT"
+    }
+  ],
+  "ssh": null
+}

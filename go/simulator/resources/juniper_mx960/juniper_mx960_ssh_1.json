@@ -1,0 +1,25 @@
+{
+  "snmp": null,
+  "ssh": [
+    {
+      "command": "show version",
+      "response": "Hostname: LON-CORE-01\nModel: mx960\nJunos: 21.4R1.12\nJUNOS OS Kernel 64-bit [20211118.0000_builder_stable_11]"
+    },
+    {
+      "command": "show interfaces terse",
+      "response": "Interface               Admin Link Proto    Local                 Remote\nge-0/0/0                up    up\nge-0/0/0.0              up    up   inet     192.168.100.1/24\nxe-0/1/0                up    up\nxe-0/1/0.0              up    up   inet     10.0.1.1/30"
+    },
+    {
+      "command": "show route",
+      "response": "inet.0: 45 destinations, 45 routes (45 active, 0 holddown, 0 hidden)\n+ = Active Route, - = Last Active, * = Both\n0.0.0.0/0          *[BGP/170] 156d 07:33:12, localpref 100\n                    \u003e to 10.0.1.2 via xe-0/1/0.0"
+    },
+    {
+      "command": "show configuration",
+      "response": "system {\n    host-name LON-CORE-01;\n    root-authentication {\n        encrypted-password \"$6$def456\";\n    }\n}\ninterfaces {\n    xe-0/1/0 {\n        unit 0 {\n            family inet {\n                address 10.0.1.1/30;\n            }\n        }\n    }\n}"
+    },
+    {
+      "command": "show chassis environment",
+      "response": "Class Item                           Status     Measurement\nTemp  Routing Engine 0               OK         41 degrees C / 106 degrees F\nTemp  Routing Engine 1               OK         39 degrees C / 102 degrees F\nFans  Fan Tray 0                     Running at normal speed\nFans  Fan Tray 1                     Running at normal speed"
+    }
+  ]
+}

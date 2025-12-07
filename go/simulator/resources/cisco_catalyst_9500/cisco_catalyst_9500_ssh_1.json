@@ -1,0 +1,73 @@
+{
+  "snmp": null,
+  "ssh": [
+    {
+      "command": "show version",
+      "response": "Cisco IOS Software, Catalyst L3 Switch Software (CAT9K_LITE_IOSXE), Version 16.12.04, RELEASE SOFTWARE (fc5)\nCisco Catalyst 9500-48Y4C\nUptime is 45 days, 12 hours, 30 minutes"
+    },
+    {
+      "command": "show interfaces status",
+      "response": "Port      Name               Status       Vlan       Duplex  Speed Type\nGi1/0/1                      connected    1            full   1000 1000BaseTX\nGi1/0/2                      connected    1            full   1000 1000BaseTX\nGi1/0/3                      notconnect   1              auto   auto 1000BaseTX"
+    },
+    {
+      "command": "show ip route",
+      "response": "Codes: L - local, C - connected, S - static, R - RIP, M - mobile, B - BGP\nGateway of last resort is 192.168.1.1 to network 0.0.0.0\nS*   0.0.0.0/0 [1/0] via 192.168.1.1\nC    192.168.1.0/24 is directly connected, Vlan1"
+    },
+    {
+      "command": "show running-config",
+      "response": "version 16.12\nhostname Core-Switch-01\ninterface Vlan1\n ip address 192.168.1.10 255.255.255.0\n no shutdown\nip default-gateway 192.168.1.1"
+    },
+    {
+      "command": "show environment all",
+      "response": "Switch 1 FAN 1 is OK\nSwitch 1 FAN 2 is OK\nSwitch 1 FAN 3 is OK\nSwitch 1 POWER SUPPLY 1 OK\nSystem Temperature = 42C\nSW  PID                   Serial#     Status           Sys Pwr  PoE Pwr  Watts\n--  --------------------  ----------  ---------------  -------  -------  -----\n1A  C9500-PWR-2800AC      DCB2134L5GT  OK              Good     Good     2800"
+    },
+    {
+      "command": "show processes cpu",
+      "response": "CPU utilization for five seconds: 25%/23%; one minute: 24%; five minutes: 25%\n PID Runtime(ms)     Invoked      uSecs   5Sec   1Min   5Min TTY Process\n   1        4872      142634         34  0.00%  0.00%  0.00%   0 Chunk Manager\n   2     1726348      528093       3270  0.15%  0.13%  0.12%   0 Load Meter\n   3     2854000      353275      8077  2.50%  2.45%  2.48%   0 Exec"
+    },
+    {
+      "command": "show memory statistics",
+      "response": "Head    Total(b)     Used(b)     Free(b)   Lowest(b)  Largest(b)\nProcessor  2148552704   967448768  1181103936   967448768  1181103936\n           2148552704   967448768  1181103936   967448768  1181103936\n\nMemory utilization: 45%"
+    },
+    {
+      "command": "show interfaces summary",
+      "response": "*: interface is up\n   IHQ: pkts in input hold queue     IQD: pkts dropped from input queue\n   OHQ: pkts in output hold queue    OQD: pkts dropped from output queue\n   RXBS: rx rate (bits/sec)          RXPS: rx rate (pkts/sec)\n   TXBS: tx rate (bits/sec)          TXPS: tx rate (pkts/sec)\n   TRTL: throttle count\n\nInterface                   IHQ       IQD       OHQ       OQD      RXBS      RXPS      TXBS      TXPS     TRTL\n\n* GigabitEthernet1/0/1        0         0         0         0     12000      15      8000      10         0\n* GigabitEthernet1/0/2        0         0         0         0      5000       8      3000       5         0\n  GigabitEthernet1/0/3        0         0         0         0         0       0         0       0         0\n\nTotal interfaces: 48 (46 up, 2 down)"
+    },
+    {
+      "command": "show module",
+      "response": "Mod Ports Card Type                              Model              Serial No.\n--- ----- -------------------------------------- ------------------ -----------\n1    48   48-Port 10/100/1000BASE-T Module       C9300-48T          TMB2345L67H\n2     4   Supervisor Module                      C9300-SUP-1        TMB2345L67S\n\n Mod MAC addresses                       Hw    Fw           Sw           Status\n --- ---------------------------------- ------ ------------ ------------ -------\n  1  1cdf.0f12.3456 to 1cdf.0f12.347f   1.0   16.12.04     16.12.04     Ok\n  2  1cdf.0f12.3480 to 1cdf.0f12.3483   2.1   16.12.04     16.12.04     Ok\n\n Mod  Sub-Module                  Model           Serial       Hw     Status\n ---- --------------------------- --------------- ------------ ------ -------\n  2/1 Supervisor Engine            C9300-SUP-1    TMB234567S   1.0    Ok"
+    },
+    {
+      "command": "show inventory",
+      "response": "NAME: \"Chassis\", DESCR: \"Cisco Catalyst 9500-48Y4C Chassis\"\nPID: C9500-48Y4C       , VID: V01  , SN: CAT9500-001\n\nNAME: \"Slot 1\", DESCR: \"48-Port 10/100/1000BASE-T Module\"\nPID: C9300-48T         , VID: V02  , SN: TMB2345L67H\n\nNAME: \"Supervisor Module 1\", DESCR: \"Supervisor Engine\"\nPID: C9300-SUP-1       , VID: V01  , SN: TMB2345L67S\n\nNAME: \"Power Supply Module 1\", DESCR: \"1100W AC Power Supply\"\nPID: PWR-C1-1100WAC    , VID: V02  , SN: DCB2134L5GT\n\nNAME: \"Power Supply Module 2\", DESCR: \"1100W AC Power Supply\"\nPID: PWR-C1-1100WAC    , VID: V02  , SN: DCB2134L5GU\n\nNAME: \"Fan Tray 1\", DESCR: \"Catalyst 9500 Fan Tray\"\nPID: C9500-FAN         , VID: V01  , SN: FAN0012345\n\nNAME: \"Fan Tray 2\", DESCR: \"Catalyst 9500 Fan Tray\"\nPID: C9500-FAN         , VID: V01  , SN: FAN0012346"
+    },
+    {
+      "command": "show power",
+      "response": "                      Power Supply Status\nPS   Model            Input  Output     Status     \n---- ---------------- ------ --------- -----------\n1    PWR-C1-1100WAC   AC     Good       Active     \n2    PWR-C1-1100WAC   AC     Good       Active     \n\nPower Supply Detailed Information:\n\nPS 1: PWR-C1-1100WAC\n  Serial Number: DCB2134L5GT\n  Input: 1100W AC (230V)\n  Output: Good\n  Status: Active\n  Temperature: 45°C\n  Load: 36% (394W of 1100W)\n\nPS 2: PWR-C1-1100WAC\n  Serial Number: DCB2134L5GU\n  Input: 1100W AC (230V)\n  Output: Good\n  Status: Active\n  Temperature: 44°C\n  Load: 32% (352W of 1100W)"
+    },
+    {
+      "command": "show platform hardware chassis fantray detail",
+      "response": "Fan Tray Information:\n\nFan Tray 1:\n  Status: OK\n  Serial Number: FAN0012345\n  Fans:\n    Fan 1: 3520 RPM (70% of max 5000 RPM)\n    Fan 2: 3480 RPM (69% of max 5000 RPM)\n\nFan Tray 2:\n  Status: OK\n  Serial Number: FAN0012346\n  Fans:\n    Fan 3: 3550 RPM (71% of max 5000 RPM)\n    Fan 4: 3500 RPM (70% of max 5000 RPM)\n\nOverall Cooling Status: OK\nSystem Temperature: 42°C (Normal)"
+    },
+    {
+      "command": "show platform hardware cpu brief",
+      "response": "CPU Information:\n\nSupervisor CPU:\n  Type: Intel Xeon E5-2690\n  Architecture: x86_64\n  Cores: 8\n  Frequency: 2900 MHz\n  Temperature: 55.3°C\n  Utilization: 25%\n  Status: OK\n\nLine Card CPU:\n  Type: ARM Cortex-A15\n  Architecture: arm64\n  Cores: 4\n  Frequency: 1400 MHz\n  Temperature: 38.7°C\n  Utilization: 8%\n  Status: OK"
+    },
+    {
+      "command": "show platform hardware memory brief",
+      "response": "Memory Information:\n\nSupervisor Memory:\n  Type: DDR4\n  Size: 16 GB\n  Frequency: 2400 MHz\n  Utilization: 45%\n  Status: OK\n\nLine Card Memory:\n  Type: DDR3\n  Size: 4 GB\n  Frequency: 1600 MHz\n  Utilization: 28%\n  Status: OK\n\nTotal System Memory: 20 GB\nOverall Utilization: 45%"
+    },
+    {
+      "command": "show cdp neighbors",
+      "response": "Capability Codes: R - Router, T - Trans Bridge, B - Source Route Bridge\n                  S - Switch, H - Host, I - IGMP, r - Repeater, P - Phone\n\nDevice ID        Local Intrfce     Holdtme    Capability  Platform  Port ID\nDist-SW-01       Gi1/0/1           142        S I         C9300-48P Gi1/0/48\nAccess-SW-02     Gi1/0/2           158        S I         C2960X-48 Gi0/24\nCore-RTR-01      Gi1/0/24          165        R           ASR1001-X Gi0/0/0\nBackup-SW-01     Gi1/0/25          135        S I         C9500-48Y Gi1/0/25\n\nTotal cdp entries displayed: 4"
+    },
+    {
+      "command": "show cdp neighbors detail",
+      "response": "-------------------------\nDevice ID: Dist-SW-01\nEntry address(es):\n  IP address: 10.1.10.2\nPlatform: cisco WS-C9300-48P,  Capabilities: Switch IGMP\nInterface: GigabitEthernet1/0/1,  Port ID (outgoing port): GigabitEthernet1/0/48\nHoldtime : 142 sec\n\nVersion :\nCisco IOS Software, Catalyst L3 Switch Software (CAT9K_IOSXE), Version 16.12.03\n\n-------------------------\nDevice ID: Access-SW-02\nEntry address(es):\n  IP address: 10.1.20.5\nPlatform: cisco WS-C2960X-48FPS-L,  Capabilities: Switch IGMP\nInterface: GigabitEthernet1/0/2,  Port ID (outgoing port): GigabitEthernet0/24\nHoldtime : 158 sec\n\nVersion :\nCisco IOS Software, C2960X Software (C2960X-UNIVERSALK9-M), Version 15.2(7)E3\n\n-------------------------\nDevice ID: Core-RTR-01\nEntry address(es):\n  IP address: 10.0.1.1\nPlatform: Cisco ASR1001-X,  Capabilities: Router\nInterface: GigabitEthernet1/0/24,  Port ID (outgoing port): GigabitEthernet0/0/0\nHoldtime : 165 sec\n\nVersion :\nCisco IOS XE Software, Version 17.03.04\n\n-------------------------\nDevice ID: Backup-SW-01\nEntry address(es):\n  IP address: 10.1.1.20\nPlatform: cisco C9500-48Y4C,  Capabilities: Switch IGMP\nInterface: GigabitEthernet1/0/25,  Port ID (outgoing port): GigabitEthernet1/0/25\nHoldtime : 135 sec\n\nVersion :\nCisco IOS Software, Catalyst L3 Switch Software (CAT9K_IOSXE), Version 16.12.04"
+    },
+    {
+      "command": "show lldp neighbors",
+      "response": "Capability codes:\n    (R) Router, (B) Bridge, (T) Telephone, (C) DOCSIS Cable Device\n    (W) WLAN Access Point, (P) Repeater, (S) Station, (O) Other\n\nDevice ID           Local Intf     Hold-time  Capability      Port ID\nDist-SW-01          Gi1/0/1        120        B               GigabitEthernet1/0/48\nAccess-SW-02        Gi1/0/2        120        B               GigabitEthernet0/24\nCore-RTR-01         Gi1/0/24       120        R               GigabitEthernet0/0/0\nBackup-SW-01        Gi1/0/25       120        B               GigabitEthernet1/0/25\n\nTotal entries displayed: 4"
+    }
+  ]
+}
