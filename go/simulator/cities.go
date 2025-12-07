@@ -6,17 +6,22 @@ import (
 	"log"
 	mathrand "math/rand"
 	"os"
+	"path/filepath"
+	"sort"
 )
 
 // Global list of world cities loaded from CSV file
 var worldCities []string
 
-// loadWorldCities loads cities from worldcities.csv file
+// loadWorldCities loads cities from worldcities directory (split CSV files)
 func loadWorldCities() error {
-	file, err := os.Open("worldcities.csv")
-	if err != nil {
-		log.Printf("Failed to open worldcities.csv, using fallback cities: %v", err)
-		// Fallback to a smaller set of cities if CSV file is not available
+	dirPath := "worldcities"
+
+	// Check if directory exists
+	info, err := os.Stat(dirPath)
+	if err != nil || !info.IsDir() {
+		log.Printf("Failed to open worldcities directory, using fallback cities: %v", err)
+		// Fallback to a smaller set of cities if directory is not available
 		worldCities = []string{
 			"Tokyo, Japan",
 			"New York, NY, USA",
@@ -31,6 +36,43 @@ func loadWorldCities() error {
 		}
 		return nil
 	}
+
+	// Find all numbered CSV files in the directory
+	files, err := filepath.Glob(filepath.Join(dirPath, "[0-9]*.csv"))
+	if err != nil {
+		return fmt.Errorf("failed to list CSV files: %v", err)
+	}
+
+	// Sort files to ensure consistent ordering
+	sort.Strings(files)
+
+	// Use a map to ensure uniqueness and avoid duplicate city-country combinations
+	uniqueLocations := make(map[string]bool)
+
+	// Process each CSV file
+	for _, filePath := range files {
+		if err := processCSVFile(filePath, uniqueLocations); err != nil {
+			log.Printf("Warning: failed to process %s: %v", filePath, err)
+			continue
+		}
+	}
+
+	// Convert map keys to slice
+	worldCities = make([]string, 0, len(uniqueLocations))
+	for location := range uniqueLocations {
+		worldCities = append(worldCities, location)
+	}
+
+	log.Printf("Loaded %d cities from worldcities directory (%d files)", len(worldCities), len(files))
+	return nil
+}
+
+// processCSVFile reads a single CSV file and adds cities to the uniqueLocations map
+func processCSVFile(filePath string, uniqueLocations map[string]bool) error {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return err
+	}
 	defer file.Close()
 
 	reader := csv.NewReader(file)
@@ -39,13 +81,9 @@ func loadWorldCities() error {
 		return fmt.Errorf("failed to read CSV: %v", err)
 	}
 
-	// Skip header row and extract city and country information
-	// Use a map to ensure uniqueness and avoid duplicate city-country combinations
-	uniqueLocations := make(map[string]bool)
-
-	for i, record := range records {
-		if i == 0 || len(record) < 5 {
-			continue // Skip header or malformed rows
+	for _, record := range records {
+		if len(record) < 5 {
+			continue // Skip malformed rows
 		}
 
 		city := record[0]    // city name
@@ -71,13 +109,6 @@ func loadWorldCities() error {
 		}
 	}
 
-	// Convert map keys to slice
-	worldCities = make([]string, 0, len(uniqueLocations))
-	for location := range uniqueLocations {
-		worldCities = append(worldCities, location)
-	}
-
-	log.Printf("Loaded %d cities from worldcities.csv", len(worldCities))
 	return nil
 }
 
