@@ -1,0 +1,25 @@
+{
+  "snmp": null,
+  "ssh": [
+    {
+      "command": "show version",
+      "response": "Arista DCS-7280R3-32P4-M\nHardware version: 11.02\nSerial number: AR-7280R3-001\nHardware MAC address: 001c.7305.1234\nSystem MAC address: 001c.7305.1234\n\nSoftware image version: 4.29.2F\nArchitecture: i686\nInternal build version: 4.29.2F-29226602.4292F\nInternal build ID: 4292F-29226602\n\nUptime: 76 days, 19 hours, 41 minutes\nTotal memory: 8097512 kB\nFree memory: 3421676 kB"
+    },
+    {
+      "command": "show interfaces status",
+      "response": "Port       Name                  Status       Vlan     Duplex Speed  Type            Flags Encap\nEt1        --                    connected    1        full   10G    10GBASE-SR      --    --\nEt2        --                    connected    1        full   10G    10GBASE-SR      --    --\nEt3        --                    notconnect   1        auto   auto   10GBASE-SR      --    --\nEt4        --                    notconnect   1        auto   auto   10GBASE-SR      --    --"
+    },
+    {
+      "command": "show ip route",
+      "response": "VRF: default\nCodes: C - connected, S - static, K - kernel, \n       O - OSPF, IA - OSPF inter area, E1 - OSPF external type 1,\n       E2 - OSPF external type 2, N1 - OSPF NSSA external type 1,\n       N2 - OSPF NSSA external type 2, B - BGP, A F - BGP Aggregate,\n       I L1 - IS-IS level 1, I L2 - IS-IS level 2, O3 - OSPFv3,\n       A B - BGP Aggregate, A O - OSPF Summary,\n       NG - Nexthop Group Static Route, V - VXLAN Control Service,\n       DH - DHCP client installed default route, M - Martian,\n       DP - Dynamic Policy Route, L - VRF Leaked,\n       RC - Route Cache Route\n\nGateway of last resort:\n S        0.0.0.0/0 [1/0] via 192.168.201.254, Management1\n\n C        192.168.201.0/24 is directly connected, Management1"
+    },
+    {
+      "command": "show running-config",
+      "response": "! Command: show running-config\n! device: SIN-SW-01 (DCS-7280R3-32P4-M, EOS-4.29.2F)\n!\nhostname SIN-SW-01\n!\ninterface Ethernet1\n   no shutdown\n   switchport\n!\ninterface Ethernet2\n   no shutdown\n   switchport\n!\ninterface Management1\n   ip address 192.168.201.1/24\n   no shutdown\n!\nip route 0.0.0.0/0 192.168.201.254\n!\nend"
+    },
+    {
+      "command": "show environment all",
+      "response": "System temperature status is Ok\nAmbient temperature: 25C\nAirflow: port-side exhaust\n\nPower Supplies:\nPower Supply 1: ok\nPower Supply 2: ok\nTotal power capacity: 1050W\nTotal power draw: 420W\n\nFan Status: Ok\nFan 1/1: ok\nFan 2/1: ok\nFan 3/1: ok\nFan 4/1: ok\n\nTemperature Sensors:\nCard type             | Sensor location      | Reading (C)\nSupervisor            | Cpu temp sensor      | 38\nSupervisor            | Board temp sensor    | 32\nSupervisor            | Switch chip temp     | 45"
+    }
+  ]
+}

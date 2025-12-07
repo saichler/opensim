@@ -1,0 +1,49 @@
+{
+  "snmp": null,
+  "ssh": [
+    {
+      "command": "show version",
+      "response": "Cisco IOS Software, C2900 Software\nSystem uptime is 15 days, 3 hours"
+    },
+    {
+      "command": "show interfaces",
+      "response": "GigabitEthernet0/0 is up, line protocol is up\nGigabitEthernet0/1 is up, line protocol is up"
+    },
+    {
+      "command": "show ip route",
+      "response": "Codes: C - connected, S - static, R - RIP\nGateway of last resort is 192.168.1.1"
+    },
+    {
+      "command": "show running-config",
+      "response": "Building configuration...\n!\nhostname Router-Simulator\n!"
+    },
+    {
+      "command": "show memory",
+      "response": "Head    Total(b)     Used(b)     Free(b)\nProcessor   262144000  45678900  216465100"
+    },
+    {
+      "command": "show cpu",
+      "response": "CPU utilization: 23%/12%; one minute: 25%; five minutes: 28%"
+    },
+    {
+      "command": "show clock",
+      "response": "08:54:27.984 PDT Mon Aug 4 2025"
+    },
+    {
+      "command": "show users",
+      "response": "Line       User       Host(s)              Idle\nvty 0      simadmin   idle                 00:00:00"
+    },
+    {
+      "command": "show cdp neighbors",
+      "response": "Capability Codes: R - Router, T - Trans Bridge, B - Source Route Bridge\n                  S - Switch, H - Host, I - IGMP, r - Repeater, P - Phone\n\nDevice ID        Local Intrfce     Holdtme    Capability  Platform  Port ID\nCore-SW-01       Gig 0/0           165        S I         WS-C3750X Gig 1/0/24\nAccess-SW-02     Gig 0/1           135        S I         WS-C2960X Gig 0/48\nDist-RTR-03      Gig 0/2           142        R B         CISCO2911 Gig 0/0\n\nTotal cdp entries displayed: 3"
+    },
+    {
+      "command": "show cdp neighbors detail",
+      "response": "-------------------------\nDevice ID: Core-SW-01\nEntry address(es):\n  IP address: 10.1.1.10\nPlatform: cisco WS-C3750X-48P,  Capabilities: Switch IGMP\nInterface: GigabitEthernet0/0,  Port ID (outgoing port): GigabitEthernet1/0/24\nHoldtime : 165 sec\n\nVersion :\nCisco IOS Software, C3750E Software (C3750E-UNIVERSALK9-M), Version 15.2(4)E8\n\n-------------------------\nDevice ID: Access-SW-02\nEntry address(es):\n  IP address: 10.1.2.20\nPlatform: cisco WS-C2960X-48FPS-L,  Capabilities: Switch IGMP\nInterface: GigabitEthernet0/1,  Port ID (outgoing port): GigabitEthernet0/48\nHoldtime : 135 sec\n\nVersion :\nCisco IOS Software, C2960X Software (C2960X-UNIVERSALK9-M), Version 15.2(7)E\n\n-------------------------\nDevice ID: Dist-RTR-03\nEntry address(es):\n  IP address: 10.1.3.1\nPlatform: Cisco CISCO2911/K9,  Capabilities: Router Source-Route-Bridge\nInterface: GigabitEthernet0/2,  Port ID (outgoing port): GigabitEthernet0/0\nHoldtime : 142 sec\n\nVersion :\nCisco IOS Software, C2900 Software (C2900-UNIVERSALK9-M), Version 15.7(3)M8"
+    },
+    {
+      "command": "show lldp neighbors",
+      "response": "Capability codes:\n    (R) Router, (B) Bridge, (T) Telephone, (C) DOCSIS Cable Device\n    (W) WLAN Access Point, (P) Repeater, (S) Station, (O) Other\n\nDevice ID           Local Intf     Hold-time  Capability      Port ID\nCore-SW-01          Gi0/0          120        B,R             GigabitEthernet1/0/24\nAccess-SW-02        Gi0/1          120        B               GigabitEthernet0/48\nDist-RTR-03         Gi0/2          120        R               GigabitEthernet0/0\n\nTotal entries displayed: 3"
+    }
+  ]
+}
