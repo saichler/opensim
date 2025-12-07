@@ -25,13 +25,22 @@ spec:
       labels:
         app: opensim
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - node1
       hostNetwork: true
       containers:
         - name: opensim
           image: saichler/opensim-web:latest
           imagePullPolicy: Always
           ports:
-            - containerPort: 22623
+            - containerPort: 50504
           volumeMounts:
             - name: hdata
               mountPath: /data
