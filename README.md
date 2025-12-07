@@ -45,12 +45,13 @@ A powerful, scalable network and infrastructure simulator that provides realisti
 
 3. **Build the simulator:**
    ```bash
-   go build -o sim/sim ./sim
+   cd simulator
+   go build -o simulator .
    ```
 
 4. **Run with root privileges:**
    ```bash
-   sudo ./sim/sim
+   sudo ./simulator
    ```
 
 ### Auto-Setup for Ubuntu
@@ -68,7 +69,7 @@ This script installs all dependencies, configures system limits, and sets up TUN
 ### Command Line Options
 
 ```bash
-sudo ./sim/sim [options]
+sudo ./simulator [options]
 
 Options:
   -auto-start-ip string    Auto-create devices starting from this IP (e.g., 192.168.100.1)
@@ -82,13 +83,13 @@ Options:
 
 ```bash
 # Start server only
-sudo ./sim/sim
+sudo ./simulator
 
 # Auto-create 5 devices starting from 192.168.100.1
-sudo ./sim/sim -auto-start-ip 192.168.100.1 -auto-count 5
+sudo ./simulator -auto-start-ip 192.168.100.1 -auto-count 5
 
 # Custom port and subnet
-sudo ./sim/sim -auto-start-ip 10.10.10.1 -auto-count 100 -port 9090
+sudo ./simulator -auto-start-ip 10.10.10.1 -auto-count 100 -port 9090
 ```
 
 ## 🌐 Web Interface
@@ -265,32 +266,51 @@ curl -X POST http://localhost:8080/api/v1/devices \
 
 ### Device Resources
 
-The simulator uses JSON files to define SNMP OIDs and SSH command responses with comprehensive coverage:
+The simulator uses a directory-based JSON resource structure for device definitions. Each device type has its own directory under `go/simulator/resources/` with JSON files split for maintainability (max 500 lines per file).
 
-**Available Device Types:**
+**Available Device Types (25 devices):**
 
-*Network Devices:*
-- Cisco: ASR9K, Catalyst 9500, ISR 4331, Nexus 9000, CRS-X (with CDP & LLDP)
-- Juniper: MX240, SRX300, EX4300
-- Palo Alto: PA-3220
-- F5: BIG-IP i4800
-- Arista: 7050X switches
-- Fortinet: FortiGate firewalls
+*Network Devices (20):*
+| Device | Ports | Description |
+|--------|-------|-------------|
+| Cisco ASR9K | 48 | High-end service provider router |
+| Cisco Catalyst 9500 | 48 | Enterprise core switch |
+| Cisco Nexus 9500 | 48 | Data center spine switch |
+| Cisco CRS-X | 144 | Carrier-class router |
+| Cisco IOS | 4 | Standard IOS router |
+| Juniper MX960 | 96 | Service provider edge router |
+| Juniper MX240 | 24 | Compact modular router |
+| Palo Alto PA-3220 | 12 | Next-gen firewall |
+| Arista 7280R3 | 32 | High-performance switch |
+| Fortinet FortiGate-600E | 20 | Enterprise firewall |
+| Huawei NE8000 | 96 | Carrier-class router |
+| Nokia 7750 SR-12 | 72 | IP/MPLS service router |
+| Extreme VSP4450 | 48 | Campus switch |
+| D-Link DGS-3630 | 52 | L3 managed switch |
+| NEC IX3315 | 48 | Enterprise router |
+| Check Point 15600 | 24 | Security gateway |
+| SonicWall NSa 6700 | 16 | Next-gen firewall |
+| Dell PowerEdge R750 | 4 | Server BMC/iDRAC |
+| HPE ProLiant DL380 | 4 | Server iLO interface |
+| IBM Power S922 | 4 | Power Systems server |
 
-*Storage Systems:*
-- AWS S3 Storage
-- Pure Storage FlashArray
-- NetApp ONTAP
-- Dell EMC Unity
-
-*Servers:*
-- Linux Server (Ubuntu 24.04 LTS)
+*Storage Systems (5):*
+| Device | Type | Protocols |
+|--------|------|-----------|
+| AWS S3 Storage | Object storage | SNMP, SSH, REST |
+| Pure Storage FlashArray | All-flash array | SNMP, SSH, REST |
+| NetApp ONTAP | Unified storage | SNMP, SSH, REST |
+| Dell EMC Unity | Unified storage | SNMP, SSH, REST |
+| Linux Server | Ubuntu 24.04 LTS | SNMP, SSH |
 
 **Enhanced Features:**
-- Complete physical inventory monitoring (chassis, power supplies, fans, temperatures)
+- **Entity MIB Alignment**: All network devices have properly aligned ifTable and Entity MIB data
+- **Complete physical inventory**: Chassis, line cards, power supplies, fans, temperature sensors
+- **entAliasMappingTable**: Proper mapping between physical ports and logical interfaces
 - Interface statistics and operational status
 - System information and hardware details
 - Vendor-specific OID implementations
+- CDP & LLDP support for network topology discovery
 
 ### Example Resource Configuration
 ```json
@@ -324,20 +344,55 @@ The simulator uses JSON files to define SNMP OIDs and SSH command responses with
 
 ```
 opensim/
-├── go/                          # Go source code
-│   ├── sim/                     # Main simulator package
-│   │   ├── simulator.go         # Core simulator logic
-│   │   ├── types.go            # Data structures
-│   │   ├── snmp.go             # SNMP server implementation
-│   │   ├── ssh.go              # SSH server implementation
-│   │   ├── web.go              # Web UI and REST API
-│   │   └── *.json              # Device resource configurations
-│   ├── go.mod                  # Go module definition
-│   └── vendor/                 # Vendored dependencies
-├── *.md                        # Documentation files
-├── *.sh                        # Setup and test scripts
-└── opensim.png                 # Project logo
+├── go/                              # Go source code
+│   ├── simulator/                   # Main simulator package
+│   │   ├── main.go                  # Entry point
+│   │   ├── manager.go               # Device management
+│   │   ├── device.go                # Device lifecycle
+│   │   ├── snmp.go                  # SNMP server implementation
+│   │   ├── ssh.go                   # SSH server implementation
+│   │   ├── api.go                   # REST API handlers
+│   │   ├── resources.go             # Resource loading logic
+│   │   ├── types.go                 # Data structures
+│   │   ├── web/                     # Web UI static files
+│   │   │   ├── index.html           # Main UI page
+│   │   │   ├── app_ui.js            # UI JavaScript
+│   │   │   └── app_api.js           # API JavaScript
+│   │   └── resources/               # Device resource definitions
+│   │       ├── asr9k/               # Cisco ASR9K (48 ports)
+│   │       │   ├── asr9k_snmp_1.json
+│   │       │   ├── asr9k_snmp_2.json
+│   │       │   └── ...
+│   │       ├── cisco_nexus_9500/    # Cisco Nexus 9500 (48 ports)
+│   │       ├── juniper_mx960/       # Juniper MX960 (96 ports)
+│   │       ├── pure_storage_flasharray/
+│   │       ├── linux_server/
+│   │       └── ...                  # 25 device directories total
+│   ├── l8/                          # Layer 8 proxy service
+│   ├── go.mod                       # Go module definition
+│   └── go.sum                       # Go module checksums
+├── *.md                             # Documentation files
+├── *.sh                             # Setup and test scripts
+└── opensim.png                      # Project logo
 ```
+
+### Resource Directory Structure
+
+Each device type has its own directory with JSON files split into manageable chunks:
+
+```
+resources/
+├── asr9k/
+│   ├── asr9k_snmp_1.json      # System MIB, ifNumber
+│   ├── asr9k_snmp_2.json      # ifTable entries
+│   ├── asr9k_snmp_3_1.json    # ifXTable entries (part 1)
+│   ├── asr9k_snmp_3_2.json    # ifXTable entries (part 2)
+│   ├── asr9k_snmp_4.json      # Entity MIB
+│   └── asr9k_snmp_5.json      # entAliasMappingTable
+└── ...
+```
+
+The loader automatically merges all JSON files in a device directory, allowing large configurations to be split across multiple files for maintainability.
 
 ## 🔍 Troubleshooting
 
@@ -384,15 +439,15 @@ See [SCALING_GUIDE.md](SCALING_GUIDE.md) for detailed performance tuning.
 ### Building from Source
 
 ```bash
-cd go
+cd go/simulator
 go mod download
-go build -o sim/sim ./sim
+go build -o simulator .
 ```
 
 ### Running Tests
 
 ```bash
-go test ./sim
+go test ./...
 ```
 
 ### Contributing
@@ -410,8 +465,8 @@ go test ./sim
 - [Port Binding Solutions](PORT_BINDING_SOLUTIONS.md) - Network configuration
 - [TUN Troubleshooting](TUN_TROUBLESHOOTING.md) - TUN/TAP interface issues
 - [Individual Interfaces Guide](INDIVIDUAL_INTERFACES_GUIDE.md) - Advanced networking
-- [Device Mock Data Requirements](go/sim/DEVICE_MOCK_DATA_REQUIREMENTS.md) - Device simulation coverage
-- [Physical Inventory Coverage](go/sim/PHYSICAL_INVENTORY_COVERAGE.md) - Hardware monitoring OIDs
+- [Device Mock Data Requirements](go/simulator/DEVICE_MOCK_DATA_REQUIREMENTS.md) - Device simulation coverage
+- [Physical Inventory Coverage](go/simulator/PHYSICAL_INVENTORY_COVERAGE.md) - Hardware monitoring OIDs
 
 ## 🤝 Use Cases
 

@@ -57,7 +57,7 @@
                     <div class="stat-label">Concurrent Devices</div>
                 </div>
                 <div class="stat-card fade-in-up">
-                    <div class="stat-number">14+</div>
+                    <div class="stat-number">25</div>
                     <div class="stat-label">Device Types</div>
                 </div>
                 <div class="stat-card fade-in-up">
@@ -135,7 +135,7 @@
                     <div class="feature-icon">📊</div>
                     <h3 class="feature-title">Comprehensive Device Coverage</h3>
                     <p class="feature-description">
-                        Support for 14+ device types including Cisco, Juniper, Palo Alto, F5, HPE, Arista, and Fortinet with complete polling system compatibility.
+                        Support for 25 device types including Cisco, Juniper, Palo Alto, Arista, Fortinet, Huawei, Nokia, storage systems, and Linux servers with complete polling system compatibility.
                     </p>
                 </div>
 
@@ -210,10 +210,10 @@
                     <h3 class="step-title">Clone & Build</h3>
                     <p class="step-description">Clone the repository and build the simulator.</p>
                     <div class="code-block">
-                        <button class="copy-btn" onclick="copyToClipboard(this)" data-text="git clone https://github.com/saichler/opensim.git&#10;cd opensim/go&#10;go build -o sim/sim ./sim">Copy</button>
+                        <button class="copy-btn" onclick="copyToClipboard(this)" data-text="git clone https://github.com/saichler/opensim.git&#10;cd opensim/go/simulator&#10;go build -o simulator .">Copy</button>
 git clone https://github.com/saichler/opensim.git
-cd opensim/go
-go build -o sim/sim ./sim
+cd opensim/go/simulator
+go build -o simulator .
                     </div>
                 </div>
 
@@ -222,8 +222,8 @@ go build -o sim/sim ./sim
                     <h3 class="step-title">Run Simulator</h3>
                     <p class="step-description">Start the simulator with root privileges for TUN interface creation.</p>
                     <div class="code-block">
-                        <button class="copy-btn" onclick="copyToClipboard(this)" data-text="sudo ./sim/sim">Copy</button>
-sudo ./sim/sim
+                        <button class="copy-btn" onclick="copyToClipboard(this)" data-text="sudo ./simulator">Copy</button>
+sudo ./simulator
                     </div>
                 </div>
 
@@ -255,10 +255,11 @@ curl -X POST http://localhost:8080/api/v1/devices \
 
                     <ul class="demo-features">
                         <li>Real-time device status monitoring</li>
-                        <li>Interactive device creation with 14+ device types</li>
+                        <li>Interactive device creation with 25 device types</li>
                         <li>CSV export and routing script generation</li>
                         <li>Advanced filtering and pagination</li>
                         <li>SSH and SNMP testing tools with enhanced reliability</li>
+                        <li>Entity MIB alignment for accurate network topology</li>
                         <li>Comprehensive polling system compatibility</li>
                     </ul>
 
@@ -321,13 +322,13 @@ curl -X POST http://localhost:8080/api/v1/devices \
                     <p class="doc-description">Port binding solutions and network configuration tips.</p>
                 </a>
 
-                <a href="go/sim/DEVICE_MOCK_DATA_REQUIREMENTS.md" class="doc-card">
+                <a href="go/simulator/DEVICE_MOCK_DATA_REQUIREMENTS.md" class="doc-card">
                     <div class="doc-icon">📋</div>
                     <h4 class="doc-title">Device Mock Data</h4>
                     <p class="doc-description">Device simulation coverage and mock data requirements.</p>
                 </a>
 
-                <a href="go/sim/PHYSICAL_INVENTORY_COVERAGE.md" class="doc-card">
+                <a href="go/simulator/PHYSICAL_INVENTORY_COVERAGE.md" class="doc-card">
                     <div class="doc-icon">🏗️</div>
                     <h4 class="doc-title">Hardware Monitoring</h4>
                     <p class="doc-description">Physical inventory coverage and hardware monitoring OIDs.</p>
@@ -383,7 +384,7 @@ curl -X POST http://localhost:8080/api/v1/devices \
             </div>
 
             <div class="footer-bottom">
-                <p>&copy; 2024 OpenSim. Licensed under the Apache License 2.0.</p>
+                <p>&copy; 2025 OpenSim. Licensed under the Apache License 2.0.</p>
             </div>
         </div>
     </footer>
