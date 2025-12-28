@@ -24,7 +24,14 @@ const elements = {
     filterDeviceType: document.getElementById('filterDeviceType'),
     filterPorts: document.getElementById('filterPorts'),
     filterStatus: document.getElementById('filterStatus'),
-    clearFiltersBtn: document.getElementById('clearFiltersBtn')
+    clearFiltersBtn: document.getElementById('clearFiltersBtn'),
+    // System stats elements
+    simulatorMemory: document.getElementById('simulatorMemory'),
+    systemMemory: document.getElementById('systemMemory'),
+    memoryPercent: document.getElementById('memoryPercent'),
+    cpuUsage: document.getElementById('cpuUsage'),
+    cpuCores: document.getElementById('cpuCores'),
+    loadAverage: document.getElementById('loadAverage')
 };
 
 function showAlert(message, type = 'success') {
@@ -245,6 +252,26 @@ function updateStats() {
     elements.tunInterfaces.textContent = interfaces;
 }
 
+function updateSystemStatsDisplay(stats) {
+    // Simulator memory
+    if (stats.simulator_memory_gb >= 1) {
+        elements.simulatorMemory.textContent = stats.simulator_memory_gb.toFixed(2) + ' GB';
+    } else {
+        elements.simulatorMemory.textContent = stats.simulator_memory_mb.toFixed(1) + ' MB';
+    }
+
+    // System memory
+    elements.systemMemory.textContent = stats.used_memory_gb.toFixed(1) + ' / ' + stats.total_memory_gb.toFixed(1) + ' GB';
+    elements.memoryPercent.textContent = stats.memory_usage_percent.toFixed(1) + '% used';
+
+    // CPU usage
+    elements.cpuUsage.textContent = stats.cpu_usage_percent.toFixed(1) + '%';
+    elements.cpuCores.textContent = stats.num_cpu + ' cores';
+
+    // Load average
+    elements.loadAverage.textContent = stats.load_avg_1.toFixed(2) + ' / ' + stats.load_avg_5.toFixed(2) + ' / ' + stats.load_avg_15.toFixed(2);
+}
+
 // Event listeners
 elements.createForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -282,10 +309,12 @@ elements.filterStatus.addEventListener('change', applyFilters);
 elements.clearFiltersBtn.addEventListener('click', clearAllFilters);
 
 setInterval(loadDevices, 30000);
+setInterval(loadSystemStats, 5000); // Refresh system stats every 5 seconds
 
 document.addEventListener('DOMContentLoaded', () => {
     loadDevices();
     loadResources();
+    loadSystemStats(); // Initial system stats load
     checkStatus(); // Initial status check
     showAlert('Network Device Simulator Web UI loaded successfully!', 'success');
 });

@@ -105,8 +105,8 @@ async function loadResources() {
 
 function populateResourceSelect() {
     const select = document.getElementById('resourceFile');
-    // Clear existing options except default
-    select.innerHTML = '<option value="">Default (Auto-detect)</option>';
+    // Clear existing options except default and round robin
+    select.innerHTML = '<option value="">Default (Auto-detect)</option><option value="__round_robin__">Round Robin (All 19 Types)</option>';
 
     // Add resource file options
     resources.forEach(resource => {
@@ -126,8 +126,11 @@ async function createDevices(startIp, deviceCount, netmask, resourceFile) {
             netmask: netmask
         };
 
-        // Add resource file if selected
-        if (resourceFile) {
+        // Check if round robin mode is selected
+        if (resourceFile === '__round_robin__') {
+            requestData.round_robin = true;
+        } else if (resourceFile) {
+            // Add resource file if selected (not round robin)
             requestData.resource_file = resourceFile;
         }
 
@@ -230,4 +233,14 @@ function testConnection(ip, port) {
 
 function pingDevice(ip) {
     showAlert('Ping test for ' + ip + '. Check your terminal: ping ' + ip, 'warning');
+}
+
+async function loadSystemStats() {
+    try {
+        const response = await apiCall('/system-stats');
+        const stats = response.data;
+        updateSystemStatsDisplay(stats);
+    } catch (error) {
+        console.error('Failed to load system stats:', error);
+    }
 }

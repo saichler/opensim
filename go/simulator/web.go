@@ -44,10 +44,10 @@ func createDevicesHandler(w http.ResponseWriter, r *http.Request) {
 	if req.PreAllocate || req.MaxWorkers > 0 {
 		// If PreAllocate is not explicitly set but MaxWorkers is provided, enable pre-allocation
 		preAllocate := req.PreAllocate || req.MaxWorkers > 0
-		err = manager.CreateDevicesWithOptions(req.StartIP, req.DeviceCount, req.Netmask, req.ResourceFile, req.SNMPv3, preAllocate, req.MaxWorkers)
+		err = manager.CreateDevicesWithOptions(req.StartIP, req.DeviceCount, req.Netmask, req.ResourceFile, req.SNMPv3, preAllocate, req.MaxWorkers, req.RoundRobin)
 	} else {
 		// Use default behavior (auto pre-allocates for 10+ devices)
-		err = manager.CreateDevices(req.StartIP, req.DeviceCount, req.Netmask, req.ResourceFile, req.SNMPv3)
+		err = manager.CreateDevices(req.StartIP, req.DeviceCount, req.Netmask, req.ResourceFile, req.SNMPv3, req.RoundRobin)
 	}
 	if err != nil {
 		sendErrorResponse(w, err.Error(), http.StatusInternalServerError)
@@ -70,6 +70,11 @@ func listResourcesHandler(w http.ResponseWriter, r *http.Request) {
 func statusHandler(w http.ResponseWriter, r *http.Request) {
 	status := manager.GetStatus()
 	sendDataResponse(w, status)
+}
+
+func systemStatsHandler(w http.ResponseWriter, r *http.Request) {
+	stats := GetSystemStats()
+	sendDataResponse(w, stats)
 }
 
 func deleteDeviceHandler(w http.ResponseWriter, r *http.Request) {
@@ -208,6 +213,7 @@ func setupRoutes() *mux.Router {
 	api.HandleFunc("/devices", deleteAllDevicesHandler).Methods("DELETE")
 	api.HandleFunc("/resources", listResourcesHandler).Methods("GET")
 	api.HandleFunc("/status", statusHandler).Methods("GET")
+	api.HandleFunc("/system-stats", systemStatsHandler).Methods("GET")
 
 	// Static file for logo
 	router.HandleFunc("/logo.png", func(w http.ResponseWriter, r *http.Request) {

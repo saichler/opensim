@@ -34,6 +34,79 @@ body {
     font-size: 1.1em;
 }
 
+.system-stats {
+    background: rgba(26, 54, 93, 0.85);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    padding: 15px 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 20px rgba(26, 54, 93, 0.2);
+    border: 1px solid rgba(66, 153, 225, 0.3);
+}
+
+.system-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+}
+
+.system-stat-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 12px 15px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    transition: all 0.3s ease;
+}
+
+.system-stat-card:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+}
+
+.stat-icon {
+    font-size: 1.8em;
+    opacity: 0.9;
+}
+
+.stat-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.stat-content h4 {
+    color: rgba(240, 245, 255, 0.8);
+    font-size: 0.75em;
+    font-weight: 500;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-value {
+    color: #f0f5ff;
+    font-size: 1.1em;
+    font-weight: 600;
+    font-family: Monaco, monospace;
+    margin: 0;
+}
+
+.stat-sub {
+    color: rgba(240, 245, 255, 0.6);
+    font-size: 0.75em;
+    margin: 2px 0 0 0;
+}
+
+@media (max-width: 1024px) {
+    .system-stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 600px) {
+    .system-stats-grid { grid-template-columns: 1fr; }
+}
+
 .controls, .status, .devices {
     background: rgba(240, 245, 255, 0.95);
     backdrop-filter: blur(10px);

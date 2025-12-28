@@ -15,6 +15,41 @@
             </div>
             <p>Manage virtual network devices with TUN/TAP interfaces, SNMP, and SSH services</p>
         </div>
+        <div class="system-stats">
+            <div class="system-stats-grid">
+                <div class="system-stat-card">
+                    <div class="stat-icon">🖥️</div>
+                    <div class="stat-content">
+                        <h4>Simulator Memory</h4>
+                        <p class="stat-value" id="simulatorMemory">-- MB</p>
+                    </div>
+                </div>
+                <div class="system-stat-card">
+                    <div class="stat-icon">💾</div>
+                    <div class="stat-content">
+                        <h4>System Memory</h4>
+                        <p class="stat-value" id="systemMemory">-- / -- GB</p>
+                        <p class="stat-sub" id="memoryPercent">--%</p>
+                    </div>
+                </div>
+                <div class="system-stat-card">
+                    <div class="stat-icon">⚡</div>
+                    <div class="stat-content">
+                        <h4>CPU Usage</h4>
+                        <p class="stat-value" id="cpuUsage">--%</p>
+                        <p class="stat-sub" id="cpuCores">-- cores</p>
+                    </div>
+                </div>
+                <div class="system-stat-card">
+                    <div class="stat-icon">📊</div>
+                    <div class="stat-content">
+                        <h4>Load Average</h4>
+                        <p class="stat-value" id="loadAverage">-- / -- / --</p>
+                        <p class="stat-sub">1m / 5m / 15m</p>
+                    </div>
+                </div>
+            </div>
+        </div>
         <div id="alerts"></div>
         <div class="controls">
             <h2>Create New Devices</h2>
@@ -41,6 +76,7 @@
                         <label for="resourceFile">Device Type</label>
                         <select id="resourceFile">
                             <option value="">Default (Auto-detect)</option>
+                            <option value="__round_robin__">Round Robin (All 19 Types)</option>
                         </select>
                     </div>
                     <div class="form-group">

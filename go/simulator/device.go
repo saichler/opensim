@@ -25,12 +25,12 @@ import (
 	"time"
 )
 
-func (sm *SimulatorManager) CreateDevices(startIP string, count int, netmask string, resourceFile string, v3Config *SNMPv3Config) error {
-	return sm.CreateDevicesWithOptions(startIP, count, netmask, resourceFile, v3Config, true, 0)
+func (sm *SimulatorManager) CreateDevices(startIP string, count int, netmask string, resourceFile string, v3Config *SNMPv3Config, roundRobin bool) error {
+	return sm.CreateDevicesWithOptions(startIP, count, netmask, resourceFile, v3Config, true, 0, roundRobin)
 }
 
 // CreateDevicesWithOptions creates devices with optional pre-allocation control
-func (sm *SimulatorManager) CreateDevicesWithOptions(startIP string, count int, netmask string, resourceFile string, v3Config *SNMPv3Config, preAllocate bool, maxWorkers int) error {
+func (sm *SimulatorManager) CreateDevicesWithOptions(startIP string, count int, netmask string, resourceFile string, v3Config *SNMPv3Config, preAllocate bool, maxWorkers int, roundRobin bool) error {
 	// Set device creation status
 	sm.isCreatingDevices.Store(true)
 	sm.deviceCreateProgress.Store(0)
@@ -69,6 +69,7 @@ func (sm *SimulatorManager) CreateDevicesWithOptions(startIP string, count int, 
 	log.Printf("   - Device Count: %d", count)
 	log.Printf("   - Start IP: %s/%s", startIP, netmask)
 	log.Printf("   - Resource File: %s", resourceFile)
+	log.Printf("   - Round Robin: %t", roundRobin)
 	log.Printf("   - SNMPv3 Enabled: %t", v3Config != nil && v3Config.Enabled)
 	log.Printf("   - Test Started: %s", time.Now().Format("2006-01-02 15:04:05.000"))
 	log.Println()
@@ -93,24 +94,44 @@ func (sm *SimulatorManager) CreateDevicesWithOptions(startIP string, count int, 
 
 	successCount := 0
 
-	// Load the specified resource file if provided
-	var resources *DeviceResources
-	if resourceFile != "" {
-		var err error
-		resources, err = sm.LoadSpecificResources(resourceFile)
-		if err != nil {
-			return fmt.Errorf("failed to load resource file %s: %v", resourceFile, err)
+	// Pre-load all round robin resource files if round robin is enabled
+	var roundRobinResources []*DeviceResources
+	var roundRobinResourceFiles []string
+	if roundRobin {
+		log.Printf("Round Robin mode enabled - loading %d device type resources...", len(RoundRobinDeviceTypes))
+		for _, rrFile := range RoundRobinDeviceTypes {
+			res, err := sm.LoadSpecificResources(rrFile)
+			if err != nil {
+				log.Printf("WARNING: Failed to load round robin resource %s: %v", rrFile, err)
+				continue
+			}
+			roundRobinResources = append(roundRobinResources, res)
+			roundRobinResourceFiles = append(roundRobinResourceFiles, rrFile)
 		}
-		// log.Printf("Using resource file: %s", resourceFile)
-	} else {
-		// Use default resources
-		resources = sm.deviceResources
-		// log.Printf("Using default resources")
+		if len(roundRobinResources) == 0 {
+			return fmt.Errorf("failed to load any round robin resource files")
+		}
+		log.Printf("Loaded %d round robin device types", len(roundRobinResources))
+	}
+
+	// Load the specified resource file if provided (for non-round-robin mode)
+	var resources *DeviceResources
+	if !roundRobin {
+		if resourceFile != "" {
+			var err error
+			resources, err = sm.LoadSpecificResources(resourceFile)
+			if err != nil {
+				return fmt.Errorf("failed to load resource file %s: %v", resourceFile, err)
+			}
+		} else {
+			// Use default resources
+			resources = sm.deviceResources
+		}
 	}
 
 	if sm.tunPoolSize > 0 {
 		// Pre-allocation was done - create devices in parallel
-		sm.createDevicesParallel(count, netmask, resourceFile, resources, v3Config, &successCount)
+		sm.createDevicesParallel(count, netmask, resourceFile, resources, v3Config, &successCount, roundRobin, roundRobinResources, roundRobinResourceFiles)
 	} else {
 		// No pre-allocation - create devices sequentially (original logic)
 		for i := 0; i < count; i++ {
@@ -171,6 +192,15 @@ func (sm *SimulatorManager) CreateDevicesWithOptions(startIP string, count int, 
 			sysLocationValue := getRandomCity()
 			sysNameValue := getRandomDeviceName()
 
+			// Select resources based on round robin or single type
+			deviceResources := resources
+			deviceResourceFile := resourceFile
+			if roundRobin && len(roundRobinResources) > 0 {
+				rrIndex := i % len(roundRobinResources)
+				deviceResources = roundRobinResources[rrIndex]
+				deviceResourceFile = roundRobinResourceFiles[rrIndex]
+			}
+
 			device := &DeviceSimulator{
 				ID:           deviceID,
 				IP:           deviceIP,
@@ -178,8 +208,8 @@ func (sm *SimulatorManager) CreateDevicesWithOptions(startIP string, count int, 
 				SSHPort:      DEFAULT_SSH_PORT,
 				APIPort:      DEFAULT_API_PORT,
 				tunIface:     tunIface,
-				resources:    resources,
-				resourceFile: resourceFile,
+				resources:    deviceResources,
+				resourceFile: deviceResourceFile,
 				sysLocation:  sysLocationValue,
 				sysName:      sysNameValue,
 			}
@@ -252,7 +282,7 @@ func (sm *SimulatorManager) CreateDevicesWithOptions(startIP string, count int, 
 }
 
 // createDevicesParallel creates devices in parallel when pre-allocation was done
-func (sm *SimulatorManager) createDevicesParallel(count int, netmask string, resourceFile string, resources *DeviceResources, v3Config *SNMPv3Config, successCount *int) {
+func (sm *SimulatorManager) createDevicesParallel(count int, netmask string, resourceFile string, resources *DeviceResources, v3Config *SNMPv3Config, successCount *int, roundRobin bool, roundRobinResources []*DeviceResources, roundRobinResourceFiles []string) {
 	// Worker pool for parallel device creation
 	sem := make(chan struct{}, sm.maxWorkers) // Limit concurrent workers
 	var wg sync.WaitGroup
@@ -289,8 +319,17 @@ func (sm *SimulatorManager) createDevicesParallel(count int, netmask string, res
 			continue
 		}
 
+		// Select resources based on round robin or single type
+		deviceResources := resources
+		deviceResourceFile := resourceFile
+		if roundRobin && len(roundRobinResources) > 0 {
+			rrIndex := i % len(roundRobinResources)
+			deviceResources = roundRobinResources[rrIndex]
+			deviceResourceFile = roundRobinResourceFiles[rrIndex]
+		}
+
 		wg.Add(1)
-		go func(deviceIndex int, ip net.IP, devID string) {
+		go func(deviceIndex int, ip net.IP, devID string, devResources *DeviceResources, devResourceFile string) {
 			defer wg.Done()
 
 			// Acquire worker slot
@@ -298,7 +337,7 @@ func (sm *SimulatorManager) createDevicesParallel(count int, netmask string, res
 			defer func() { <-sem }()
 
 			// Create device in parallel
-			if sm.createSingleDevice(deviceIndex, ip, devID, netmask, resourceFile, resources, v3Config) {
+			if sm.createSingleDevice(deviceIndex, ip, devID, netmask, devResourceFile, devResources, v3Config) {
 				mu.Lock()
 				(*successCount)++
 				progress := *successCount
@@ -308,7 +347,7 @@ func (sm *SimulatorManager) createDevicesParallel(count int, netmask string, res
 				sm.deviceCreateProgress.Store(progress)
 			}
 
-		}(i, deviceIP, deviceID)
+		}(i, deviceIP, deviceID, deviceResources, deviceResourceFile)
 	}
 
 	// Wait for all workers to complete
