@@ -29,6 +29,7 @@ type TunInterface struct {
 	IP           net.IP
 	fd           int
 	PreAllocated bool // Track if this interface was pre-allocated
+	InNamespace  bool // Track if this interface is in a network namespace
 }
 
 type SNMPResource struct {
@@ -145,6 +146,10 @@ type SimulatorManager struct {
 	deviceResources *DeviceResources
 	resourcesCache  map[string]*DeviceResources // Cache for loaded resource files
 	sharedSSHSigner ssh.Signer                   // Shared SSH host key for all devices
+
+	// Network namespace for device isolation (prevents systemd-networkd overhead)
+	netNamespace    *NetNamespace // Network namespace for all simulated devices
+	useNamespace    bool          // Whether to use network namespace isolation
 
 	// TUN interface pre-allocation settings
 	tunPoolSize     int                   // Size of the pre-allocated pool (0 = no pre-allocation)

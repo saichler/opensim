@@ -21,7 +21,9 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -63,6 +65,27 @@ func getFirstDeviceKey(devices map[string]*DeviceSimulator) string {
 	return ""
 }
 
+// setupSignalHandler sets up graceful shutdown on SIGINT/SIGTERM
+func setupSignalHandler() {
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		sig := <-sigChan
+		log.Printf("\nReceived signal %v, shutting down gracefully...", sig)
+
+		// Cleanup manager (deletes devices, cleans up namespace)
+		if manager != nil {
+			if err := manager.Shutdown(); err != nil {
+				log.Printf("Error during shutdown: %v", err)
+			}
+		}
+
+		log.Println("Shutdown complete")
+		os.Exit(0)
+	}()
+}
+
 func main() {
 	// Define command-line flags
 	var (
@@ -73,6 +96,7 @@ func main() {
 		snmpv3AuthProto = flag.String("snmpv3-auth", "md5", "SNMPv3 authentication protocol: none, md5, sha1 (default: md5)")
 		snmpv3PrivProto = flag.String("snmpv3-priv", "none", "SNMPv3 privacy protocol: none, des, aes128 (default: none)")
 		port            = flag.String("port", "8080", "Server port (default: 8080)")
+		noNamespace     = flag.Bool("no-namespace", true, "Disable network namespace isolation (use root namespace)")
 		showHelp        = flag.Bool("help", false, "Show this help message")
 	)
 
@@ -88,15 +112,20 @@ func main() {
 		fmt.Println("Options:")
 		flag.PrintDefaults()
 		fmt.Println()
+		fmt.Println("Network Namespace Isolation:")
+		fmt.Println("  By default, devices are created in a dedicated network namespace ('opensim')")
+		fmt.Println("  to prevent systemd-networkd from consuming excessive CPU/memory with many devices.")
+		fmt.Println("  External machines can still access devices via static routes to this host.")
+		fmt.Println("  Use -no-namespace to disable this (not recommended for 1000+ devices).")
+		fmt.Println()
 		fmt.Println("Examples:")
 		fmt.Printf("  %s                                                    # Start server only\n", os.Args[0])
 		fmt.Printf("  %s -auto-start-ip 192.168.100.1 -auto-count 5       # Auto-create 5 devices\n", os.Args[0])
 		fmt.Printf("  %s -auto-start-ip 10.10.10.1 -auto-count 3 -port 9090  # Custom port\n", os.Args[0])
-		fmt.Printf("  %s -auto-start-ip 192.168.100.1 -auto-count 10000       # 10K devices\n", os.Args[0])
+		fmt.Printf("  %s -auto-start-ip 192.168.100.1 -auto-count 30000      # 30K devices (uses namespace)\n", os.Args[0])
+		fmt.Printf("  %s -auto-start-ip 192.168.100.1 -auto-count 100 -no-namespace  # Disable namespace\n", os.Args[0])
 		fmt.Printf("  %s -auto-start-ip 192.168.100.1 -auto-count 2 \\      # SNMPv3 with MD5 auth\n", os.Args[0])
 		fmt.Printf("    -snmpv3-engine-id 800000090300AABBCCDD -snmpv3-auth md5\n")
-		fmt.Printf("  %s -auto-start-ip 192.168.100.1 -auto-count 1 \\      # SNMPv3 with privacy\n", os.Args[0])
-		fmt.Printf("    -snmpv3-engine-id 800000090300AABBCCDD -snmpv3-auth sha1 -snmpv3-priv des\n")
 		fmt.Println()
 		return
 	}
@@ -109,8 +138,12 @@ func main() {
 		log.Println("Please run with: sudo ./simulator")
 	}
 
-	// Initialize manager
-	manager = NewSimulatorManager()
+	// Initialize manager with namespace support (unless disabled)
+	useNamespace := !*noNamespace
+	manager = NewSimulatorManagerWithOptions(useNamespace)
+
+	// Setup signal handler for graceful shutdown
+	setupSignalHandler()
 
 	// Load world cities from CSV file
 	if err := loadWorldCities(); err != nil {

@@ -31,6 +31,11 @@ import (
 
 // SimulatorManager implementation
 func NewSimulatorManager() *SimulatorManager {
+	return NewSimulatorManagerWithOptions(true) // Default: use namespace isolation
+}
+
+// NewSimulatorManagerWithOptions creates a manager with configurable namespace isolation
+func NewSimulatorManagerWithOptions(useNamespace bool) *SimulatorManager {
 	// Initialize random seed once at startup
 	mathrand.Seed(time.Now().UnixNano())
 
@@ -39,6 +44,7 @@ func NewSimulatorManager() *SimulatorManager {
 		nextTunIndex:     0,
 		resourcesCache:   make(map[string]*DeviceResources),
 		tunInterfacePool: make(map[string]*TunInterface),
+		useNamespace:     useNamespace,
 	}
 	// Initialize atomic values
 	sm.isPreAllocating.Store(false)
@@ -46,6 +52,19 @@ func NewSimulatorManager() *SimulatorManager {
 	sm.isCreatingDevices.Store(false)
 	sm.deviceCreateProgress.Store(0)
 	sm.deviceCreateTotal.Store(0)
+
+	// Initialize network namespace for device isolation
+	if useNamespace {
+		ns, err := CreateNetNamespace()
+		if err != nil {
+			log.Printf("WARNING: Failed to create network namespace: %v", err)
+			log.Printf("Falling back to root namespace (systemd-networkd may consume resources)")
+			sm.useNamespace = false
+		} else {
+			sm.netNamespace = ns
+			log.Printf("Network namespace '%s' active - devices isolated from systemd-networkd", NETNS_NAME)
+		}
+	}
 
 	// Pre-generate shared SSH host key for all devices
 	sm.generateSharedSSHKey()
@@ -172,8 +191,15 @@ func (sm *SimulatorManager) DeleteAllDevices() error {
 
 	// Bulk delete TUN interfaces for better performance
 	if len(tunInterfaces) > 0 {
-		if err := sm.bulkDeleteTunInterfaces(tunInterfaces); err != nil {
-			errors = append(errors, fmt.Sprintf("bulk TUN deletion: %v", err))
+		if sm.useNamespace && sm.netNamespace != nil {
+			// Delete interfaces in namespace
+			if err := sm.bulkDeleteTunInterfacesInNamespace(tunInterfaces); err != nil {
+				errors = append(errors, fmt.Sprintf("bulk TUN deletion in namespace: %v", err))
+			}
+		} else {
+			if err := sm.bulkDeleteTunInterfaces(tunInterfaces); err != nil {
+				errors = append(errors, fmt.Sprintf("bulk TUN deletion: %v", err))
+			}
 		}
 	}
 
@@ -184,4 +210,51 @@ func (sm *SimulatorManager) DeleteAllDevices() error {
 		return fmt.Errorf("errors deleting devices: %s", strings.Join(errors, ", "))
 	}
 	return nil
+}
+
+// Shutdown cleans up all resources including the network namespace
+func (sm *SimulatorManager) Shutdown() error {
+	log.Println("Shutting down simulator manager...")
+
+	// Delete all devices first
+	if err := sm.DeleteAllDevices(); err != nil {
+		log.Printf("Warning: errors deleting devices during shutdown: %v", err)
+	}
+
+	// Cleanup pre-allocated interfaces
+	sm.CleanupPreAllocatedInterfaces()
+
+	// Cleanup network namespace
+	if sm.netNamespace != nil {
+		if err := sm.netNamespace.Close(); err != nil {
+			log.Printf("Warning: failed to close network namespace: %v", err)
+		}
+		sm.netNamespace = nil
+	}
+
+	log.Println("Simulator manager shutdown complete")
+	return nil
+}
+
+// SetupRoutesForDevices adds host routes to make devices accessible from external machines
+func (sm *SimulatorManager) SetupRoutesForDevices(startIP string, count int, netmask string) error {
+	if !sm.useNamespace || sm.netNamespace == nil {
+		// No namespace, routes not needed (interfaces are in root namespace)
+		return nil
+	}
+
+	return sm.netNamespace.AddRouteForDevices(startIP, count, netmask)
+}
+
+// IsUsingNamespace returns whether namespace isolation is active
+func (sm *SimulatorManager) IsUsingNamespace() bool {
+	return sm.useNamespace && sm.netNamespace != nil
+}
+
+// GetNamespaceName returns the namespace name if active
+func (sm *SimulatorManager) GetNamespaceName() string {
+	if sm.netNamespace != nil {
+		return sm.netNamespace.Name
+	}
+	return ""
 }

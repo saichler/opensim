@@ -175,9 +175,14 @@ func (sm *SimulatorManager) CreateDevicesWithOptions(startIP string, count int, 
 				tunIP := make(net.IP, len(currentIP))
 				copy(tunIP, currentIP)
 
-				tunIface, err = createTunInterface(tunName, tunIP, netmask)
+				// Create TUN interface (in namespace if enabled)
+				if sm.useNamespace && sm.netNamespace != nil {
+					tunIface, err = createTunInterfaceInNamespaceViaExec(sm.netNamespace.Name, tunName, tunIP, netmask)
+				} else {
+					tunIface, err = createTunInterface(tunName, tunIP, netmask)
+				}
 				if err != nil {
-					// log.Printf("Failed to create TUN interface for %s: %v", deviceID, err)
+					log.Printf("Failed to create TUN interface %s for %s: %v", tunName, deviceID, err)
 					sm.mu.Lock()
 					sm.incrementIP()
 					sm.mu.Unlock()
@@ -228,7 +233,7 @@ func (sm *SimulatorManager) CreateDevicesWithOptions(startIP string, count int, 
 
 			// Start device services
 			if err := device.Start(); err != nil {
-				// log.Printf("Failed to start device %s: %v", deviceID, err)
+				log.Printf("Failed to start device %s: %v", deviceID, err)
 				device.Stop() // Clean up
 				sm.mu.Lock()
 				sm.incrementIP()
@@ -278,6 +283,15 @@ func (sm *SimulatorManager) CreateDevicesWithOptions(startIP string, count int, 
 	}
 
 	log.Printf("Successfully created %d out of %d requested devices", successCount, count)
+
+	// Setup host routes for external access if using namespace
+	if sm.useNamespace && sm.netNamespace != nil && successCount > 0 {
+		log.Printf("Setting up host routes for external access...")
+		if err := sm.SetupRoutesForDevices(startIP, successCount, netmask); err != nil {
+			log.Printf("Warning: failed to setup some routes: %v", err)
+		}
+	}
+
 	return nil
 }
 
@@ -380,9 +394,14 @@ func (sm *SimulatorManager) createSingleDevice(deviceIndex int, deviceIP net.IP,
 		tunName := sm.getNextTunName()
 		sm.mu.Unlock()
 		var err error
-		tunIface, err = createTunInterface(tunName, deviceIP, netmask)
+		// Create TUN interface (in namespace if enabled)
+		if sm.useNamespace && sm.netNamespace != nil {
+			tunIface, err = createTunInterfaceInNamespaceViaExec(sm.netNamespace.Name, tunName, deviceIP, netmask)
+		} else {
+			tunIface, err = createTunInterface(tunName, deviceIP, netmask)
+		}
 		if err != nil {
-			// log.Printf("Failed to create TUN interface for %s: %v", deviceID, err)
+			log.Printf("Failed to create TUN interface %s for device %s: %v", tunName, deviceID, err)
 			return false
 		}
 	}
@@ -419,6 +438,7 @@ func (sm *SimulatorManager) createSingleDevice(deviceIndex int, deviceIP net.IP,
 
 	// Start device services
 	if err := device.Start(); err != nil {
+		log.Printf("Failed to start device %s: %v", deviceID, err)
 		device.Stop() // Clean up
 		return false
 	}

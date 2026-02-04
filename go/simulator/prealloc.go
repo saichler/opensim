@@ -84,8 +84,14 @@ func (sm *SimulatorManager) PreAllocateTunInterfaces(poolSize int, maxWorkers in
 			// Generate unique interface name using the current nextTunIndex offset
 			tunName := fmt.Sprintf("%s%d", TUN_DEVICE_PREFIX, sm.nextTunIndex+interfaceIndex)
 
-			// Create TUN interface
-			tunIface, err := createTunInterface(tunName, ip, netmask)
+			// Create TUN interface (in namespace if enabled)
+			var tunIface *TunInterface
+			var err error
+			if sm.useNamespace && sm.netNamespace != nil {
+				tunIface, err = createTunInterfaceInNamespaceViaExec(sm.netNamespace.Name, tunName, ip, netmask)
+			} else {
+				tunIface, err = createTunInterface(tunName, ip, netmask)
+			}
 			if err != nil {
 				mu.Lock()
 				errors = append(errors, fmt.Errorf("failed to create interface %s: %v", tunName, err))
@@ -303,7 +309,13 @@ func (sm *SimulatorManager) CleanupPreAllocatedInterfaces() {
 
 	// Bulk delete the interfaces
 	if len(interfaceNames) > 0 {
-		if err := sm.bulkDeleteTunInterfaces(interfaceNames); err != nil {
+		var err error
+		if sm.useNamespace && sm.netNamespace != nil {
+			err = sm.bulkDeleteTunInterfacesInNamespace(interfaceNames)
+		} else {
+			err = sm.bulkDeleteTunInterfaces(interfaceNames)
+		}
+		if err != nil {
 			log.Printf("Warning: bulk cleanup failed, some interfaces may remain: %v", err)
 		}
 	}
@@ -312,4 +324,79 @@ func (sm *SimulatorManager) CleanupPreAllocatedInterfaces() {
 	sm.tunInterfacePool = make(map[string]*TunInterface)
 	sm.tunPoolSize = 0
 	log.Printf("Cleaned up all %d pre-allocated interfaces", len(interfaceNames))
+}
+
+// bulkDeleteTunInterfacesInNamespace deletes TUN interfaces inside the network namespace
+func (sm *SimulatorManager) bulkDeleteTunInterfacesInNamespace(interfaceNames []string) error {
+	if len(interfaceNames) == 0 {
+		return nil
+	}
+
+	if sm.netNamespace == nil {
+		return fmt.Errorf("no namespace available")
+	}
+
+	log.Printf("Bulk deleting %d TUN interfaces in namespace '%s'...", len(interfaceNames), sm.netNamespace.Name)
+	startTime := time.Now()
+
+	// Method 1: Use ip netns exec with batch file
+	batchFile, err := os.CreateTemp("", "tun_delete_ns_batch_*.txt")
+	if err != nil {
+		return sm.deleteTunInterfacesInNamespaceParallel(interfaceNames)
+	}
+	defer os.Remove(batchFile.Name())
+	defer batchFile.Close()
+
+	// Write all deletion commands to the batch file
+	for _, ifName := range interfaceNames {
+		if _, err := fmt.Fprintf(batchFile, "link delete %s\n", ifName); err != nil {
+			return sm.deleteTunInterfacesInNamespaceParallel(interfaceNames)
+		}
+	}
+	batchFile.Sync()
+
+	// Execute the batch file inside the namespace
+	cmd := exec.Command("ip", "netns", "exec", sm.netNamespace.Name, "ip", "-batch", batchFile.Name())
+	if output, err := cmd.CombinedOutput(); err != nil {
+		log.Printf("Batch deletion in namespace failed: %v, output: %s", err, string(output))
+		return sm.deleteTunInterfacesInNamespaceParallel(interfaceNames)
+	}
+
+	elapsed := time.Since(startTime)
+	log.Printf("Bulk deleted %d TUN interfaces in namespace in %v", len(interfaceNames), elapsed)
+	return nil
+}
+
+// deleteTunInterfacesInNamespaceParallel deletes interfaces in namespace in parallel
+func (sm *SimulatorManager) deleteTunInterfacesInNamespaceParallel(interfaceNames []string) error {
+	const maxWorkers = 50
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	var errors []string
+
+	sem := make(chan struct{}, maxWorkers)
+
+	for _, ifName := range interfaceNames {
+		wg.Add(1)
+		go func(interfaceName string) {
+			defer wg.Done()
+
+			sem <- struct{}{}
+			defer func() { <-sem }()
+
+			cmd := exec.Command("ip", "netns", "exec", sm.netNamespace.Name, "ip", "link", "delete", interfaceName)
+			if err := cmd.Run(); err != nil {
+				mu.Lock()
+				errors = append(errors, fmt.Sprintf("%s: %v", interfaceName, err))
+				mu.Unlock()
+			}
+		}(ifName)
+	}
+
+	wg.Wait()
+
+	if len(errors) > 0 {
+		return fmt.Errorf("parallel deletion errors in namespace: %s", strings.Join(errors, ", "))
+	}
+	return nil
 }
