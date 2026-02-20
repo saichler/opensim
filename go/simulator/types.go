@@ -78,6 +78,7 @@ type DeviceSimulator struct {
 	// Cached frequently accessed values (lock-free)
 	cachedSysName     atomic.Value // Stores string
 	cachedSysLocation atomic.Value // Stores string
+	metricsCycler *MetricsCycler   // Per-device cycling CPU/memory metrics
 	running      bool
 	mu           sync.RWMutex
 }

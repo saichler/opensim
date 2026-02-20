@@ -37,6 +37,13 @@ func (s *SNMPServer) findResponse(oid string) string {
 		return s.device.sysName // Fallback
 	}
 
+	// Handle dynamic CPU/memory metric OIDs - per-device cycling values
+	if s.device.metricsCycler != nil {
+		if val := s.getMetricValue(oid); val != "" {
+			return val
+		}
+	}
+
 	// Fast O(1) lookup using lock-free sync.Map
 	if s.device.resources.oidIndex != nil {
 		if response, exists := s.device.resources.oidIndex.Load(oid); exists {
@@ -138,8 +145,8 @@ func (s *SNMPServer) findNextOID(currentOID string) (string, string) {
 		}
 	}
 
-	// Check candidates: next static OID, dynamic sysName, and dynamic sysLocation
-	candidates := make([]struct{ oid, resp string }, 0, 3)
+	// Check candidates: next static OID, dynamic sysName/sysLocation, and metric OIDs
+	candidates := make([]struct{ oid, resp string }, 0, 8)
 
 	// Add next static OID if found
 	if left < len(sortedOIDs) {
@@ -167,6 +174,23 @@ func (s *SNMPServer) findNextOID(currentOID string) (string, string) {
 			oid:  sysLocationOID,
 			resp: cachedSysLocation,
 		})
+	}
+
+	// Add dynamic metric OIDs as candidates for walks
+	if s.device.metricsCycler != nil {
+		metricOIDs := GetAllMetricOIDsForDevice(s.device.resourceFile)
+		for _, mOID := range metricOIDs {
+			if compareOIDs(mOID, currentOID) > 0 {
+				val := s.getMetricValue(mOID)
+				if val != "" {
+					candidates = append(candidates, struct{ oid, resp string }{
+						oid:  mOID,
+						resp: val,
+					})
+					break // Only need the first (smallest) metric OID greater than current
+				}
+			}
+		}
 	}
 
 	if len(candidates) == 0 {
@@ -305,4 +329,30 @@ func (s *SNMPServer) parseGetBulkParams(data []byte) (int, int) {
 	//	s.device.ID, nonRepeaters, maxRepetitions)
 
 	return nonRepeaters, maxRepetitions
+}
+
+// getMetricValue returns the cycling metric value for a dynamic OID,
+// or empty string if the OID is not a metric OID for this device.
+func (s *SNMPServer) getMetricValue(oid string) string {
+	metricOIDs := GetMetricOIDs(s.device.resourceFile)
+	if metricOIDs == nil {
+		return ""
+	}
+	metricType, exists := metricOIDs[oid]
+	if !exists {
+		return ""
+	}
+	switch metricType {
+	case MetricCPUPercent:
+		return s.device.metricsCycler.GetCPUPercent()
+	case MetricMemUsed:
+		return s.device.metricsCycler.GetMemUsed()
+	case MetricMemFree:
+		return s.device.metricsCycler.GetMemFree()
+	case MetricMemTotal:
+		return s.device.metricsCycler.GetMemTotal()
+	case MetricMemUsedPct:
+		return s.device.metricsCycler.GetMemUsedPercent()
+	}
+	return ""
 }

@@ -14,6 +14,7 @@ require (
 	github.com/saichler/l8web v0.0.0-20251206181027-3d75edb1ca07
 	github.com/saichler/probler v0.0.0-20251204194016-20f60ad73c63
 	golang.org/x/crypto v0.45.0
+	golang.org/x/sys v0.38.0
 	google.golang.org/protobuf v1.36.10
 )
 
@@ -23,5 +24,4 @@ require (
 	github.com/saichler/l8ql v0.0.0-20251030150208-8a58a1d7ac8a // indirect
 	github.com/saichler/l8services v0.0.0-20251202035558-7b9c570e0807 // indirect
 	github.com/saichler/l8srlz v0.0.0-20251115151807-11c9349faf9a // indirect
-	golang.org/x/sys v0.38.0 // indirect
 )
