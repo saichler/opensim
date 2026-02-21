@@ -136,6 +136,8 @@ var vendorOIDs = map[string]map[string]MetricOIDType{
 		"1.3.6.1.4.1.674.10892.5.4.200.10.1.12.1.1": MetricCPUPercent,
 		"1.3.6.1.4.1.674.10892.5.4.700.20.1.8.1.1":  MetricMemTotal,
 		"1.3.6.1.4.1.674.10892.5.4.700.20.1.6.1.1":  MetricTemperature, // systemBoardInletTemp
+		"1.3.6.1.2.1.25.2.3.1.5.1":                   MetricMemTotal,    // hrStorageSize (physical memory)
+		"1.3.6.1.2.1.25.2.3.1.6.1":                   MetricMemUsed,     // hrStorageUsed (physical memory)
 	},
 
 	// --- HPE iLO ---
