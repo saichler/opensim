@@ -24,14 +24,16 @@ import (
 
 const numDataPoints = 100
 
-// MetricsCycler holds 100 pre-generated CPU and memory data points per device.
+// MetricsCycler holds 100 pre-generated CPU, memory, and temperature data points per device.
 // Each SNMP GET advances the index, round-robining after 100 points.
 type MetricsCycler struct {
-	cpuPoints [numDataPoints]int   // CPU utilization % (0-100)
-	memUsed   [numDataPoints]int64 // Memory used in KB
-	memTotal  int64                // Total memory in KB (constant)
-	cpuIndex  uint32               // atomic, current position
-	memIndex  uint32               // atomic, current position
+	cpuPoints  [numDataPoints]int   // CPU utilization % (0-100)
+	memUsed    [numDataPoints]int64 // Memory used in KB
+	tempPoints [numDataPoints]int   // Temperature in Celsius
+	memTotal   int64                // Total memory in KB (constant)
+	cpuIndex   uint32               // atomic, current position
+	memIndex   uint32               // atomic, current position
+	tempIndex  uint32               // atomic, current position
 }
 
 // NewMetricsCycler creates a cycler with 100 data points generated from the
@@ -78,6 +80,21 @@ func NewMetricsCycler(seed int64, profile DeviceProfile) *MetricsCycler {
 		c.memUsed[i] = int64(memPct / 100.0 * float64(profile.MemTotalKB))
 	}
 
+	// Generate temperature curve: slow sine wave with small jitter
+	tempBase := profile.TempBaseMin + rng.Intn(profile.TempBaseMax-profile.TempBaseMin+1)
+	tempPhase1 := rng.Float64() * 2 * math.Pi
+	tempPhase2 := rng.Float64() * 2 * math.Pi
+
+	for i := 0; i < numDataPoints; i++ {
+		t := float64(i) / float64(numDataPoints) * 2 * math.Pi
+		wave1 := math.Sin(t*0.6+tempPhase1) * float64(profile.TempSpike) * 0.6
+		wave2 := math.Sin(t*1.9+tempPhase2) * float64(profile.TempSpike) * 0.3
+		jitter := float64(rng.Intn(3) - 1) // -1 to +1
+
+		temp := float64(tempBase) + wave1 + wave2 + jitter
+		c.tempPoints[i] = clampInt(int(math.Round(temp)), 15, 95)
+	}
+
 	return c
 }
 
@@ -115,6 +132,12 @@ func (c *MetricsCycler) GetMemUsedPercent() string {
 	used := c.memUsed[idx%numDataPoints]
 	pct := float64(used) / float64(c.memTotal) * 100
 	return fmt.Sprintf("%d", int(math.Round(pct)))
+}
+
+// GetTemperature returns the current temperature in Celsius as a string and advances the index.
+func (c *MetricsCycler) GetTemperature() string {
+	idx := atomic.AddUint32(&c.tempIndex, 1) - 1
+	return fmt.Sprintf("%d", c.tempPoints[idx%numDataPoints])
 }
 
 func clampInt(val, min, max int) int {

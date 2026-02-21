@@ -15,7 +15,7 @@
 
 package main
 
-// DeviceProfile defines CPU/memory metric parameters for a device category.
+// DeviceProfile defines CPU/memory/temperature metric parameters for a device category.
 type DeviceProfile struct {
 	CPUBaseMin  int   // Minimum base CPU% (e.g., 10)
 	CPUBaseMax  int   // Maximum base CPU% (e.g., 40)
@@ -24,42 +24,51 @@ type DeviceProfile struct {
 	MemBaseMin  int   // Minimum base memory utilization %
 	MemBaseMax  int   // Maximum base memory utilization %
 	MemVariance int   // Memory fluctuation range %
+	TempBaseMin int   // Minimum base temperature in Celsius
+	TempBaseMax int   // Maximum base temperature in Celsius
+	TempSpike   int   // Max amplitude of temperature spikes
 }
 
 var profileCoreRouter = DeviceProfile{
 	CPUBaseMin: 15, CPUBaseMax: 45, CPUSpike: 20,
 	MemTotalKB: 16 * 1024 * 1024, // 16 GB
 	MemBaseMin: 50, MemBaseMax: 80, MemVariance: 10,
+	TempBaseMin: 38, TempBaseMax: 52, TempSpike: 6,
 }
 
 var profileEdgeRouter = DeviceProfile{
 	CPUBaseMin: 10, CPUBaseMax: 35, CPUSpike: 18,
 	MemTotalKB: 8 * 1024 * 1024, // 8 GB
 	MemBaseMin: 40, MemBaseMax: 70, MemVariance: 10,
+	TempBaseMin: 32, TempBaseMax: 44, TempSpike: 5,
 }
 
 var profileDCSwitch = DeviceProfile{
 	CPUBaseMin: 8, CPUBaseMax: 30, CPUSpike: 15,
 	MemTotalKB: 16 * 1024 * 1024, // 16 GB
 	MemBaseMin: 45, MemBaseMax: 75, MemVariance: 8,
+	TempBaseMin: 28, TempBaseMax: 40, TempSpike: 4,
 }
 
 var profileCampusSwitch = DeviceProfile{
 	CPUBaseMin: 5, CPUBaseMax: 25, CPUSpike: 12,
 	MemTotalKB: 4 * 1024 * 1024, // 4 GB
 	MemBaseMin: 35, MemBaseMax: 65, MemVariance: 8,
+	TempBaseMin: 26, TempBaseMax: 38, TempSpike: 4,
 }
 
 var profileFirewall = DeviceProfile{
 	CPUBaseMin: 25, CPUBaseMax: 60, CPUSpike: 25,
 	MemTotalKB: 8 * 1024 * 1024, // 8 GB
 	MemBaseMin: 55, MemBaseMax: 85, MemVariance: 10,
+	TempBaseMin: 36, TempBaseMax: 54, TempSpike: 7,
 }
 
 var profileServer = DeviceProfile{
 	CPUBaseMin: 20, CPUBaseMax: 50, CPUSpike: 22,
 	MemTotalKB: 32 * 1024 * 1024, // 32 GB
 	MemBaseMin: 50, MemBaseMax: 80, MemVariance: 10,
+	TempBaseMin: 30, TempBaseMax: 55, TempSpike: 8,
 }
 
 // deviceProfileMap maps resource file names to their device profiles.

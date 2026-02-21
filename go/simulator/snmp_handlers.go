@@ -353,6 +353,8 @@ func (s *SNMPServer) getMetricValue(oid string) string {
 		return s.device.metricsCycler.GetMemTotal()
 	case MetricMemUsedPct:
 		return s.device.metricsCycler.GetMemUsedPercent()
+	case MetricTemperature:
+		return s.device.metricsCycler.GetTemperature()
 	}
 	return ""
 }
