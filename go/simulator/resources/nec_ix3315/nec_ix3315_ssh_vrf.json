@@ -1,0 +1,13 @@
+{
+  "snmp": null,
+  "ssh": [
+    {
+      "command": "show ip vrf",
+      "response": "VRF Name                 RD               Interfaces\nCUSTOMER-A               65001:100        GigabitEthernet1.100\nMGMT                     65001:999        GigabitEthernet2.0\nINTERNET                 65001:200        GigabitEthernet1.200"
+    },
+    {
+      "command": "show ip vrf detail",
+      "response": "VRF CUSTOMER-A\n  Route Distinguisher: 65001:100\n  Description: Customer A VPN\n  Interfaces:\n    GigabitEthernet1.100       up\n  Import Route Target:\n    65001:100\n  Export Route Target:\n    65001:100\n  Maximum Routes: not set\n\nVRF MGMT\n  Route Distinguisher: 65001:999\n  Description: Management VRF\n  Interfaces:\n    GigabitEthernet2.0         up\n  Import Route Target:\n    65001:999\n  Export Route Target:\n    65001:999\n  Maximum Routes: not set\n\nVRF INTERNET\n  Route Distinguisher: 65001:200\n  Description: Internet Gateway VRF\n  Interfaces:\n    GigabitEthernet1.200       up\n  Import Route Target:\n    65001:200\n  Export Route Target:\n    65001:200\n  Maximum Routes: not set"
+    }
+  ]
+}

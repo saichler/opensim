@@ -1,0 +1,13 @@
+{
+  "snmp": null,
+  "ssh": [
+    {
+      "command": "show vrf",
+      "response": "VRF-Name                           VRF-ID State   Reason                        \nCUSTOMER-A                              1 Up      --                            \nMGMT                                    2 Up      --                            \nINTERNET                                3 Up      --                            \ndefault                                 0 Up      --                            \nmanagement                              4 Up      --                            "
+    },
+    {
+      "command": "show vrf detail",
+      "response": "VRF-Name: CUSTOMER-A, VRF-ID: 1, State: Up\n    VPNID: unknown\n    RD: 65001:100\n    Max Routes: 0  Mid-Threshold: 0\n    Table-ID: 0x00000001, AF: IPv4, Fwd-ID: 0x00000001\n    Table-ID: 0x80000001, AF: IPv6, Fwd-ID: 0x80000001\n    Import RT list:\n        65001:100\n    Export RT list:\n        65001:100\n    Interfaces:\n        Vlan100\n\nVRF-Name: MGMT, VRF-ID: 2, State: Up\n    VPNID: unknown\n    RD: 65001:999\n    Max Routes: 0  Mid-Threshold: 0\n    Table-ID: 0x00000002, AF: IPv4, Fwd-ID: 0x00000002\n    Table-ID: 0x80000002, AF: IPv6, Fwd-ID: 0x80000002\n    Import RT list:\n        65001:999\n    Export RT list:\n        65001:999\n    Interfaces:\n        Vlan999\n\nVRF-Name: INTERNET, VRF-ID: 3, State: Up\n    VPNID: unknown\n    RD: 65001:200\n    Max Routes: 0  Mid-Threshold: 0\n    Table-ID: 0x00000003, AF: IPv4, Fwd-ID: 0x00000003\n    Table-ID: 0x80000003, AF: IPv6, Fwd-ID: 0x80000003\n    Import RT list:\n        65001:200\n    Export RT list:\n        65001:200\n    Interfaces:\n        Vlan200"
+    }
+  ]
+}

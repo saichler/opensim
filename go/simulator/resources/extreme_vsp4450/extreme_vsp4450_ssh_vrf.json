@@ -1,0 +1,13 @@
+{
+  "snmp": null,
+  "ssh": [
+    {
+      "command": "show ip vrf",
+      "response": "================================================================================\n                          VRF Information\n================================================================================\nVrf Name            Vrf Id   Ipv4 Max Routes  Ipv4 Mid Routes  State\n--------------------------------------------------------------------------------\nCUSTOMER-A          1        5000             2500             enabled\nMGMT                2        1000             500              enabled\nINTERNET            3        10000            5000             enabled\n--------------------------------------------------------------------------------\nTotal VRFs: 3"
+    },
+    {
+      "command": "show ip vrf detail",
+      "response": "================================================================================\n                        VRF Detail Information\n================================================================================\nVRF Name: CUSTOMER-A\n  VRF Id: 1\n  State: enabled\n  RD: 65001:100\n  RT Import: 65001:100\n  RT Export: 65001:100\n  Interfaces: 1/1\n  IPv4 Max Routes: 5000\n  IPv4 Mid Routes: 2500\n  IPv4 Active Routes: 12\n  Description: Customer A VPN\n\nVRF Name: MGMT\n  VRF Id: 2\n  State: enabled\n  RD: 65001:999\n  RT Import: 65001:999\n  RT Export: 65001:999\n  Interfaces: mgmt\n  IPv4 Max Routes: 1000\n  IPv4 Mid Routes: 500\n  IPv4 Active Routes: 3\n  Description: Management VRF\n\nVRF Name: INTERNET\n  VRF Id: 3\n  State: enabled\n  RD: 65001:200\n  RT Import: 65001:200\n  RT Export: 65001:200\n  Interfaces: 1/9\n  IPv4 Max Routes: 10000\n  IPv4 Mid Routes: 5000\n  IPv4 Active Routes: 8\n  Description: Internet Gateway VRF"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "snmp": null,
+  "ssh": [
+    {
+      "command": "show ip vrf",
+      "response": "  Name                             Default RD            Interfaces\n  CUSTOMER-A                       65001:100              Gi1/0/1.100\n  MGMT                             65001:999              Vlan999\n  INTERNET                         65001:200              Gi1/0/2.200"
+    },
+    {
+      "command": "show ip vrf detail",
+      "response": "VRF CUSTOMER-A (VRF Id = 1); default RD 65001:100; default VPNID <not set>\n  New CLI format, supports IPv4 and IPv6\n  Flags: 0x180C\n  Interfaces:\n    Gi1/0/1.100\nAddress family ipv4 unicast (Table ID = 0x1):\n  Export VPN route-target communities\n    RT:65001:100\n  Import VPN route-target communities\n    RT:65001:100\n  No import route-map\n  No global export route-map\n  No export route-map\n  VRF label distribution protocol: not configured\n  VRF label allocation mode: per-prefix\n\nVRF MGMT (VRF Id = 2); default RD 65001:999; default VPNID <not set>\n  New CLI format, supports IPv4 and IPv6\n  Flags: 0x180C\n  Interfaces:\n    Vlan999\nAddress family ipv4 unicast (Table ID = 0x2):\n  Export VPN route-target communities\n    RT:65001:999\n  Import VPN route-target communities\n    RT:65001:999\n  No import route-map\n  No global export route-map\n  No export route-map\n  VRF label distribution protocol: not configured\n  VRF label allocation mode: per-prefix\n\nVRF INTERNET (VRF Id = 3); default RD 65001:200; default VPNID <not set>\n  New CLI format, supports IPv4 and IPv6\n  Flags: 0x180C\n  Interfaces:\n    Gi1/0/2.200\nAddress family ipv4 unicast (Table ID = 0x3):\n  Export VPN route-target communities\n    RT:65001:200\n  Import VPN route-target communities\n    RT:65001:200\n  No import route-map\n  No global export route-map\n  No export route-map\n  VRF label distribution protocol: not configured\n  VRF label allocation mode: per-prefix"
+    }
+  ]
+}
