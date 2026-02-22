@@ -136,7 +136,7 @@ func (s *SSHServer) handleSession(channel ssh.Channel, requests <-chan *ssh.Requ
 	go func() {
 		for req := range requests {
 			switch req.Type {
-			case "shell", "exec":
+			case "shell", "exec", "pty-req", "window-change":
 				req.Reply(true, nil)
 			default:
 				req.Reply(false, nil)
