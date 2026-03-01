@@ -202,8 +202,8 @@ func (s *SNMPServer) encryptScopedPDU(scopedPDU []byte, requestMsg *SNMPv3Messag
 
 // encryptDES encrypts data using DES
 func (s *SNMPServer) encryptDES(data []byte) ([]byte, []byte, error) {
-	// Generate DES key from privacy password
-	key := s.generateDESKey()
+	// Use cached DES key from privacy password
+	key := s.getDESKey()
 
 	// Generate random IV (8 bytes for DES)
 	iv := make([]byte, 8)
@@ -224,10 +224,19 @@ func (s *SNMPServer) encryptDES(data []byte) ([]byte, []byte, error) {
 	return encrypted, iv, nil
 }
 
+// getAESKey returns the cached AES key, computing and caching it on first call
+func (s *SNMPServer) getAESKey() []byte {
+	if s.cachedAESKey != nil {
+		return s.cachedAESKey
+	}
+	s.cachedAESKey = s.generateAESKey(s.v3Config.Password)
+	return s.cachedAESKey
+}
+
 // encryptAES128 encrypts data using AES-128-CFB
 func (s *SNMPServer) encryptAES128(data []byte) ([]byte, []byte, error) {
-	// Generate AES key from password
-	aesKey := s.generateAESKey(s.v3Config.Password)
+	// Use cached AES key from password
+	aesKey := s.getAESKey()
 
 	// Create AES cipher
 	block, err := aes.NewCipher(aesKey)
@@ -277,8 +286,8 @@ func (s *SNMPServer) decryptAES128(encrypted []byte, privParams []byte) ([]byte,
 	// Privacy parameters for last 8 bytes
 	copy(iv[8:16], privParams)
 
-	// Generate AES key from password
-	aesKey := s.generateAESKey(s.v3Config.Password)
+	// Use cached AES key from password
+	aesKey := s.getAESKey()
 
 	// Create AES cipher
 	block, err := aes.NewCipher(aesKey)

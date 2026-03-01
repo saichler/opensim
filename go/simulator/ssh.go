@@ -25,9 +25,12 @@ import (
 	"log"
 	"net"
 	"strings"
+	"time"
 
 	"golang.org/x/crypto/ssh"
 )
+
+const sshIdleTimeout = 5 * time.Minute
 
 // SSH Server implementation
 func (s *SSHServer) Start() error {
@@ -102,11 +105,16 @@ func (s *SSHServer) handleConnections() {
 }
 
 func (s *SSHServer) handleConnection(conn net.Conn) {
+	// Set initial idle timeout — if no activity within this window, the connection closes
+	conn.SetDeadline(time.Now().Add(sshIdleTimeout))
 	defer conn.Close()
 
 	sshConn, channels, requests, err := ssh.NewServerConn(conn, s.config)
 	if err != nil {
-		log.Printf("SSH handshake error: %v", err)
+		// Don't log timeout-induced errors
+		if !isTimeoutError(err) {
+			log.Printf("SSH handshake error: %v", err)
+		}
 		return
 	}
 	defer sshConn.Close()
@@ -125,11 +133,19 @@ func (s *SSHServer) handleConnection(conn net.Conn) {
 			continue
 		}
 
-		go s.handleSession(channel, requests)
+		go s.handleSession(channel, requests, conn)
 	}
 }
 
-func (s *SSHServer) handleSession(channel ssh.Channel, requests <-chan *ssh.Request) {
+// isTimeoutError checks if an error is a network timeout
+func isTimeoutError(err error) bool {
+	if netErr, ok := err.(net.Error); ok {
+		return netErr.Timeout()
+	}
+	return false
+}
+
+func (s *SSHServer) handleSession(channel ssh.Channel, requests <-chan *ssh.Request, conn net.Conn) {
 	defer channel.Close()
 
 	// Handle session requests
@@ -154,10 +170,13 @@ func (s *SSHServer) handleSession(channel ssh.Channel, requests <-chan *ssh.Requ
 		// Send prompt
 		channel.Write([]byte(fmt.Sprintf("%s> ", s.device.ID)))
 
-		// Read command
+		// Read command — scanner.Scan() will return false on idle timeout
 		if !scanner.Scan() {
 			break
 		}
+
+		// Reset idle timer on activity
+		conn.SetDeadline(time.Now().Add(sshIdleTimeout))
 
 		command := strings.TrimSpace(scanner.Text())
 		if command == "" {

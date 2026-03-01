@@ -371,14 +371,23 @@ func (s *SNMPServer) parseHexEngineID(hexEngineID string) ([]byte, error) {
 	return result, nil
 }
 
+// getDESKey returns the cached DES key, computing and caching it on first call
+func (s *SNMPServer) getDESKey() []byte {
+	if s.cachedDESKey != nil {
+		return s.cachedDESKey
+	}
+	s.cachedDESKey = s.generateDESKey()
+	return s.cachedDESKey
+}
+
 // decryptDES performs basic DES decryption (simplified for simulation)
 func (s *SNMPServer) decryptDES(encryptedData []byte, privParams []byte) ([]byte, error) {
 	if len(privParams) < 8 {
 		return nil, fmt.Errorf("invalid DES privacy parameters length: %d", len(privParams))
 	}
 
-	// Generate DES key from privacy password using RFC 3414 method
-	key := s.generateDESKey() // Use the same method as encryption
+	// Use cached DES key derived from privacy password using RFC 3414 method
+	key := s.getDESKey()
 	iv := privParams[:8]      // Use privacy parameters as IV
 
 	// log.Printf("SNMPv3: DES decryption - key: %d bytes, IV: %d bytes, data: %d bytes",

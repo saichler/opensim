@@ -167,6 +167,15 @@ func (sm *SimulatorManager) DeleteDevice(deviceID string) error {
 		// log.Printf("Error stopping device %s: %v", deviceID, err)
 	}
 
+	// Always close TUN FD on deletion, even for pre-allocated interfaces
+	if device.tunIface != nil && device.tunIface.PreAllocated {
+		device.tunIface.destroy()
+		// Remove from pre-allocated pool
+		sm.tunPoolMutex.Lock()
+		delete(sm.tunInterfacePool, device.IP.String())
+		sm.tunPoolMutex.Unlock()
+	}
+
 	delete(sm.devices, deviceID)
 	return nil
 }
@@ -183,8 +192,11 @@ func (sm *SimulatorManager) DeleteAllDevices() error {
 		if err := device.Stop(); err != nil {
 			errors = append(errors, fmt.Sprintf("%s: %v", deviceID, err))
 		}
-		// Collect TUN interface names for bulk deletion
-		if device.tunIface != nil && !device.tunIface.PreAllocated {
+		if device.tunIface != nil {
+			// Always close FD on deletion regardless of PreAllocated status
+			if device.tunIface.PreAllocated {
+				device.tunIface.destroy()
+			}
 			tunInterfaces = append(tunInterfaces, device.tunIface.Name)
 		}
 	}
@@ -203,8 +215,11 @@ func (sm *SimulatorManager) DeleteAllDevices() error {
 		}
 	}
 
-	// Clear the devices map
+	// Clear the devices map and pre-allocated pool
 	sm.devices = make(map[string]*DeviceSimulator)
+	sm.tunPoolMutex.Lock()
+	sm.tunInterfacePool = make(map[string]*TunInterface)
+	sm.tunPoolMutex.Unlock()
 
 	if len(errors) > 0 {
 		return fmt.Errorf("errors deleting devices: %s", strings.Join(errors, ", "))

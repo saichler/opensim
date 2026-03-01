@@ -119,10 +119,12 @@ type SNMPv3SecurityParams struct {
 }
 
 type SNMPServer struct {
-	device    *DeviceSimulator
-	listener  *net.UDPConn
-	running   bool
-	v3Config  *SNMPv3Config
+	device       *DeviceSimulator
+	listener     *net.UDPConn
+	running      bool
+	v3Config     *SNMPv3Config
+	cachedDESKey []byte // cached result of generateDESKey()
+	cachedAESKey []byte // cached result of generateAESKey()
 }
 
 type SSHServer struct {

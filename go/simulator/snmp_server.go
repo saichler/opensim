@@ -18,7 +18,13 @@ package main
 import (
 	"log"
 	"net"
+	"sync"
 )
+
+// Pool for SNMP read buffers to avoid per-request allocation
+var snmpBufPool = sync.Pool{
+	New: func() interface{} { return make([]byte, 1024) },
+}
 
 // Helper function for minimum of two integers
 func min(a, b int) int {
@@ -61,17 +67,20 @@ func (s *SNMPServer) handleRequests() {
 			break
 		}
 
-		buffer := make([]byte, 1024)
+		buffer := snmpBufPool.Get().([]byte)
 		n, clientAddr, err := s.listener.ReadFromUDP(buffer)
 		if err != nil {
+			snmpBufPool.Put(buffer)
 			if s.running {
 				log.Printf("SNMP server error reading UDP: %v", err)
 			}
 			continue
 		}
 
-		// Handle each request concurrently to avoid blocking
-		go s.handleSingleRequest(buffer[:n], clientAddr)
+		// Process inline — SNMP is stateless UDP, handler is CPU-only.
+		// The UDP listener is per-device, so there's no cross-device contention.
+		s.handleSingleRequest(buffer[:n], clientAddr)
+		snmpBufPool.Put(buffer)
 	}
 }
 
