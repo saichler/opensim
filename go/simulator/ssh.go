@@ -16,7 +16,6 @@
 package main
 
 import (
-	"bufio"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -148,51 +147,101 @@ func isTimeoutError(err error) bool {
 func (s *SSHServer) handleSession(channel ssh.Channel, requests <-chan *ssh.Request, conn net.Conn) {
 	defer channel.Close()
 
+	shellReady := make(chan struct{}, 1)
+
 	// Handle session requests
 	go func() {
 		for req := range requests {
 			switch req.Type {
-			case "shell", "exec", "pty-req", "window-change":
+			case "pty-req", "window-change":
 				req.Reply(true, nil)
+			case "shell":
+				req.Reply(true, nil)
+				select {
+				case shellReady <- struct{}{}:
+				default:
+				}
+			case "exec":
+				req.Reply(true, nil)
+				select {
+				case shellReady <- struct{}{}:
+				default:
+				}
 			default:
 				req.Reply(false, nil)
 			}
 		}
 	}()
 
+	// Wait for shell or exec request before starting interactive session
+	select {
+	case <-shellReady:
+	case <-time.After(10 * time.Second):
+		return
+	}
+
 	// Send welcome message
-	welcome := fmt.Sprintf("Welcome to %s\nDevice Simulator SSH Server\n\n", s.device.ID)
+	welcome := fmt.Sprintf("\r\nWelcome to %s\r\nDevice Simulator SSH Server\r\n\r\n", s.device.ID)
 	channel.Write([]byte(welcome))
 
-	scanner := bufio.NewScanner(channel)
+	s.interactiveLoop(channel, conn)
+}
+
+func (s *SSHServer) interactiveLoop(channel ssh.Channel, conn net.Conn) {
+	buf := make([]byte, 1)
+	var line []byte
+
+	prompt := fmt.Sprintf("%s> ", s.device.ID)
+	channel.Write([]byte(prompt))
 
 	for {
-		// Send prompt
-		channel.Write([]byte(fmt.Sprintf("%s> ", s.device.ID)))
-
-		// Read command — scanner.Scan() will return false on idle timeout
-		if !scanner.Scan() {
+		n, err := channel.Read(buf)
+		if err != nil || n == 0 {
 			break
 		}
 
 		// Reset idle timer on activity
 		conn.SetDeadline(time.Now().Add(sshIdleTimeout))
 
-		command := strings.TrimSpace(scanner.Text())
-		if command == "" {
-			continue
+		b := buf[0]
+
+		switch {
+		case b == 3: // Ctrl-C
+			channel.Write([]byte("^C\r\n"))
+			line = nil
+			channel.Write([]byte(prompt))
+		case b == 4: // Ctrl-D
+			channel.Write([]byte("\r\nGoodbye!\r\n"))
+			return
+		case b == 127 || b == 8: // Backspace / Delete
+			if len(line) > 0 {
+				line = line[:len(line)-1]
+				channel.Write([]byte("\b \b"))
+			}
+		case b == '\r' || b == '\n':
+			channel.Write([]byte("\r\n"))
+			command := strings.TrimSpace(string(line))
+			line = nil
+
+			if command == "" {
+				channel.Write([]byte(prompt))
+				continue
+			}
+
+			if command == "exit" || command == "quit" {
+				channel.Write([]byte("Goodbye!\r\n"))
+				return
+			}
+
+			response := s.findCommandResponse(command)
+			// Convert \n to \r\n for proper terminal display
+			response = strings.ReplaceAll(response, "\n", "\r\n")
+			channel.Write([]byte(response + "\r\n\r\n"))
+			channel.Write([]byte(prompt))
+		default:
+			line = append(line, b)
+			channel.Write([]byte{b}) // Echo character back
 		}
-
-		if command == "exit" || command == "quit" {
-			channel.Write([]byte("Goodbye!\n"))
-			break
-		}
-
-		// Find response
-		response := s.findCommandResponse(command)
-		channel.Write([]byte(response + "\n\n"))
-
-		// log.Printf("SSH %s: %s -> %s", s.device.ID, command, strings.Split(response, "\n")[0])
 	}
 }
 

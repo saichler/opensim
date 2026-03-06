@@ -4,24 +4,24 @@ go 1.25.4
 
 require (
 	github.com/gorilla/mux v1.8.1
-	github.com/saichler/l8bus v0.0.0-20251202005543-ee483e2628d0
-	github.com/saichler/l8business v0.0.0-20251206140742-3476a2f87171
-	github.com/saichler/l8parser v0.0.0-20251202025738-1e71832c3895
-	github.com/saichler/l8pollaris v0.0.0-20251202025128-bb03a2ce54d4
-	github.com/saichler/l8reflect v0.0.0-20251128181736-c312870c9030
-	github.com/saichler/l8types v0.0.0-20251206163426-0de8fdeb6d5f
-	github.com/saichler/l8utils v0.0.0-20251205005428-4e70794c62a2
-	github.com/saichler/l8web v0.0.0-20251206181027-3d75edb1ca07
-	github.com/saichler/probler v0.0.0-20251204194016-20f60ad73c63
-	golang.org/x/crypto v0.45.0
-	golang.org/x/sys v0.38.0
-	google.golang.org/protobuf v1.36.10
+	github.com/saichler/l8bus v0.0.0-20260306092410-a27147c696b2
+	github.com/saichler/l8business v0.0.0-20251227041835-66643028d545
+	github.com/saichler/l8parser v0.0.0-20260225131129-f124c121b583
+	github.com/saichler/l8pollaris v0.0.0-20260301140058-24ca66c4852f
+	github.com/saichler/l8reflect v0.0.0-20260306101914-2763da1fd8d5
+	github.com/saichler/l8types v0.0.0-20260306090713-f96a3211a554
+	github.com/saichler/l8utils v0.0.0-20260306090400-6c296282f03a
+	github.com/saichler/l8web v0.0.0-20260306093235-0bc22cfc827a
+	github.com/saichler/probler v0.0.0-20260306103811-112ac82305db
+	golang.org/x/crypto v0.48.0
+	golang.org/x/sys v0.41.0
+	google.golang.org/protobuf v1.36.11
 )
 
 require (
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/saichler/l8collector v0.0.0-20251202024917-d0af6c7d36f2 // indirect
-	github.com/saichler/l8ql v0.0.0-20251030150208-8a58a1d7ac8a // indirect
-	github.com/saichler/l8services v0.0.0-20251202035558-7b9c570e0807 // indirect
-	github.com/saichler/l8srlz v0.0.0-20251115151807-11c9349faf9a // indirect
+	github.com/saichler/l8collector v0.0.0-20260225170644-2bf4ca8b41df // indirect
+	github.com/saichler/l8ql v0.0.0-20260228184750-adc402b17e27 // indirect
+	github.com/saichler/l8services v0.0.0-20260306100626-369aa16cb13f // indirect
+	github.com/saichler/l8srlz v0.0.0-20251226163123-de32dc54dd4b // indirect
 )

@@ -19,7 +19,6 @@ import (
 	"github.com/saichler/l8bus/go/overlay/vnet"
 	"github.com/saichler/l8bus/go/overlay/vnic"
 	"github.com/saichler/l8business/go/types/l8business"
-	"github.com/saichler/l8reflect/go/reflect/helping"
 	"github.com/saichler/l8types/go/ifs"
 	"github.com/saichler/l8types/go/types/l8api"
 	"github.com/saichler/l8types/go/types/l8health"
@@ -31,7 +30,7 @@ import (
 )
 
 func main() {
-	resources := shared.ResourcesOf("opensim", 50505, 0, false)
+	resources := shared.ResourcesOf("opensim", 50505, 0, "")
 	resources.Logger().SetLogLevel(ifs.Info_Level)
 	net := vnet.NewVNet(resources)
 	net.Start()
@@ -69,10 +68,10 @@ func StartWebServer(port int, cert string) {
 }
 
 func CreateVnic(vnet uint32, name string) ifs.IVNic {
-	resources := shared.ResourcesOf(name, vnet, 0, false)
+	resources := shared.ResourcesOf(name, vnet, 0, "")
 
 	node, _ := resources.Introspector().Inspect(&l8business.L8Business{})
-	helping.AddPrimaryKeyDecorator(node, "TaxId")
+	resources.Introspector().Decorators().AddPrimaryKeyDecorator(node, "TaxId")
 
 	nic := vnic.NewVirtualNetworkInterface(resources, nil)
 	nic.Resources().SysConfig().KeepAliveIntervalSeconds = 60
