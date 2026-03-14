@@ -99,6 +99,9 @@ func CreateNetNamespace() (*NetNamespace, error) {
 		ns.VethSetup = true
 	}
 
+	// Enable IP forwarding so remote machines can reach devices in the namespace
+	enableIPForwarding()
+
 	elapsed := time.Since(startTime)
 	log.Printf("Network namespace '%s' created in %v", NETNS_NAME, elapsed)
 
@@ -414,6 +417,33 @@ func incrementIP(ip net.IP) {
 				ip[0]++
 			}
 		}
+	}
+}
+
+// enableIPForwarding enables IPv4 forwarding and configures the host
+// so remote machines can reach devices inside the namespace
+func enableIPForwarding() {
+	// Enable IP forwarding
+	cmd := exec.Command("sysctl", "-w", "net.ipv4.ip_forward=1")
+	if output, err := cmd.CombinedOutput(); err != nil {
+		log.Printf("Warning: failed to enable IP forwarding: %v, output: %s", err, string(output))
+	} else {
+		log.Printf("IP forwarding enabled")
+	}
+
+	// Disable reverse path filtering on the veth interface and all
+	// so the kernel doesn't drop response packets from the namespace
+	for _, iface := range []string{"all", VETH_HOST} {
+		cmd = exec.Command("sysctl", "-w", fmt.Sprintf("net.ipv4.conf.%s.rp_filter=0", iface))
+		if output, err := cmd.CombinedOutput(); err != nil {
+			log.Printf("Warning: failed to disable rp_filter on %s: %v, output: %s", iface, err, string(output))
+		}
+	}
+
+	// Allow forwarding on the veth interface
+	cmd = exec.Command("sysctl", "-w", fmt.Sprintf("net.ipv4.conf.%s.forwarding=1", VETH_HOST))
+	if output, err := cmd.CombinedOutput(); err != nil {
+		log.Printf("Warning: failed to enable forwarding on %s: %v, output: %s", VETH_HOST, err, string(output))
 	}
 }
 
