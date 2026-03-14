@@ -41,7 +41,14 @@ func (s *SNMPServer) Start() error {
 		Port: s.device.SNMPPort,
 	}
 
-	listener, err := net.ListenUDP("udp", addr)
+	var listener *net.UDPConn
+	var err error
+
+	if s.device.netNamespace != nil {
+		listener, err = s.device.netNamespace.ListenUDPInNamespace(addr)
+	} else {
+		listener, err = net.ListenUDP("udp", addr)
+	}
 	if err != nil {
 		return err
 	}

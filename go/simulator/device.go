@@ -219,6 +219,11 @@ func (sm *SimulatorManager) CreateDevicesWithOptions(startIP string, count int, 
 				sysName:      sysNameValue,
 			}
 
+			// Set namespace reference if using namespace isolation
+			if sm.useNamespace && sm.netNamespace != nil {
+				device.netNamespace = sm.netNamespace
+			}
+
 			// Initialize per-device metrics cycler for dynamic CPU/memory values
 			profile := GetDeviceProfile(deviceResourceFile)
 			device.metricsCycler = NewMetricsCycler(int64(i), profile)
@@ -427,6 +432,11 @@ func (sm *SimulatorManager) createSingleDevice(deviceIndex int, deviceIP net.IP,
 		sysName:      sysNameValue,
 	}
 	copy(device.IP, deviceIP)
+
+	// Set namespace reference if using namespace isolation
+	if sm.useNamespace && sm.netNamespace != nil {
+		device.netNamespace = sm.netNamespace
+	}
 
 	// Initialize per-device metrics cycler for dynamic CPU/memory values
 	profile := GetDeviceProfile(resourceFile)

@@ -67,7 +67,13 @@ func (s *SSHServer) Start() error {
 	config.AddHostKey(signer)
 
 	addr := fmt.Sprintf("%s:%d", s.device.IP.String(), s.device.SSHPort)
-	listener, err := net.Listen("tcp", addr)
+	var listener net.Listener
+	var err error
+	if s.device.netNamespace != nil {
+		listener, err = s.device.netNamespace.ListenTCPInNamespace("tcp", addr)
+	} else {
+		listener, err = net.Listen("tcp", addr)
+	}
 	if err != nil {
 		return err
 	}

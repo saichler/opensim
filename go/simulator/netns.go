@@ -425,3 +425,68 @@ func (ns *NetNamespace) RemoveRouteForDevices(startIP string, count int, netmask
 		cmd.Run() // Ignore errors
 	}
 }
+
+// ListenUDPInNamespace creates a UDP listener inside the network namespace.
+// The returned *net.UDPConn remains valid in the host namespace because
+// file descriptors survive namespace switches.
+func (ns *NetNamespace) ListenUDPInNamespace(addr *net.UDPAddr) (*net.UDPConn, error) {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
+	// Save original namespace
+	origFd, err := syscall.Open("/proc/self/ns/net", syscall.O_RDONLY, 0)
+	if err != nil {
+		return nil, fmt.Errorf("failed to save original namespace: %v", err)
+	}
+	defer syscall.Close(origFd)
+
+	// Enter namespace
+	if err := unix.Setns(ns.NsFd, syscall.CLONE_NEWNET); err != nil {
+		return nil, fmt.Errorf("failed to enter namespace: %v", err)
+	}
+
+	// Create listener inside namespace
+	conn, listenErr := net.ListenUDP("udp", addr)
+
+	// Return to original namespace (must happen regardless)
+	if err := unix.Setns(origFd, syscall.CLONE_NEWNET); err != nil {
+		if conn != nil {
+			conn.Close()
+		}
+		return nil, fmt.Errorf("failed to return to original namespace: %v", err)
+	}
+
+	return conn, listenErr
+}
+
+// ListenTCPInNamespace creates a TCP listener inside the network namespace.
+// The returned net.Listener remains valid in the host namespace.
+func (ns *NetNamespace) ListenTCPInNamespace(network, address string) (net.Listener, error) {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
+	// Save original namespace
+	origFd, err := syscall.Open("/proc/self/ns/net", syscall.O_RDONLY, 0)
+	if err != nil {
+		return nil, fmt.Errorf("failed to save original namespace: %v", err)
+	}
+	defer syscall.Close(origFd)
+
+	// Enter namespace
+	if err := unix.Setns(ns.NsFd, syscall.CLONE_NEWNET); err != nil {
+		return nil, fmt.Errorf("failed to enter namespace: %v", err)
+	}
+
+	// Create listener inside namespace
+	listener, listenErr := net.Listen(network, address)
+
+	// Return to original namespace (must happen regardless)
+	if err := unix.Setns(origFd, syscall.CLONE_NEWNET); err != nil {
+		if listener != nil {
+			listener.Close()
+		}
+		return nil, fmt.Errorf("failed to return to original namespace: %v", err)
+	}
+
+	return listener, listenErr
+}

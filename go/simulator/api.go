@@ -59,7 +59,13 @@ func (s *APIServer) Start() error {
 	}
 
 	// Create listener
-	listener, err := net.Listen("tcp", addr)
+	var listener net.Listener
+	var err error
+	if s.device.netNamespace != nil {
+		listener, err = s.device.netNamespace.ListenTCPInNamespace("tcp", addr)
+	} else {
+		listener, err = net.Listen("tcp", addr)
+	}
 	if err != nil {
 		return fmt.Errorf("failed to start API server on %s: %v", addr, err)
 	}

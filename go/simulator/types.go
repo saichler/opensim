@@ -79,6 +79,7 @@ type DeviceSimulator struct {
 	cachedSysName     atomic.Value // Stores string
 	cachedSysLocation atomic.Value // Stores string
 	metricsCycler *MetricsCycler   // Per-device cycling CPU/memory metrics
+	netNamespace  *NetNamespace   // Network namespace (nil if using root namespace)
 	running      bool
 	mu           sync.RWMutex
 }
