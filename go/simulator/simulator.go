@@ -96,7 +96,7 @@ func main() {
 		snmpv3AuthProto = flag.String("snmpv3-auth", "md5", "SNMPv3 authentication protocol: none, md5, sha1 (default: md5)")
 		snmpv3PrivProto = flag.String("snmpv3-priv", "none", "SNMPv3 privacy protocol: none, des, aes128 (default: none)")
 		port            = flag.String("port", "8080", "Server port (default: 8080)")
-		noNamespace     = flag.Bool("no-namespace", true, "Disable network namespace isolation (use root namespace)")
+		noNamespace     = flag.Bool("no-namespace", false, "Disable network namespace isolation (use root namespace)")
 		showHelp        = flag.Bool("help", false, "Show this help message")
 	)
 
