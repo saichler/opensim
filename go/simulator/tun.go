@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"net"
 	"os/exec"
+	"runtime"
 	"strconv"
 	"strings"
 	"syscall"
@@ -166,6 +167,11 @@ func createTunInterfaceInNamespaceViaExec(nsName string, tunName string, ip net.
 
 	// Now open the TUN fd from within the namespace
 	// We need to enter the namespace to get the fd
+	// IMPORTANT: Lock goroutine to OS thread before namespace switching
+	// to prevent Go scheduler from migrating us to a different thread
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
 	nsPath := fmt.Sprintf("/var/run/netns/%s", nsName)
 	nsFd, err := syscall.Open(nsPath, syscall.O_RDONLY, 0)
 	if err != nil {

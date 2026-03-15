@@ -78,12 +78,12 @@ print_info "✅ Network queues optimized for burst traffic"
 print_info "Setting file descriptor limits..."
 
 # Set file descriptor limit for current session
-ulimit -n 65535
+ulimit -n 10000000
 
 # Update system-wide file descriptor limit
-sudo sh -c 'echo 65535 > /proc/sys/fs/file-max' 2>/dev/null || true
+sudo sh -c 'echo 10000000 > /proc/sys/fs/file-max' 2>/dev/null || true
 
-print_info "✅ File descriptors: 65535 (supports 1000+ devices)"
+print_info "✅ File descriptors: 10000000 (supports 1000+ devices)"
 
 # 4. UDP-Specific Memory Optimizations
 print_info "Applying UDP memory optimizations..."

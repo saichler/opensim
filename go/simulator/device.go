@@ -321,16 +321,20 @@ func (sm *SimulatorManager) createDevicesParallel(count int, netmask string, res
 	copy(startingIP, sm.currentIP)
 	sm.mu.RUnlock()
 
+	// Pre-compute all device IPs in O(n) instead of O(n²)
+	deviceIPs := make([]net.IP, count)
+	currentDevIP := make(net.IP, len(startingIP))
+	copy(currentDevIP, startingIP)
 	for i := 0; i < count; i++ {
-		// Calculate IP for this device index
-		deviceIP := make(net.IP, len(startingIP))
-		copy(deviceIP, startingIP)
-
-		// Increment IP for this device index
-		for j := 0; j < i; j++ {
-			sm.incrementIPAddress(deviceIP)
+		deviceIPs[i] = make(net.IP, len(currentDevIP))
+		copy(deviceIPs[i], currentDevIP)
+		if i < count-1 {
+			sm.incrementIPAddress(currentDevIP)
 		}
+	}
 
+	for i := 0; i < count; i++ {
+		deviceIP := deviceIPs[i]
 		deviceID := fmt.Sprintf("device-%s", deviceIP.String())
 
 		// Check if device already exists
