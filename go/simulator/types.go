@@ -176,6 +176,7 @@ type ResourceInfo struct {
 	Filename string `json:"filename"`
 	Name     string `json:"name"`
 	Type     string `json:"type"`
+	Category string `json:"category"`
 }
 
 // API request/response structures

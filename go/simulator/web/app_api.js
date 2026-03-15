@@ -104,12 +104,35 @@ async function loadResources() {
 }
 
 function populateResourceSelect() {
-    const select = document.getElementById('resourceFile');
-    // Clear existing options except default and round robin
-    select.innerHTML = '<option value="">Default (Auto-detect)</option><option value="__round_robin__">Round Robin (All 19 Types)</option>';
+    const categorySelect = document.getElementById('deviceCategory');
+    const typeSelect = document.getElementById('resourceFile');
 
-    // Add resource file options
-    resources.forEach(resource => {
+    // Build unique sorted category list
+    const categories = [...new Set(resources.map(r => r.category))].sort();
+    categorySelect.innerHTML = '<option value="">All Categories</option>';
+    categories.forEach(cat => {
+        const option = document.createElement('option');
+        option.value = cat;
+        option.textContent = cat;
+        categorySelect.appendChild(option);
+    });
+
+    // Populate device type dropdown (initially all)
+    updateDeviceTypeDropdown('');
+
+    // Filter device types when category changes
+    categorySelect.addEventListener('change', function() {
+        updateDeviceTypeDropdown(this.value);
+    });
+}
+
+function updateDeviceTypeDropdown(category) {
+    const select = document.getElementById('resourceFile');
+    const totalTypes = resources.length;
+    select.innerHTML = '<option value="">Default (Auto-detect)</option><option value="__round_robin__">Round Robin (All ' + totalTypes + ' Types)</option>';
+
+    const filtered = category ? resources.filter(r => r.category === category) : resources;
+    filtered.forEach(resource => {
         const option = document.createElement('option');
         option.value = resource.filename;
         option.textContent = resource.name + ' (' + resource.type + ')';

@@ -334,6 +334,7 @@ func (sm *SimulatorManager) ListAvailableResources() []ResourceInfo {
 					Filename: name + ".json", // Keep .json suffix for API compatibility
 					Name:     name,
 					Type:     deviceType,
+					Category: getDeviceCategoryFromName(name),
 				})
 			}
 		}
@@ -399,6 +400,55 @@ func getDeviceTypeFromName(name string) string {
 		return strings.ToUpper(name[:1]) + name[1:]
 	}
 	return "Unknown"
+}
+
+// getDeviceCategoryFromName determines the device category from a resource name.
+func getDeviceCategoryFromName(name string) string {
+	nameLower := strings.ToLower(name)
+
+	// Routers
+	if strings.Contains(nameLower, "asr9k") || strings.Contains(nameLower, "crs") ||
+		strings.Contains(nameLower, "mx240") || strings.Contains(nameLower, "mx960") ||
+		strings.Contains(nameLower, "ne8000") || strings.Contains(nameLower, "7750") ||
+		strings.Contains(nameLower, "nec") || (strings.Contains(nameLower, "cisco") && strings.Contains(nameLower, "ios")) {
+		return "Routers"
+	}
+
+	// Switches
+	if strings.Contains(nameLower, "catalyst") || strings.Contains(nameLower, "nexus") ||
+		strings.Contains(nameLower, "arista") || strings.Contains(nameLower, "extreme") ||
+		strings.Contains(nameLower, "dlink") || strings.Contains(nameLower, "d-link") {
+		return "Switches"
+	}
+
+	// Firewalls
+	if strings.Contains(nameLower, "palo") || strings.Contains(nameLower, "fortinet") ||
+		strings.Contains(nameLower, "fortigate") || strings.Contains(nameLower, "check_point") ||
+		strings.Contains(nameLower, "sonicwall") {
+		return "Firewalls"
+	}
+
+	// GPU Servers
+	if strings.Contains(nameLower, "nvidia") || strings.Contains(nameLower, "dgx") ||
+		strings.Contains(nameLower, "hgx") {
+		return "GPU Servers"
+	}
+
+	// Storage
+	if strings.Contains(nameLower, "netapp") || strings.Contains(nameLower, "pure") ||
+		strings.Contains(nameLower, "dell_emc") || strings.Contains(nameLower, "aws") {
+		return "Storage"
+	}
+
+	// Servers
+	if strings.Contains(nameLower, "dell") || strings.Contains(nameLower, "hpe") ||
+		strings.Contains(nameLower, "hp") || strings.Contains(nameLower, "ibm") ||
+		strings.Contains(nameLower, "linux") || strings.Contains(nameLower, "poweredge") ||
+		strings.Contains(nameLower, "proliant") || strings.Contains(nameLower, "power_s") {
+		return "Servers"
+	}
+
+	return "Other"
 }
 
 // getDeviceTypeFromResourceFile determines the device type from a resource filename
