@@ -15,6 +15,8 @@
 
 package main
 
+import "fmt"
+
 // MetricOIDType identifies which cycling metric an OID maps to.
 type MetricOIDType int
 
@@ -25,6 +27,16 @@ const (
 	MetricMemTotal                          // Memory total (KB, constant)
 	MetricMemUsedPct                        // Memory used % (for vendors that report %)
 	MetricTemperature                       // Temperature in Celsius
+
+	// GPU-specific metric types (NVIDIA DCGM)
+	MetricGPUUtil     MetricOIDType = iota + 10 // GPU compute utilization %
+	MetricGPUMemUsed                             // GPU VRAM used (MB)
+	MetricGPUMemTotal                            // GPU VRAM total (MB, constant)
+	MetricGPUTemp                                // GPU temperature (Celsius)
+	MetricGPUPower                               // GPU power draw (Watts)
+	MetricGPUFanSpeed                            // GPU fan speed %
+	MetricGPUClockSM                             // GPU SM clock (MHz)
+	MetricGPUClockMem                            // GPU memory clock (MHz)
 )
 
 // vendorOIDs maps resource file names to their vendor-specific metric OIDs.
@@ -181,6 +193,46 @@ var vendorOIDs = map[string]map[string]MetricOIDType{
 		"1.3.6.1.4.1.171.12.1.1.9.4.0":  MetricMemUsedPct,
 		"1.3.6.1.4.1.171.12.11.1.1.6.1": MetricTemperature, // dLinkTemperature
 	},
+}
+
+// nvidiaGPUOIDs builds per-GPU dynamic metric OID mappings for NVIDIA DCGM devices.
+// OID schema: 1.3.6.1.4.1.53246.1.1.1.1.{metric}.{gpuIndex}
+//   metric 5=GPUUtil, 6=GPUMemUsed, 7=GPUMemTotal, 8=GPUTemp,
+//   9=GPUPower, 10=GPUFanSpeed, 11=GPUClockSM, 12=GPUClockMem
+//   gpuIndex 0-7
+func nvidiaGPUOIDs(gpuCount int) map[string]MetricOIDType {
+	prefix := "1.3.6.1.4.1.53246.1.1.1.1"
+	metrics := []struct {
+		suffix int
+		typ    MetricOIDType
+	}{
+		{5, MetricGPUUtil},
+		{6, MetricGPUMemUsed},
+		{7, MetricGPUMemTotal},
+		{8, MetricGPUTemp},
+		{9, MetricGPUPower},
+		{10, MetricGPUFanSpeed},
+		{11, MetricGPUClockSM},
+		{12, MetricGPUClockMem},
+	}
+	m := make(map[string]MetricOIDType, gpuCount*len(metrics))
+	for gpu := 0; gpu < gpuCount; gpu++ {
+		for _, mt := range metrics {
+			oid := fmt.Sprintf("%s.%d.%d", prefix, mt.suffix, gpu)
+			m[oid] = mt.typ
+		}
+	}
+	// Also include host-level CPU/memory/temperature via standard Host Resources MIB
+	m["1.3.6.1.2.1.25.3.3.1.2.1"] = MetricCPUPercent
+	m["1.3.6.1.2.1.25.2.3.1.5.1"] = MetricMemTotal
+	m["1.3.6.1.2.1.25.2.3.1.6.1"] = MetricMemUsed
+	return m
+}
+
+func init() {
+	vendorOIDs["nvidia_dgx_a100.json"] = nvidiaGPUOIDs(8)
+	vendorOIDs["nvidia_dgx_h100.json"] = nvidiaGPUOIDs(8)
+	vendorOIDs["nvidia_hgx_h200.json"] = nvidiaGPUOIDs(8)
 }
 
 // GetMetricOIDs returns the OID-to-metric-type mapping for a device type.

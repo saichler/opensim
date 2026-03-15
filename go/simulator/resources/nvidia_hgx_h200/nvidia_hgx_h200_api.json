@@ -1,0 +1,375 @@
+{
+  "api": [
+    {
+      "method": "GET",
+      "path": "/api/v1/gpu/status",
+      "response": {
+        "gpu_count": 8,
+        "driver_version": "545.23.08",
+        "cuda_version": "12.3",
+        "dcgm_version": "3.4.1",
+        "gpus": [
+          {
+            "index": 0,
+            "name": "NVIDIA H200 141GB HBM3e",
+            "uuid": "GPU-e7a1b2c3-d4e5-4f67-8901-2a3b4c5d6e7f",
+            "pci_bus_id": "00000000:07:00.0",
+            "temperature_c": 42,
+            "power_draw_w": 280.45,
+            "power_limit_w": 700.00,
+            "gpu_utilization_pct": 40,
+            "memory_utilization_pct": 24,
+            "memory_used_mib": 35000,
+            "memory_total_mib": 144384,
+            "ecc_corrected": 0,
+            "ecc_uncorrected": 0,
+            "nvlink_active": 18
+          },
+          {
+            "index": 1,
+            "name": "NVIDIA H200 141GB HBM3e",
+            "uuid": "GPU-b8c9d0e1-f2a3-4b56-7890-1c2d3e4f5a6b",
+            "pci_bus_id": "00000000:0A:00.0",
+            "temperature_c": 55,
+            "power_draw_w": 450.32,
+            "power_limit_w": 700.00,
+            "gpu_utilization_pct": 65,
+            "memory_utilization_pct": 54,
+            "memory_used_mib": 78000,
+            "memory_total_mib": 144384,
+            "ecc_corrected": 0,
+            "ecc_uncorrected": 0,
+            "nvlink_active": 18
+          },
+          {
+            "index": 2,
+            "name": "NVIDIA H200 141GB HBM3e",
+            "uuid": "GPU-c3d4e5f6-a7b8-4901-2345-6d7e8f9a0b1c",
+            "pci_bus_id": "00000000:0D:00.0",
+            "temperature_c": 70,
+            "power_draw_w": 680.91,
+            "power_limit_w": 700.00,
+            "gpu_utilization_pct": 92,
+            "memory_utilization_pct": 88,
+            "memory_used_mib": 128000,
+            "memory_total_mib": 144384,
+            "ecc_corrected": 0,
+            "ecc_uncorrected": 0,
+            "nvlink_active": 18
+          },
+          {
+            "index": 3,
+            "name": "NVIDIA H200 141GB HBM3e",
+            "uuid": "GPU-d5e6f7a8-b9c0-4123-4567-8e9f0a1b2c3d",
+            "pci_bus_id": "00000000:47:00.0",
+            "temperature_c": 38,
+            "power_draw_w": 220.18,
+            "power_limit_w": 700.00,
+            "gpu_utilization_pct": 45,
+            "memory_utilization_pct": 29,
+            "memory_used_mib": 42000,
+            "memory_total_mib": 144384,
+            "ecc_corrected": 0,
+            "ecc_uncorrected": 0,
+            "nvlink_active": 18
+          },
+          {
+            "index": 4,
+            "name": "NVIDIA H200 141GB HBM3e",
+            "uuid": "GPU-e7f8a9b0-c1d2-4345-6789-0a1b2c3d4e5f",
+            "pci_bus_id": "00000000:4A:00.0",
+            "temperature_c": 34,
+            "power_draw_w": 180.67,
+            "power_limit_w": 700.00,
+            "gpu_utilization_pct": 42,
+            "memory_utilization_pct": 26,
+            "memory_used_mib": 38000,
+            "memory_total_mib": 144384,
+            "ecc_corrected": 0,
+            "ecc_uncorrected": 0,
+            "nvlink_active": 18
+          },
+          {
+            "index": 5,
+            "name": "NVIDIA H200 141GB HBM3e",
+            "uuid": "GPU-f9a0b1c2-d3e4-4567-8901-2f3a4b5c6d7e",
+            "pci_bus_id": "00000000:4D:00.0",
+            "temperature_c": 67,
+            "power_draw_w": 620.44,
+            "power_limit_w": 700.00,
+            "gpu_utilization_pct": 88,
+            "memory_utilization_pct": 81,
+            "memory_used_mib": 118000,
+            "memory_total_mib": 144384,
+            "ecc_corrected": 0,
+            "ecc_uncorrected": 0,
+            "nvlink_active": 18
+          },
+          {
+            "index": 6,
+            "name": "NVIDIA H200 141GB HBM3e",
+            "uuid": "GPU-a1b2c3d4-e5f6-4789-0123-4a5b6c7d8e9f",
+            "pci_bus_id": "00000000:87:00.0",
+            "temperature_c": 60,
+            "power_draw_w": 530.73,
+            "power_limit_w": 700.00,
+            "gpu_utilization_pct": 78,
+            "memory_utilization_pct": 65,
+            "memory_used_mib": 95000,
+            "memory_total_mib": 144384,
+            "ecc_corrected": 0,
+            "ecc_uncorrected": 0,
+            "nvlink_active": 18
+          },
+          {
+            "index": 7,
+            "name": "NVIDIA H200 141GB HBM3e",
+            "uuid": "GPU-b3c4d5e6-f7a8-4901-2345-6b7c8d9e0f1a",
+            "pci_bus_id": "00000000:8A:00.0",
+            "temperature_c": 48,
+            "power_draw_w": 380.29,
+            "power_limit_w": 700.00,
+            "gpu_utilization_pct": 58,
+            "memory_utilization_pct": 42,
+            "memory_used_mib": 62000,
+            "memory_total_mib": 144384,
+            "ecc_corrected": 0,
+            "ecc_uncorrected": 0,
+            "nvlink_active": 18
+          }
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/gpu/devices",
+      "response": {
+        "count": 8,
+        "devices": [
+          {
+            "index": 0,
+            "name": "NVIDIA H200 141GB HBM3e",
+            "uuid": "GPU-e7a1b2c3-d4e5-4f67-8901-2a3b4c5d6e7f",
+            "serial": "1780944003GHI",
+            "pci_bus_id": "00000000:07:00.0",
+            "memory_total_mib": 144384,
+            "compute_capability": "9.0",
+            "persistence_mode": "Enabled"
+          },
+          {
+            "index": 1,
+            "name": "NVIDIA H200 141GB HBM3e",
+            "uuid": "GPU-b8c9d0e1-f2a3-4b56-7890-1c2d3e4f5a6b",
+            "serial": "1780944103GHI",
+            "pci_bus_id": "00000000:0A:00.0",
+            "memory_total_mib": 144384,
+            "compute_capability": "9.0",
+            "persistence_mode": "Enabled"
+          },
+          {
+            "index": 2,
+            "name": "NVIDIA H200 141GB HBM3e",
+            "uuid": "GPU-c3d4e5f6-a7b8-4901-2345-6d7e8f9a0b1c",
+            "serial": "1780944203GHI",
+            "pci_bus_id": "00000000:0D:00.0",
+            "memory_total_mib": 144384,
+            "compute_capability": "9.0",
+            "persistence_mode": "Enabled"
+          },
+          {
+            "index": 3,
+            "name": "NVIDIA H200 141GB HBM3e",
+            "uuid": "GPU-d5e6f7a8-b9c0-4123-4567-8e9f0a1b2c3d",
+            "serial": "1780944303GHI",
+            "pci_bus_id": "00000000:47:00.0",
+            "memory_total_mib": 144384,
+            "compute_capability": "9.0",
+            "persistence_mode": "Enabled"
+          },
+          {
+            "index": 4,
+            "name": "NVIDIA H200 141GB HBM3e",
+            "uuid": "GPU-e7f8a9b0-c1d2-4345-6789-0a1b2c3d4e5f",
+            "serial": "1780944403GHI",
+            "pci_bus_id": "00000000:4A:00.0",
+            "memory_total_mib": 144384,
+            "compute_capability": "9.0",
+            "persistence_mode": "Enabled"
+          },
+          {
+            "index": 5,
+            "name": "NVIDIA H200 141GB HBM3e",
+            "uuid": "GPU-f9a0b1c2-d3e4-4567-8901-2f3a4b5c6d7e",
+            "serial": "1780944503GHI",
+            "pci_bus_id": "00000000:4D:00.0",
+            "memory_total_mib": 144384,
+            "compute_capability": "9.0",
+            "persistence_mode": "Enabled"
+          },
+          {
+            "index": 6,
+            "name": "NVIDIA H200 141GB HBM3e",
+            "uuid": "GPU-a1b2c3d4-e5f6-4789-0123-4a5b6c7d8e9f",
+            "serial": "1780944603GHI",
+            "pci_bus_id": "00000000:87:00.0",
+            "memory_total_mib": 144384,
+            "compute_capability": "9.0",
+            "persistence_mode": "Enabled"
+          },
+          {
+            "index": 7,
+            "name": "NVIDIA H200 141GB HBM3e",
+            "uuid": "GPU-b3c4d5e6-f7a8-4901-2345-6b7c8d9e0f1a",
+            "serial": "1780944703GHI",
+            "pci_bus_id": "00000000:8A:00.0",
+            "memory_total_mib": 144384,
+            "compute_capability": "9.0",
+            "persistence_mode": "Enabled"
+          }
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/gpu/topology",
+      "response": {
+        "gpu_count": 8,
+        "nvlink_version": 4,
+        "nvswitch_count": 4,
+        "topology": "full_mesh",
+        "links_per_gpu": 18,
+        "bandwidth_per_link_gbps": 25,
+        "total_bandwidth_per_gpu_gbps": 450,
+        "connections": [
+          {"gpu_pair": [0, 1], "type": "NV18"},
+          {"gpu_pair": [0, 2], "type": "NV18"},
+          {"gpu_pair": [0, 3], "type": "NV18"},
+          {"gpu_pair": [0, 4], "type": "NV18"},
+          {"gpu_pair": [0, 5], "type": "NV18"},
+          {"gpu_pair": [0, 6], "type": "NV18"},
+          {"gpu_pair": [0, 7], "type": "NV18"},
+          {"gpu_pair": [1, 2], "type": "NV18"},
+          {"gpu_pair": [1, 3], "type": "NV18"},
+          {"gpu_pair": [1, 4], "type": "NV18"},
+          {"gpu_pair": [1, 5], "type": "NV18"},
+          {"gpu_pair": [1, 6], "type": "NV18"},
+          {"gpu_pair": [1, 7], "type": "NV18"},
+          {"gpu_pair": [2, 3], "type": "NV18"},
+          {"gpu_pair": [2, 4], "type": "NV18"},
+          {"gpu_pair": [2, 5], "type": "NV18"},
+          {"gpu_pair": [2, 6], "type": "NV18"},
+          {"gpu_pair": [2, 7], "type": "NV18"},
+          {"gpu_pair": [3, 4], "type": "NV18"},
+          {"gpu_pair": [3, 5], "type": "NV18"},
+          {"gpu_pair": [3, 6], "type": "NV18"},
+          {"gpu_pair": [3, 7], "type": "NV18"},
+          {"gpu_pair": [4, 5], "type": "NV18"},
+          {"gpu_pair": [4, 6], "type": "NV18"},
+          {"gpu_pair": [4, 7], "type": "NV18"},
+          {"gpu_pair": [5, 6], "type": "NV18"},
+          {"gpu_pair": [5, 7], "type": "NV18"},
+          {"gpu_pair": [6, 7], "type": "NV18"}
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/dcgm/health",
+      "response": {
+        "overall_health": "HEALTHY",
+        "checks": {
+          "deployment": "PASS",
+          "pcie": "PASS",
+          "memory": "PASS",
+          "sm_clocks": "PASS",
+          "thermal": "PASS",
+          "power": "PASS",
+          "nvlink": "PASS",
+          "nvswitch": "PASS"
+        },
+        "gpu_health": [
+          {"gpu_id": 0, "status": "HEALTHY", "warnings": []},
+          {"gpu_id": 1, "status": "HEALTHY", "warnings": []},
+          {"gpu_id": 2, "status": "HEALTHY", "warnings": []},
+          {"gpu_id": 3, "status": "HEALTHY", "warnings": []},
+          {"gpu_id": 4, "status": "HEALTHY", "warnings": []},
+          {"gpu_id": 5, "status": "HEALTHY", "warnings": []},
+          {"gpu_id": 6, "status": "HEALTHY", "warnings": []},
+          {"gpu_id": 7, "status": "HEALTHY", "warnings": []}
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/dcgm/config",
+      "response": {
+        "dcgm_version": "3.4.1",
+        "monitoring_enabled": true,
+        "collection_interval_ms": 1000,
+        "health_check_interval_s": 30,
+        "profiling_enabled": true,
+        "watched_fields": [
+          "DCGM_FI_DEV_GPU_TEMP",
+          "DCGM_FI_DEV_POWER_USAGE",
+          "DCGM_FI_DEV_GPU_UTIL",
+          "DCGM_FI_DEV_MEM_COPY_UTIL",
+          "DCGM_FI_DEV_FB_USED",
+          "DCGM_FI_DEV_FB_FREE",
+          "DCGM_FI_DEV_ECC_SBE_AGG_TOTAL",
+          "DCGM_FI_DEV_ECC_DBE_AGG_TOTAL",
+          "DCGM_FI_DEV_NVLINK_BANDWIDTH_TOTAL",
+          "DCGM_FI_DEV_PCIE_REPLAY_COUNTER"
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/system/info",
+      "response": {
+        "hostname": "hgx-h200-001",
+        "os": "Ubuntu 22.04.4 LTS",
+        "kernel": "6.5.0-44-generic",
+        "architecture": "x86_64",
+        "driver_version": "545.23.08",
+        "cuda_version": "12.3",
+        "dcgm_version": "3.4.1",
+        "hgx_software_version": "1.2.0",
+        "cpu": {
+          "model": "Intel(R) Xeon(R) Platinum 8480C",
+          "sockets": 2,
+          "cores_per_socket": 28,
+          "threads_per_core": 2,
+          "total_threads": 112
+        },
+        "gpu": {
+          "count": 8,
+          "model": "NVIDIA H200 141GB HBM3e",
+          "memory_per_gpu_mib": 144384,
+          "total_gpu_memory_mib": 1155072,
+          "nvlink_version": 4,
+          "compute_capability": "9.0"
+        },
+        "network": {
+          "management": "25GbE",
+          "infiniband": "4x NDR 400Gbps",
+          "total_ib_bandwidth_gbps": 1600
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/system/memory",
+      "response": {
+        "total_gb": 2048,
+        "used_gb": 1430,
+        "free_gb": 618,
+        "shared_gb": 2,
+        "buff_cache_gb": 245,
+        "available_gb": 580,
+        "swap_total_gb": 32,
+        "swap_used_gb": 0,
+        "swap_free_gb": 32
+      }
+    }
+  ]
+}

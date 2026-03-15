@@ -1,0 +1,364 @@
+{
+  "api": [
+    {
+      "method": "GET",
+      "path": "/api/v1/gpu/status",
+      "response": {
+        "gpu_count": 8,
+        "driver_version": "525.105.17",
+        "cuda_version": "12.0",
+        "dcgm_version": "3.1.8",
+        "overall_health": "healthy",
+        "gpus": [
+          {
+            "index": 0,
+            "name": "NVIDIA A100-SXM4-80GB",
+            "uuid": "GPU-a1b2c3d4-e5f6-7890-abcd-ef1234567800",
+            "pci_bus_id": "00000000:07:00.0",
+            "temperature_c": 42,
+            "power_draw_w": 168.35,
+            "power_limit_w": 400.0,
+            "gpu_utilization_pct": 35,
+            "memory_utilization_pct": 28,
+            "memory_used_mib": 22528,
+            "memory_total_mib": 81920,
+            "ecc_corrected": 0,
+            "ecc_uncorrected": 0,
+            "health": "healthy"
+          },
+          {
+            "index": 1,
+            "name": "NVIDIA A100-SXM4-80GB",
+            "uuid": "GPU-b2c3d4e5-f6a7-8901-bcde-f12345678011",
+            "pci_bus_id": "00000000:0B:00.0",
+            "temperature_c": 45,
+            "power_draw_w": 205.42,
+            "power_limit_w": 400.0,
+            "gpu_utilization_pct": 58,
+            "memory_utilization_pct": 55,
+            "memory_used_mib": 45056,
+            "memory_total_mib": 81920,
+            "ecc_corrected": 0,
+            "ecc_uncorrected": 0,
+            "health": "healthy"
+          },
+          {
+            "index": 2,
+            "name": "NVIDIA A100-SXM4-80GB",
+            "uuid": "GPU-c3d4e5f6-a7b8-9012-cdef-123456780022",
+            "pci_bus_id": "00000000:47:00.0",
+            "temperature_c": 68,
+            "power_draw_w": 342.18,
+            "power_limit_w": 400.0,
+            "gpu_utilization_pct": 75,
+            "memory_utilization_pct": 80,
+            "memory_used_mib": 65536,
+            "memory_total_mib": 81920,
+            "ecc_corrected": 0,
+            "ecc_uncorrected": 0,
+            "health": "healthy"
+          },
+          {
+            "index": 3,
+            "name": "NVIDIA A100-SXM4-80GB",
+            "uuid": "GPU-d4e5f6a7-b8c9-0123-defa-123456780033",
+            "pci_bus_id": "00000000:4E:00.0",
+            "temperature_c": 52,
+            "power_draw_w": 245.67,
+            "power_limit_w": 400.0,
+            "gpu_utilization_pct": 48,
+            "memory_utilization_pct": 50,
+            "memory_used_mib": 40960,
+            "memory_total_mib": 81920,
+            "ecc_corrected": 0,
+            "ecc_uncorrected": 0,
+            "health": "healthy"
+          },
+          {
+            "index": 4,
+            "name": "NVIDIA A100-SXM4-80GB",
+            "uuid": "GPU-e5f6a7b8-c9d0-1234-efab-123456780044",
+            "pci_bus_id": "00000000:87:00.0",
+            "temperature_c": 38,
+            "power_draw_w": 152.89,
+            "power_limit_w": 400.0,
+            "gpu_utilization_pct": 30,
+            "memory_utilization_pct": 25,
+            "memory_used_mib": 20480,
+            "memory_total_mib": 81920,
+            "ecc_corrected": 0,
+            "ecc_uncorrected": 0,
+            "health": "healthy"
+          },
+          {
+            "index": 5,
+            "name": "NVIDIA A100-SXM4-80GB",
+            "uuid": "GPU-f6a7b8c9-d0e1-2345-fabc-123456780055",
+            "pci_bus_id": "00000000:8E:00.0",
+            "temperature_c": 61,
+            "power_draw_w": 310.54,
+            "power_limit_w": 400.0,
+            "gpu_utilization_pct": 68,
+            "memory_utilization_pct": 70,
+            "memory_used_mib": 57344,
+            "memory_total_mib": 81920,
+            "ecc_corrected": 0,
+            "ecc_uncorrected": 0,
+            "health": "healthy"
+          },
+          {
+            "index": 6,
+            "name": "NVIDIA A100-SXM4-80GB",
+            "uuid": "GPU-a7b8c9d0-e1f2-3456-abcd-123456780066",
+            "pci_bus_id": "00000000:C7:00.0",
+            "temperature_c": 55,
+            "power_draw_w": 275.23,
+            "power_limit_w": 400.0,
+            "gpu_utilization_pct": 55,
+            "memory_utilization_pct": 60,
+            "memory_used_mib": 49152,
+            "memory_total_mib": 81920,
+            "ecc_corrected": 0,
+            "ecc_uncorrected": 0,
+            "health": "healthy"
+          },
+          {
+            "index": 7,
+            "name": "NVIDIA A100-SXM4-80GB",
+            "uuid": "GPU-b8c9d0e1-f2a3-4567-bcde-123456780077",
+            "pci_bus_id": "00000000:CE:00.0",
+            "temperature_c": 48,
+            "power_draw_w": 190.76,
+            "power_limit_w": 400.0,
+            "gpu_utilization_pct": 42,
+            "memory_utilization_pct": 40,
+            "memory_used_mib": 32768,
+            "memory_total_mib": 81920,
+            "ecc_corrected": 0,
+            "ecc_uncorrected": 0,
+            "health": "healthy"
+          }
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/gpu/devices",
+      "response": {
+        "count": 8,
+        "devices": [
+          {
+            "index": 0,
+            "name": "NVIDIA A100-SXM4-80GB",
+            "uuid": "GPU-a1b2c3d4-e5f6-7890-abcd-ef1234567800",
+            "pci_bus_id": "00000000:07:00.0",
+            "serial": "132042200001ABC",
+            "memory_total_mib": 81920,
+            "compute_capability": "8.0",
+            "persistence_mode": "Enabled"
+          },
+          {
+            "index": 1,
+            "name": "NVIDIA A100-SXM4-80GB",
+            "uuid": "GPU-b2c3d4e5-f6a7-8901-bcde-f12345678011",
+            "pci_bus_id": "00000000:0B:00.0",
+            "serial": "132042210101ABC",
+            "memory_total_mib": 81920,
+            "compute_capability": "8.0",
+            "persistence_mode": "Enabled"
+          },
+          {
+            "index": 2,
+            "name": "NVIDIA A100-SXM4-80GB",
+            "uuid": "GPU-c3d4e5f6-a7b8-9012-cdef-123456780022",
+            "pci_bus_id": "00000000:47:00.0",
+            "serial": "132042220201ABC",
+            "memory_total_mib": 81920,
+            "compute_capability": "8.0",
+            "persistence_mode": "Enabled"
+          },
+          {
+            "index": 3,
+            "name": "NVIDIA A100-SXM4-80GB",
+            "uuid": "GPU-d4e5f6a7-b8c9-0123-defa-123456780033",
+            "pci_bus_id": "00000000:4E:00.0",
+            "serial": "132042230301ABC",
+            "memory_total_mib": 81920,
+            "compute_capability": "8.0",
+            "persistence_mode": "Enabled"
+          },
+          {
+            "index": 4,
+            "name": "NVIDIA A100-SXM4-80GB",
+            "uuid": "GPU-e5f6a7b8-c9d0-1234-efab-123456780044",
+            "pci_bus_id": "00000000:87:00.0",
+            "serial": "132042240401ABC",
+            "memory_total_mib": 81920,
+            "compute_capability": "8.0",
+            "persistence_mode": "Enabled"
+          },
+          {
+            "index": 5,
+            "name": "NVIDIA A100-SXM4-80GB",
+            "uuid": "GPU-f6a7b8c9-d0e1-2345-fabc-123456780055",
+            "pci_bus_id": "00000000:8E:00.0",
+            "serial": "132042250501ABC",
+            "memory_total_mib": 81920,
+            "compute_capability": "8.0",
+            "persistence_mode": "Enabled"
+          },
+          {
+            "index": 6,
+            "name": "NVIDIA A100-SXM4-80GB",
+            "uuid": "GPU-a7b8c9d0-e1f2-3456-abcd-123456780066",
+            "pci_bus_id": "00000000:C7:00.0",
+            "serial": "132042260601ABC",
+            "memory_total_mib": 81920,
+            "compute_capability": "8.0",
+            "persistence_mode": "Enabled"
+          },
+          {
+            "index": 7,
+            "name": "NVIDIA A100-SXM4-80GB",
+            "uuid": "GPU-b8c9d0e1-f2a3-4567-bcde-123456780077",
+            "pci_bus_id": "00000000:CE:00.0",
+            "serial": "132042270701ABC",
+            "memory_total_mib": 81920,
+            "compute_capability": "8.0",
+            "persistence_mode": "Enabled"
+          }
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/gpu/topology",
+      "response": {
+        "nvlink_version": 3,
+        "nvswitch_count": 6,
+        "gpu_count": 8,
+        "connectivity": [
+          { "gpu_src": 0, "gpu_dst": 1, "link_type": "NV12", "nvlinks": 12 },
+          { "gpu_src": 0, "gpu_dst": 2, "link_type": "NV12", "nvlinks": 12 },
+          { "gpu_src": 0, "gpu_dst": 3, "link_type": "NV12", "nvlinks": 12 },
+          { "gpu_src": 0, "gpu_dst": 4, "link_type": "NV12", "nvlinks": 12 },
+          { "gpu_src": 0, "gpu_dst": 5, "link_type": "NV12", "nvlinks": 12 },
+          { "gpu_src": 0, "gpu_dst": 6, "link_type": "NV12", "nvlinks": 12 },
+          { "gpu_src": 0, "gpu_dst": 7, "link_type": "NV12", "nvlinks": 12 },
+          { "gpu_src": 1, "gpu_dst": 2, "link_type": "NV12", "nvlinks": 12 },
+          { "gpu_src": 1, "gpu_dst": 3, "link_type": "NV12", "nvlinks": 12 },
+          { "gpu_src": 1, "gpu_dst": 4, "link_type": "NV12", "nvlinks": 12 },
+          { "gpu_src": 1, "gpu_dst": 5, "link_type": "NV12", "nvlinks": 12 },
+          { "gpu_src": 1, "gpu_dst": 6, "link_type": "NV12", "nvlinks": 12 },
+          { "gpu_src": 1, "gpu_dst": 7, "link_type": "NV12", "nvlinks": 12 },
+          { "gpu_src": 2, "gpu_dst": 3, "link_type": "NV12", "nvlinks": 12 },
+          { "gpu_src": 2, "gpu_dst": 4, "link_type": "NV12", "nvlinks": 12 },
+          { "gpu_src": 2, "gpu_dst": 5, "link_type": "NV12", "nvlinks": 12 },
+          { "gpu_src": 2, "gpu_dst": 6, "link_type": "NV12", "nvlinks": 12 },
+          { "gpu_src": 2, "gpu_dst": 7, "link_type": "NV12", "nvlinks": 12 },
+          { "gpu_src": 3, "gpu_dst": 4, "link_type": "NV12", "nvlinks": 12 },
+          { "gpu_src": 3, "gpu_dst": 5, "link_type": "NV12", "nvlinks": 12 },
+          { "gpu_src": 3, "gpu_dst": 6, "link_type": "NV12", "nvlinks": 12 },
+          { "gpu_src": 3, "gpu_dst": 7, "link_type": "NV12", "nvlinks": 12 },
+          { "gpu_src": 4, "gpu_dst": 5, "link_type": "NV12", "nvlinks": 12 },
+          { "gpu_src": 4, "gpu_dst": 6, "link_type": "NV12", "nvlinks": 12 },
+          { "gpu_src": 4, "gpu_dst": 7, "link_type": "NV12", "nvlinks": 12 },
+          { "gpu_src": 5, "gpu_dst": 6, "link_type": "NV12", "nvlinks": 12 },
+          { "gpu_src": 5, "gpu_dst": 7, "link_type": "NV12", "nvlinks": 12 },
+          { "gpu_src": 6, "gpu_dst": 7, "link_type": "NV12", "nvlinks": 12 }
+        ],
+        "numa_affinity": {
+          "node0_gpus": [0, 1, 4, 5],
+          "node1_gpus": [2, 3, 6, 7]
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/dcgm/health",
+      "response": {
+        "overall_health": "healthy",
+        "checks": {
+          "pcie": { "status": "pass", "message": "All PCIe links operating normally" },
+          "memory": { "status": "pass", "message": "No memory errors detected" },
+          "inforom": { "status": "pass", "message": "InfoROM validation successful" },
+          "thermal": { "status": "pass", "message": "All GPUs within thermal limits" },
+          "power": { "status": "pass", "message": "All GPUs within power limits" },
+          "nvlink": { "status": "pass", "message": "All NVLink connections healthy" }
+        },
+        "last_check": "2026-03-15T10:24:10Z"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/dcgm/config",
+      "response": {
+        "dcgm_version": "3.1.8",
+        "monitoring_interval_ms": 1000,
+        "features": {
+          "health_monitoring": true,
+          "profiling": true,
+          "policy_management": true,
+          "diagnostics": true,
+          "process_stats": true
+        },
+        "watched_fields": [
+          "DCGM_FI_DEV_GPU_TEMP",
+          "DCGM_FI_DEV_POWER_USAGE",
+          "DCGM_FI_DEV_GPU_UTIL",
+          "DCGM_FI_DEV_MEM_COPY_UTIL",
+          "DCGM_FI_DEV_FB_FREE",
+          "DCGM_FI_DEV_FB_USED",
+          "DCGM_FI_DEV_ECC_SBE_VOL_TOTAL",
+          "DCGM_FI_DEV_ECC_DBE_VOL_TOTAL",
+          "DCGM_FI_DEV_NVLINK_BANDWIDTH_TOTAL"
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/system/info",
+      "response": {
+        "hostname": "dgx-a100-001",
+        "os": "Ubuntu 22.04.3 LTS",
+        "kernel": "5.15.0-91-generic",
+        "architecture": "x86_64",
+        "nvidia_driver": "525.105.17",
+        "cuda_version": "12.0",
+        "dcgm_version": "3.1.8",
+        "dgx_software_version": "5.4.1",
+        "cpu_model": "AMD EPYC 7742 64-Core Processor",
+        "cpu_sockets": 2,
+        "cpu_cores_total": 128,
+        "gpu_count": 8,
+        "gpu_model": "NVIDIA A100-SXM4-80GB",
+        "infiniband_ports": 4,
+        "infiniband_speed_gbps": 200
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/system/memory",
+      "response": {
+        "system_memory": {
+          "total_gb": 1024,
+          "used_gb": 512,
+          "free_gb": 320,
+          "buff_cache_gb": 192,
+          "available_gb": 480
+        },
+        "gpu_memory": {
+          "total_per_gpu_mib": 81920,
+          "total_aggregate_mib": 655360,
+          "used_aggregate_mib": 333824,
+          "free_aggregate_mib": 321536
+        },
+        "swap": {
+          "total_gb": 16,
+          "used_gb": 0,
+          "free_gb": 16
+        }
+      }
+    }
+  ]
+}

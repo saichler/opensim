@@ -355,6 +355,23 @@ func (s *SNMPServer) getMetricValue(oid string) string {
 		return s.device.metricsCycler.GetMemUsedPercent()
 	case MetricTemperature:
 		return s.device.metricsCycler.GetTemperature()
+	// GPU metric types (NVIDIA DCGM)
+	case MetricGPUUtil:
+		return s.device.metricsCycler.GetGPUUtil(parseGPUIndexFromOID(oid))
+	case MetricGPUMemUsed:
+		return s.device.metricsCycler.GetGPUMemUsed(parseGPUIndexFromOID(oid))
+	case MetricGPUMemTotal:
+		return s.device.metricsCycler.GetGPUMemTotal(parseGPUIndexFromOID(oid))
+	case MetricGPUTemp:
+		return s.device.metricsCycler.GetGPUTemp(parseGPUIndexFromOID(oid))
+	case MetricGPUPower:
+		return s.device.metricsCycler.GetGPUPower(parseGPUIndexFromOID(oid))
+	case MetricGPUFanSpeed:
+		return s.device.metricsCycler.GetGPUFanSpeed(parseGPUIndexFromOID(oid))
+	case MetricGPUClockSM:
+		return s.device.metricsCycler.GetGPUClockSM(parseGPUIndexFromOID(oid))
+	case MetricGPUClockMem:
+		return s.device.metricsCycler.GetGPUClockMem(parseGPUIndexFromOID(oid))
 	}
 	return ""
 }

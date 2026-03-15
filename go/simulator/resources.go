@@ -67,6 +67,7 @@ func (sm *SimulatorManager) loadResourcesFromDir(dirPath string) error {
 	sm.deviceResources = &DeviceResources{
 		SNMP: make([]SNMPResource, 0),
 		SSH:  make([]SSHResource, 0),
+		API:  make([]APIResource, 0),
 	}
 
 	for _, entry := range entries {
@@ -89,6 +90,7 @@ func (sm *SimulatorManager) loadResourcesFromDir(dirPath string) error {
 
 		sm.deviceResources.SNMP = append(sm.deviceResources.SNMP, partResources.SNMP...)
 		sm.deviceResources.SSH = append(sm.deviceResources.SSH, partResources.SSH...)
+		sm.deviceResources.API = append(sm.deviceResources.API, partResources.API...)
 	}
 
 	// Build indexes for loaded default resources
@@ -224,6 +226,7 @@ func (sm *SimulatorManager) loadSpecificResourcesFromDir(dirPath string, cacheKe
 	resources := &DeviceResources{
 		SNMP: make([]SNMPResource, 0),
 		SSH:  make([]SSHResource, 0),
+		API:  make([]APIResource, 0),
 	}
 
 	for _, entry := range entries {
@@ -246,6 +249,7 @@ func (sm *SimulatorManager) loadSpecificResourcesFromDir(dirPath string, cacheKe
 
 		resources.SNMP = append(resources.SNMP, partResources.SNMP...)
 		resources.SSH = append(resources.SSH, partResources.SSH...)
+		resources.API = append(resources.API, partResources.API...)
 	}
 
 	// Sort SNMP resources by OID to ensure correct lexicographic ordering for SNMP walks
@@ -386,6 +390,8 @@ func getDeviceTypeFromName(name string) string {
 		return "AWS"
 	} else if strings.Contains(nameLower, "linux") {
 		return "Linux Server"
+	} else if strings.Contains(nameLower, "nvidia") || strings.Contains(nameLower, "dgx") || strings.Contains(nameLower, "hgx") {
+		return "NVIDIA GPU Server"
 	}
 
 	// Capitalize first letter of name as fallback

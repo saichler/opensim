@@ -27,6 +27,24 @@ type DeviceProfile struct {
 	TempBaseMin int   // Minimum base temperature in Celsius
 	TempBaseMax int   // Maximum base temperature in Celsius
 	TempSpike   int   // Max amplitude of temperature spikes
+	GPU         *GPUProfile // Non-nil for GPU server devices
+}
+
+// GPUProfile defines per-GPU metric generation parameters for NVIDIA DCGM devices.
+type GPUProfile struct {
+	GPUCount        int   // Number of GPUs (e.g., 8 for DGX/HGX)
+	VRAMPerGPUMB    int64 // VRAM per GPU in MB
+	GPUUtilMin      int   // Min GPU utilization %
+	GPUUtilMax      int   // Max GPU utilization %
+	GPUUtilSpike    int   // Utilization spike amplitude
+	GPUTempMin      int   // Min GPU temperature (Celsius)
+	GPUTempMax      int   // Max GPU temperature (Celsius)
+	GPUTempSpike    int   // Temperature spike amplitude
+	GPUPowerMin     int   // Min power draw (Watts)
+	GPUPowerMax     int   // Max power draw (Watts)
+	GPUPowerSpike   int   // Power spike amplitude
+	GPUClockSMBase  int   // Base SM clock (MHz)
+	GPUClockMemBase int   // Base memory clock (MHz)
 }
 
 var profileCoreRouter = DeviceProfile{
@@ -71,6 +89,49 @@ var profileServer = DeviceProfile{
 	TempBaseMin: 30, TempBaseMax: 55, TempSpike: 8,
 }
 
+// GPU server profiles
+var profileGPUServerA100 = DeviceProfile{
+	CPUBaseMin: 20, CPUBaseMax: 55, CPUSpike: 25,
+	MemTotalKB:  1024 * 1024 * 1024, // 1 TB system RAM
+	MemBaseMin:  40, MemBaseMax: 75, MemVariance: 12,
+	TempBaseMin: 32, TempBaseMax: 48, TempSpike: 6,
+	GPU: &GPUProfile{
+		GPUCount: 8, VRAMPerGPUMB: 81920,
+		GPUUtilMin: 15, GPUUtilMax: 85, GPUUtilSpike: 30,
+		GPUTempMin: 35, GPUTempMax: 75, GPUTempSpike: 12,
+		GPUPowerMin: 100, GPUPowerMax: 400, GPUPowerSpike: 80,
+		GPUClockSMBase: 1410, GPUClockMemBase: 1512,
+	},
+}
+
+var profileGPUServerH100 = DeviceProfile{
+	CPUBaseMin: 25, CPUBaseMax: 60, CPUSpike: 28,
+	MemTotalKB:  2 * 1024 * 1024 * 1024, // 2 TB system RAM
+	MemBaseMin:  45, MemBaseMax: 80, MemVariance: 12,
+	TempBaseMin: 34, TempBaseMax: 50, TempSpike: 7,
+	GPU: &GPUProfile{
+		GPUCount: 8, VRAMPerGPUMB: 81920,
+		GPUUtilMin: 20, GPUUtilMax: 90, GPUUtilSpike: 30,
+		GPUTempMin: 35, GPUTempMax: 80, GPUTempSpike: 14,
+		GPUPowerMin: 150, GPUPowerMax: 700, GPUPowerSpike: 120,
+		GPUClockSMBase: 1980, GPUClockMemBase: 2619,
+	},
+}
+
+var profileGPUServerH200 = DeviceProfile{
+	CPUBaseMin: 25, CPUBaseMax: 60, CPUSpike: 28,
+	MemTotalKB:  2 * 1024 * 1024 * 1024, // 2 TB system RAM
+	MemBaseMin:  45, MemBaseMax: 80, MemVariance: 12,
+	TempBaseMin: 34, TempBaseMax: 50, TempSpike: 7,
+	GPU: &GPUProfile{
+		GPUCount: 8, VRAMPerGPUMB: 144384,
+		GPUUtilMin: 20, GPUUtilMax: 90, GPUUtilSpike: 30,
+		GPUTempMin: 35, GPUTempMax: 78, GPUTempSpike: 13,
+		GPUPowerMin: 150, GPUPowerMax: 700, GPUPowerSpike: 120,
+		GPUClockSMBase: 1980, GPUClockMemBase: 2619,
+	},
+}
+
 // deviceProfileMap maps resource file names to their device profiles.
 var deviceProfileMap = map[string]DeviceProfile{
 	// Core Routers
@@ -104,6 +165,11 @@ var deviceProfileMap = map[string]DeviceProfile{
 	"dell_poweredge_r750.json": profileServer,
 	"hpe_proliant_dl380.json":  profileServer,
 	"ibm_power_s922.json":      profileServer,
+
+	// NVIDIA GPU Servers
+	"nvidia_dgx_a100.json": profileGPUServerA100,
+	"nvidia_dgx_h100.json": profileGPUServerH100,
+	"nvidia_hgx_h200.json": profileGPUServerH200,
 }
 
 // GetDeviceProfile returns the metric profile for a given resource file.

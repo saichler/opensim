@@ -34,6 +34,7 @@ type MetricsCycler struct {
 	cpuIndex   uint32               // atomic, current position
 	memIndex   uint32               // atomic, current position
 	tempIndex  uint32               // atomic, current position
+	gpuMetrics []*GPUMetrics        // Per-GPU cycling metrics (nil for non-GPU devices)
 }
 
 // NewMetricsCycler creates a cycler with 100 data points generated from the

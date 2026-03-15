@@ -190,7 +190,7 @@ type CreateDevicesRequest struct {
 	MaxWorkers   int            `json:"max_workers,omitempty"` // Optional: max workers for pre-allocation
 }
 
-// RoundRobinDeviceTypes defines the 19 device flavors for round robin creation
+// RoundRobinDeviceTypes defines the 22 device flavors for round robin creation
 var RoundRobinDeviceTypes = []string{
 	"cisco_catalyst_9500.json",
 	"juniper_mx240.json",
@@ -211,6 +211,9 @@ var RoundRobinDeviceTypes = []string{
 	"sonicwall_nsa6700.json",
 	"dlink_dgs3630.json",
 	"ibm_power_s922.json",
+	"nvidia_dgx_a100.json",
+	"nvidia_dgx_h100.json",
+	"nvidia_hgx_h200.json",
 }
 
 type DeviceInfo struct {

@@ -1,0 +1,375 @@
+{
+  "api": [
+    {
+      "method": "GET",
+      "path": "/api/v1/gpu/status",
+      "response": {
+        "gpu_count": 8,
+        "driver_version": "535.129.03",
+        "cuda_version": "12.2",
+        "dcgm_version": "3.3.0",
+        "gpus": [
+          {
+            "index": 0,
+            "name": "NVIDIA H100 80GB HBM3",
+            "uuid": "GPU-d4e8f2a1-7b3c-4d9e-a1f0-8c2d3e4f5a6b",
+            "pci_bus_id": "00000000:07:00.0",
+            "temperature_c": 45,
+            "power_draw_w": 350.24,
+            "power_limit_w": 700.00,
+            "gpu_utilization_pct": 52,
+            "memory_utilization_pct": 39,
+            "memory_used_mib": 32456,
+            "memory_total_mib": 81920,
+            "ecc_corrected": 0,
+            "ecc_uncorrected": 0,
+            "nvlink_active": 18
+          },
+          {
+            "index": 1,
+            "name": "NVIDIA H100 80GB HBM3",
+            "uuid": "GPU-a3b7c9d1-2e4f-4a8b-b5c6-d7e8f9012345",
+            "pci_bus_id": "00000000:0A:00.0",
+            "temperature_c": 48,
+            "power_draw_w": 420.18,
+            "power_limit_w": 700.00,
+            "gpu_utilization_pct": 67,
+            "memory_utilization_pct": 55,
+            "memory_used_mib": 45678,
+            "memory_total_mib": 81920,
+            "ecc_corrected": 0,
+            "ecc_uncorrected": 0,
+            "nvlink_active": 18
+          },
+          {
+            "index": 2,
+            "name": "NVIDIA H100 80GB HBM3",
+            "uuid": "GPU-f1e2d3c4-b5a6-4978-8d7c-6b5a4f3e2d1c",
+            "pci_bus_id": "00000000:0D:00.0",
+            "temperature_c": 72,
+            "power_draw_w": 650.72,
+            "power_limit_w": 700.00,
+            "gpu_utilization_pct": 88,
+            "memory_utilization_pct": 87,
+            "memory_used_mib": 72000,
+            "memory_total_mib": 81920,
+            "ecc_corrected": 0,
+            "ecc_uncorrected": 0,
+            "nvlink_active": 18
+          },
+          {
+            "index": 3,
+            "name": "NVIDIA H100 80GB HBM3",
+            "uuid": "GPU-12345678-abcd-4ef0-9876-543210fedcba",
+            "pci_bus_id": "00000000:47:00.0",
+            "temperature_c": 42,
+            "power_draw_w": 310.45,
+            "power_limit_w": 700.00,
+            "gpu_utilization_pct": 42,
+            "memory_utilization_pct": 30,
+            "memory_used_mib": 25000,
+            "memory_total_mib": 81920,
+            "ecc_corrected": 0,
+            "ecc_uncorrected": 0,
+            "nvlink_active": 18
+          },
+          {
+            "index": 4,
+            "name": "NVIDIA H100 80GB HBM3",
+            "uuid": "GPU-87654321-dcba-4fe0-1234-abcdef098765",
+            "pci_bus_id": "00000000:4A:00.0",
+            "temperature_c": 36,
+            "power_draw_w": 200.30,
+            "power_limit_w": 700.00,
+            "gpu_utilization_pct": 35,
+            "memory_utilization_pct": 35,
+            "memory_used_mib": 28900,
+            "memory_total_mib": 81920,
+            "ecc_corrected": 0,
+            "ecc_uncorrected": 0,
+            "nvlink_active": 18
+          },
+          {
+            "index": 5,
+            "name": "NVIDIA H100 80GB HBM3",
+            "uuid": "GPU-aabbccdd-1122-4334-5566-778899aabbcc",
+            "pci_bus_id": "00000000:4D:00.0",
+            "temperature_c": 65,
+            "power_draw_w": 580.56,
+            "power_limit_w": 700.00,
+            "gpu_utilization_pct": 82,
+            "memory_utilization_pct": 83,
+            "memory_used_mib": 68500,
+            "memory_total_mib": 81920,
+            "ecc_corrected": 0,
+            "ecc_uncorrected": 0,
+            "nvlink_active": 18
+          },
+          {
+            "index": 6,
+            "name": "NVIDIA H100 80GB HBM3",
+            "uuid": "GPU-11223344-5566-4778-99aa-bbccddeeff00",
+            "pci_bus_id": "00000000:87:00.0",
+            "temperature_c": 58,
+            "power_draw_w": 490.89,
+            "power_limit_w": 700.00,
+            "gpu_utilization_pct": 73,
+            "memory_utilization_pct": 67,
+            "memory_used_mib": 55200,
+            "memory_total_mib": 81920,
+            "ecc_corrected": 0,
+            "ecc_uncorrected": 0,
+            "nvlink_active": 18
+          },
+          {
+            "index": 7,
+            "name": "NVIDIA H100 80GB HBM3",
+            "uuid": "GPU-ffeeddcc-bbaa-4998-8776-554433221100",
+            "pci_bus_id": "00000000:8A:00.0",
+            "temperature_c": 51,
+            "power_draw_w": 380.15,
+            "power_limit_w": 700.00,
+            "gpu_utilization_pct": 58,
+            "memory_utilization_pct": 50,
+            "memory_used_mib": 41000,
+            "memory_total_mib": 81920,
+            "ecc_corrected": 0,
+            "ecc_uncorrected": 0,
+            "nvlink_active": 18
+          }
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/gpu/devices",
+      "response": {
+        "count": 8,
+        "devices": [
+          {
+            "index": 0,
+            "name": "NVIDIA H100 80GB HBM3",
+            "uuid": "GPU-d4e8f2a1-7b3c-4d9e-a1f0-8c2d3e4f5a6b",
+            "serial": "1560833002DEF",
+            "pci_bus_id": "00000000:07:00.0",
+            "memory_total_mib": 81920,
+            "compute_capability": "9.0",
+            "persistence_mode": "Enabled"
+          },
+          {
+            "index": 1,
+            "name": "NVIDIA H100 80GB HBM3",
+            "uuid": "GPU-a3b7c9d1-2e4f-4a8b-b5c6-d7e8f9012345",
+            "serial": "1560833102DEF",
+            "pci_bus_id": "00000000:0A:00.0",
+            "memory_total_mib": 81920,
+            "compute_capability": "9.0",
+            "persistence_mode": "Enabled"
+          },
+          {
+            "index": 2,
+            "name": "NVIDIA H100 80GB HBM3",
+            "uuid": "GPU-f1e2d3c4-b5a6-4978-8d7c-6b5a4f3e2d1c",
+            "serial": "1560833202DEF",
+            "pci_bus_id": "00000000:0D:00.0",
+            "memory_total_mib": 81920,
+            "compute_capability": "9.0",
+            "persistence_mode": "Enabled"
+          },
+          {
+            "index": 3,
+            "name": "NVIDIA H100 80GB HBM3",
+            "uuid": "GPU-12345678-abcd-4ef0-9876-543210fedcba",
+            "serial": "1560833302DEF",
+            "pci_bus_id": "00000000:47:00.0",
+            "memory_total_mib": 81920,
+            "compute_capability": "9.0",
+            "persistence_mode": "Enabled"
+          },
+          {
+            "index": 4,
+            "name": "NVIDIA H100 80GB HBM3",
+            "uuid": "GPU-87654321-dcba-4fe0-1234-abcdef098765",
+            "serial": "1560833402DEF",
+            "pci_bus_id": "00000000:4A:00.0",
+            "memory_total_mib": 81920,
+            "compute_capability": "9.0",
+            "persistence_mode": "Enabled"
+          },
+          {
+            "index": 5,
+            "name": "NVIDIA H100 80GB HBM3",
+            "uuid": "GPU-aabbccdd-1122-4334-5566-778899aabbcc",
+            "serial": "1560833502DEF",
+            "pci_bus_id": "00000000:4D:00.0",
+            "memory_total_mib": 81920,
+            "compute_capability": "9.0",
+            "persistence_mode": "Enabled"
+          },
+          {
+            "index": 6,
+            "name": "NVIDIA H100 80GB HBM3",
+            "uuid": "GPU-11223344-5566-4778-99aa-bbccddeeff00",
+            "serial": "1560833602DEF",
+            "pci_bus_id": "00000000:87:00.0",
+            "memory_total_mib": 81920,
+            "compute_capability": "9.0",
+            "persistence_mode": "Enabled"
+          },
+          {
+            "index": 7,
+            "name": "NVIDIA H100 80GB HBM3",
+            "uuid": "GPU-ffeeddcc-bbaa-4998-8776-554433221100",
+            "serial": "1560833702DEF",
+            "pci_bus_id": "00000000:8A:00.0",
+            "memory_total_mib": 81920,
+            "compute_capability": "9.0",
+            "persistence_mode": "Enabled"
+          }
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/gpu/topology",
+      "response": {
+        "gpu_count": 8,
+        "nvlink_version": 4,
+        "nvswitch_count": 4,
+        "topology": "full_mesh",
+        "links_per_gpu": 18,
+        "bandwidth_per_link_gbps": 25,
+        "total_bandwidth_per_gpu_gbps": 450,
+        "connections": [
+          {"gpu_pair": [0, 1], "type": "NV18"},
+          {"gpu_pair": [0, 2], "type": "NV18"},
+          {"gpu_pair": [0, 3], "type": "NV18"},
+          {"gpu_pair": [0, 4], "type": "NV18"},
+          {"gpu_pair": [0, 5], "type": "NV18"},
+          {"gpu_pair": [0, 6], "type": "NV18"},
+          {"gpu_pair": [0, 7], "type": "NV18"},
+          {"gpu_pair": [1, 2], "type": "NV18"},
+          {"gpu_pair": [1, 3], "type": "NV18"},
+          {"gpu_pair": [1, 4], "type": "NV18"},
+          {"gpu_pair": [1, 5], "type": "NV18"},
+          {"gpu_pair": [1, 6], "type": "NV18"},
+          {"gpu_pair": [1, 7], "type": "NV18"},
+          {"gpu_pair": [2, 3], "type": "NV18"},
+          {"gpu_pair": [2, 4], "type": "NV18"},
+          {"gpu_pair": [2, 5], "type": "NV18"},
+          {"gpu_pair": [2, 6], "type": "NV18"},
+          {"gpu_pair": [2, 7], "type": "NV18"},
+          {"gpu_pair": [3, 4], "type": "NV18"},
+          {"gpu_pair": [3, 5], "type": "NV18"},
+          {"gpu_pair": [3, 6], "type": "NV18"},
+          {"gpu_pair": [3, 7], "type": "NV18"},
+          {"gpu_pair": [4, 5], "type": "NV18"},
+          {"gpu_pair": [4, 6], "type": "NV18"},
+          {"gpu_pair": [4, 7], "type": "NV18"},
+          {"gpu_pair": [5, 6], "type": "NV18"},
+          {"gpu_pair": [5, 7], "type": "NV18"},
+          {"gpu_pair": [6, 7], "type": "NV18"}
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/dcgm/health",
+      "response": {
+        "overall_health": "HEALTHY",
+        "checks": {
+          "deployment": "PASS",
+          "pcie": "PASS",
+          "memory": "PASS",
+          "sm_clocks": "PASS",
+          "thermal": "PASS",
+          "power": "PASS",
+          "nvlink": "PASS",
+          "nvswitch": "PASS"
+        },
+        "gpu_health": [
+          {"gpu_id": 0, "status": "HEALTHY", "warnings": []},
+          {"gpu_id": 1, "status": "HEALTHY", "warnings": []},
+          {"gpu_id": 2, "status": "HEALTHY", "warnings": []},
+          {"gpu_id": 3, "status": "HEALTHY", "warnings": []},
+          {"gpu_id": 4, "status": "HEALTHY", "warnings": []},
+          {"gpu_id": 5, "status": "HEALTHY", "warnings": []},
+          {"gpu_id": 6, "status": "HEALTHY", "warnings": []},
+          {"gpu_id": 7, "status": "HEALTHY", "warnings": []}
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/dcgm/config",
+      "response": {
+        "dcgm_version": "3.3.0",
+        "monitoring_enabled": true,
+        "collection_interval_ms": 1000,
+        "health_check_interval_s": 30,
+        "profiling_enabled": true,
+        "watched_fields": [
+          "DCGM_FI_DEV_GPU_TEMP",
+          "DCGM_FI_DEV_POWER_USAGE",
+          "DCGM_FI_DEV_GPU_UTIL",
+          "DCGM_FI_DEV_MEM_COPY_UTIL",
+          "DCGM_FI_DEV_FB_USED",
+          "DCGM_FI_DEV_FB_FREE",
+          "DCGM_FI_DEV_ECC_SBE_AGG_TOTAL",
+          "DCGM_FI_DEV_ECC_DBE_AGG_TOTAL",
+          "DCGM_FI_DEV_NVLINK_BANDWIDTH_TOTAL",
+          "DCGM_FI_DEV_PCIE_REPLAY_COUNTER"
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/system/info",
+      "response": {
+        "hostname": "dgx-h100-001",
+        "os": "Ubuntu 22.04.3 LTS",
+        "kernel": "5.15.0-91-generic",
+        "architecture": "x86_64",
+        "driver_version": "535.129.03",
+        "cuda_version": "12.2",
+        "dcgm_version": "3.3.0",
+        "dgx_software_version": "6.1.0",
+        "cpu": {
+          "model": "Intel(R) Xeon(R) Platinum 8480C",
+          "sockets": 2,
+          "cores_per_socket": 28,
+          "threads_per_core": 2,
+          "total_threads": 112
+        },
+        "gpu": {
+          "count": 8,
+          "model": "NVIDIA H100 80GB HBM3",
+          "memory_per_gpu_mib": 81920,
+          "total_gpu_memory_mib": 655360,
+          "nvlink_version": 4,
+          "compute_capability": "9.0"
+        },
+        "network": {
+          "management": "25GbE",
+          "infiniband": "4x NDR 400Gbps",
+          "total_ib_bandwidth_gbps": 1600
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/system/memory",
+      "response": {
+        "total_gb": 2048,
+        "used_gb": 1230,
+        "free_gb": 818,
+        "shared_gb": 2,
+        "buff_cache_gb": 312,
+        "available_gb": 780,
+        "swap_total_gb": 32,
+        "swap_used_gb": 0,
+        "swap_free_gb": 32
+      }
+    }
+  ]
+}

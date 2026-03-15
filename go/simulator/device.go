@@ -227,6 +227,7 @@ func (sm *SimulatorManager) CreateDevicesWithOptions(startIP string, count int, 
 			// Initialize per-device metrics cycler for dynamic CPU/memory values
 			profile := GetDeviceProfile(deviceResourceFile)
 			device.metricsCycler = NewMetricsCycler(int64(i), profile)
+			device.metricsCycler.InitGPUMetrics(int64(i), profile.GPU)
 
 			// Cache the dynamic values using atomic for lock-free access
 			device.cachedSysName.Store(sysNameValue)
@@ -445,6 +446,7 @@ func (sm *SimulatorManager) createSingleDevice(deviceIndex int, deviceIP net.IP,
 	// Initialize per-device metrics cycler for dynamic CPU/memory values
 	profile := GetDeviceProfile(resourceFile)
 	device.metricsCycler = NewMetricsCycler(int64(deviceIndex), profile)
+	device.metricsCycler.InitGPUMetrics(int64(deviceIndex), profile.GPU)
 
 	// Cache the dynamic values using atomic for lock-free access
 	device.cachedSysName.Store(sysNameValue)
