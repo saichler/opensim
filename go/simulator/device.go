@@ -25,12 +25,12 @@ import (
 	"time"
 )
 
-func (sm *SimulatorManager) CreateDevices(startIP string, count int, netmask string, resourceFile string, v3Config *SNMPv3Config, roundRobin bool) error {
-	return sm.CreateDevicesWithOptions(startIP, count, netmask, resourceFile, v3Config, true, 0, roundRobin)
+func (sm *SimulatorManager) CreateDevices(startIP string, count int, netmask string, resourceFile string, v3Config *SNMPv3Config, roundRobin bool, category string) error {
+	return sm.CreateDevicesWithOptions(startIP, count, netmask, resourceFile, v3Config, true, 0, roundRobin, category)
 }
 
 // CreateDevicesWithOptions creates devices with optional pre-allocation control
-func (sm *SimulatorManager) CreateDevicesWithOptions(startIP string, count int, netmask string, resourceFile string, v3Config *SNMPv3Config, preAllocate bool, maxWorkers int, roundRobin bool) error {
+func (sm *SimulatorManager) CreateDevicesWithOptions(startIP string, count int, netmask string, resourceFile string, v3Config *SNMPv3Config, preAllocate bool, maxWorkers int, roundRobin bool, category string) error {
 	// Set device creation status
 	sm.isCreatingDevices.Store(true)
 	sm.deviceCreateProgress.Store(0)
@@ -94,12 +94,28 @@ func (sm *SimulatorManager) CreateDevicesWithOptions(startIP string, count int, 
 
 	successCount := 0
 
-	// Pre-load all round robin resource files if round robin is enabled
+	// Pre-load round robin resource files if round robin is enabled
 	var roundRobinResources []*DeviceResources
 	var roundRobinResourceFiles []string
 	if roundRobin {
-		log.Printf("Round Robin mode enabled - loading %d device type resources...", len(RoundRobinDeviceTypes))
-		for _, rrFile := range RoundRobinDeviceTypes {
+		// Filter device types by category if specified
+		rrTypes := RoundRobinDeviceTypes
+		if category != "" {
+			var filtered []string
+			for _, rrFile := range RoundRobinDeviceTypes {
+				name := strings.TrimSuffix(rrFile, ".json")
+				if getDeviceCategoryFromName(name) == category {
+					filtered = append(filtered, rrFile)
+				}
+			}
+			if len(filtered) > 0 {
+				rrTypes = filtered
+			}
+			log.Printf("Round Robin mode enabled for category %q - %d device types", category, len(rrTypes))
+		} else {
+			log.Printf("Round Robin mode enabled - loading %d device type resources...", len(rrTypes))
+		}
+		for _, rrFile := range rrTypes {
 			res, err := sm.LoadSpecificResources(rrFile)
 			if err != nil {
 				log.Printf("WARNING: Failed to load round robin resource %s: %v", rrFile, err)

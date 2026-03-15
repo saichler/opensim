@@ -105,7 +105,6 @@ async function loadResources() {
 
 function populateResourceSelect() {
     const categorySelect = document.getElementById('deviceCategory');
-    const typeSelect = document.getElementById('resourceFile');
 
     // Build unique sorted category list
     const categories = [...new Set(resources.map(r => r.category))].sort();
@@ -128,10 +127,11 @@ function populateResourceSelect() {
 
 function updateDeviceTypeDropdown(category) {
     const select = document.getElementById('resourceFile');
-    const totalTypes = resources.length;
-    select.innerHTML = '<option value="">Default (Auto-detect)</option><option value="__round_robin__">Round Robin (All ' + totalTypes + ' Types)</option>';
-
     const filtered = category ? resources.filter(r => r.category === category) : resources;
+    const count = filtered.length;
+    const label = category ? category : 'All ' + count + ' Types';
+    select.innerHTML = '<option value="">Default (Auto-detect)</option><option value="__round_robin__">Round Robin (' + label + ')</option>';
+
     filtered.forEach(resource => {
         const option = document.createElement('option');
         option.value = resource.filename;
@@ -152,6 +152,10 @@ async function createDevices(startIp, deviceCount, netmask, resourceFile) {
         // Check if round robin mode is selected
         if (resourceFile === '__round_robin__') {
             requestData.round_robin = true;
+            const category = document.getElementById('deviceCategory').value;
+            if (category) {
+                requestData.category = category;
+            }
         } else if (resourceFile) {
             // Add resource file if selected (not round robin)
             requestData.resource_file = resourceFile;

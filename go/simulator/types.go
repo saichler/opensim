@@ -185,14 +185,16 @@ type CreateDevicesRequest struct {
 	DeviceCount  int            `json:"device_count"`
 	Netmask      string         `json:"netmask"`
 	ResourceFile string         `json:"resource_file,omitempty"` // Optional resource file selection
-	RoundRobin   bool           `json:"round_robin,omitempty"`   // Optional: cycle through all device types
+	RoundRobin   bool           `json:"round_robin,omitempty"`   // Optional: cycle through device types
+	Category     string         `json:"category,omitempty"`      // Optional: filter round robin to a category
 	SNMPv3       *SNMPv3Config  `json:"snmpv3,omitempty"`
 	PreAllocate  bool           `json:"pre_allocate,omitempty"` // Optional: explicitly enable/disable pre-allocation
 	MaxWorkers   int            `json:"max_workers,omitempty"` // Optional: max workers for pre-allocation
 }
 
-// RoundRobinDeviceTypes defines the 22 device flavors for round robin creation
+// RoundRobinDeviceTypes defines all 28 device flavors for round robin creation
 var RoundRobinDeviceTypes = []string{
+	// Network Devices
 	"cisco_catalyst_9500.json",
 	"juniper_mx240.json",
 	"asr9k.json",
@@ -201,20 +203,29 @@ var RoundRobinDeviceTypes = []string{
 	"juniper_mx960.json",
 	"cisco_nexus_9500.json",
 	"huawei_ne8000.json",
-	"dell_poweredge_r750.json",
 	"nec_ix3315.json",
 	"arista_7280r3.json",
 	"check_point_15600.json",
-	"hpe_proliant_dl380.json",
 	"cisco_crs_x.json",
+	"cisco_ios.json",
 	"extreme_vsp4450.json",
 	"nokia_7750_sr12.json",
 	"sonicwall_nsa6700.json",
 	"dlink_dgs3630.json",
+	// Servers
+	"dell_poweredge_r750.json",
+	"hpe_proliant_dl380.json",
 	"ibm_power_s922.json",
+	"linux_server.json",
+	// GPU Servers
 	"nvidia_dgx_a100.json",
 	"nvidia_dgx_h100.json",
 	"nvidia_hgx_h200.json",
+	// Storage
+	"netapp_ontap.json",
+	"pure_storage_flasharray.json",
+	"dell_emc_unity.json",
+	"aws_s3_storage.json",
 }
 
 type DeviceInfo struct {

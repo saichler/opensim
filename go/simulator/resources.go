@@ -406,26 +406,19 @@ func getDeviceTypeFromName(name string) string {
 func getDeviceCategoryFromName(name string) string {
 	nameLower := strings.ToLower(name)
 
-	// Routers
+	// Network Devices (routers, switches, firewalls)
 	if strings.Contains(nameLower, "asr9k") || strings.Contains(nameLower, "crs") ||
 		strings.Contains(nameLower, "mx240") || strings.Contains(nameLower, "mx960") ||
 		strings.Contains(nameLower, "ne8000") || strings.Contains(nameLower, "7750") ||
-		strings.Contains(nameLower, "nec") || (strings.Contains(nameLower, "cisco") && strings.Contains(nameLower, "ios")) {
-		return "Routers"
-	}
-
-	// Switches
-	if strings.Contains(nameLower, "catalyst") || strings.Contains(nameLower, "nexus") ||
+		strings.Contains(nameLower, "nec") || (strings.Contains(nameLower, "cisco") && strings.Contains(nameLower, "ios")) ||
+		strings.Contains(nameLower, "catalyst") || strings.Contains(nameLower, "nexus") ||
 		strings.Contains(nameLower, "arista") || strings.Contains(nameLower, "extreme") ||
-		strings.Contains(nameLower, "dlink") || strings.Contains(nameLower, "d-link") {
-		return "Switches"
-	}
-
-	// Firewalls
-	if strings.Contains(nameLower, "palo") || strings.Contains(nameLower, "fortinet") ||
+		strings.Contains(nameLower, "dlink") || strings.Contains(nameLower, "d-link") ||
+		strings.Contains(nameLower, "palo") || strings.Contains(nameLower, "fortinet") ||
 		strings.Contains(nameLower, "fortigate") || strings.Contains(nameLower, "check_point") ||
-		strings.Contains(nameLower, "sonicwall") {
-		return "Firewalls"
+		strings.Contains(nameLower, "sonicwall") || strings.Contains(nameLower, "nokia") ||
+		strings.Contains(nameLower, "huawei") || strings.Contains(nameLower, "juniper") {
+		return "Network Devices"
 	}
 
 	// GPU Servers

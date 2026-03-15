@@ -77,13 +77,26 @@ print_info "✅ Network queues optimized for burst traffic"
 # 3. File Descriptor Limits - Required for many TUN interfaces
 print_info "Setting file descriptor limits..."
 
-# Set file descriptor limit for current session
-ulimit -n 10000000
+# Permanently configure high file descriptor limits if not already set
+if ! grep -q "nofile.*10000000" /etc/security/limits.conf 2>/dev/null; then
+    print_info "Configuring permanent file descriptor limits in /etc/security/limits.conf..."
+    sudo tee -a /etc/security/limits.conf > /dev/null << 'LIMITS'
+*    soft    nofile    10000000
+*    hard    nofile    10000000
+root soft    nofile    10000000
+root hard    nofile    10000000
+LIMITS
+    print_info "✅ Permanent limits configured (will take full effect after re-login)"
+fi
+
+# Raise hard limit for current session via prlimit, then set soft limit
+sudo prlimit --nofile=10000000:10000000 --pid $$ 2>/dev/null || true
+ulimit -n 10000000 2>/dev/null || ulimit -n $(ulimit -Hn) 2>/dev/null || true
 
 # Update system-wide file descriptor limit
 sudo sh -c 'echo 10000000 > /proc/sys/fs/file-max' 2>/dev/null || true
 
-print_info "✅ File descriptors: 10000000 (supports 1000+ devices)"
+print_info "✅ File descriptors: $(ulimit -n) (supports 1000+ devices)"
 
 # 4. UDP-Specific Memory Optimizations
 print_info "Applying UDP memory optimizations..."
@@ -302,6 +315,33 @@ create_device "CAI-SW-01" "${BASE_IP}.$(($START_IP_LAST_OCTET + 17))" "dlink_dgs
 # Device 19: CPT-SRV-01 (IBM Power System S922)
 create_device "CPT-SRV-01" "${BASE_IP}.$(($START_IP_LAST_OCTET + 18))" "ibm_power_s922.json" 1
 
+# Device 20: SFO-IOS-01 (Cisco IOS)
+create_device "SFO-IOS-01" "${BASE_IP}.$(($START_IP_LAST_OCTET + 19))" "cisco_ios.json" 1
+
+# Device 21: DEN-SRV-01 (Linux Server)
+create_device "DEN-SRV-01" "${BASE_IP}.$(($START_IP_LAST_OCTET + 20))" "linux_server.json" 1
+
+# Device 22: GPU-A100-01 (NVIDIA DGX A100)
+create_device "GPU-A100-01" "${BASE_IP}.$(($START_IP_LAST_OCTET + 21))" "nvidia_dgx_a100.json" 1
+
+# Device 23: GPU-H100-01 (NVIDIA DGX H100)
+create_device "GPU-H100-01" "${BASE_IP}.$(($START_IP_LAST_OCTET + 22))" "nvidia_dgx_h100.json" 1
+
+# Device 24: GPU-H200-01 (NVIDIA HGX H200)
+create_device "GPU-H200-01" "${BASE_IP}.$(($START_IP_LAST_OCTET + 23))" "nvidia_hgx_h200.json" 1
+
+# Device 25: STR-NTAP-01 (NetApp ONTAP)
+create_device "STR-NTAP-01" "${BASE_IP}.$(($START_IP_LAST_OCTET + 24))" "netapp_ontap.json" 1
+
+# Device 26: STR-PURE-01 (Pure Storage FlashArray)
+create_device "STR-PURE-01" "${BASE_IP}.$(($START_IP_LAST_OCTET + 25))" "pure_storage_flasharray.json" 1
+
+# Device 27: STR-EMC-01 (Dell EMC Unity)
+create_device "STR-EMC-01" "${BASE_IP}.$(($START_IP_LAST_OCTET + 26))" "dell_emc_unity.json" 1
+
+# Device 28: STR-AWS-01 (AWS S3 Storage)
+create_device "STR-AWS-01" "${BASE_IP}.$(($START_IP_LAST_OCTET + 27))" "aws_s3_storage.json" 1
+
 echo ""
 echo "=================================================="
 echo -e "${GREEN}🎉 All devices created successfully!${NC}"
@@ -343,6 +383,15 @@ echo "• ${BASE_IP}.16 - SAO-CORE-01 (Nokia 7750 SR-12)"
 echo "• ${BASE_IP}.17 - BOG-FW-01 (SonicWall NSa 6700) ⚠️  WARNING"
 echo "• ${BASE_IP}.18 - CAI-SW-01 (D-Link DGS-3630-52TC)"
 echo "• ${BASE_IP}.19 - CPT-SRV-01 (IBM Power System S922)"
+echo "• ${BASE_IP}.20 - SFO-IOS-01 (Cisco IOS)"
+echo "• ${BASE_IP}.21 - DEN-SRV-01 (Linux Server)"
+echo "• ${BASE_IP}.22 - GPU-A100-01 (NVIDIA DGX A100)"
+echo "• ${BASE_IP}.23 - GPU-H100-01 (NVIDIA DGX H100)"
+echo "• ${BASE_IP}.24 - GPU-H200-01 (NVIDIA HGX H200)"
+echo "• ${BASE_IP}.25 - STR-NTAP-01 (NetApp ONTAP)"
+echo "• ${BASE_IP}.26 - STR-PURE-01 (Pure Storage FlashArray)"
+echo "• ${BASE_IP}.27 - STR-EMC-01 (Dell EMC Unity)"
+echo "• ${BASE_IP}.28 - STR-AWS-01 (AWS S3 Storage)"
 echo ""
 
 echo -e "${BLUE}🧪 Test Commands:${NC}"
@@ -362,5 +411,6 @@ echo "curl http://localhost:$SERVER_PORT/api/v1/devices"
 echo "curl http://localhost:$SERVER_PORT/api/v1/devices/export"
 echo ""
 
-echo -e "${GREEN}✅ Setup complete! All 19 mock devices are running.${NC}"
+echo -e "${GREEN}✅ Setup complete! All 28 mock devices are running.${NC}"
+echo -e "${YELLOW}   17 Network Devices, 4 Servers, 3 GPU Servers, 4 Storage${NC}"
 echo -e "${YELLOW}📋 Use './stop_all_devices.sh' to stop all devices and server.${NC}"
