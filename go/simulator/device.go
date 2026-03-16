@@ -255,7 +255,7 @@ func (sm *SimulatorManager) CreateDevicesWithOptions(startIP string, count int, 
 				v3Config: v3Config,
 			}
 			device.sshServer = &SSHServer{device: device, signer: sm.sharedSSHSigner}
-			device.apiServer = &APIServer{device: device}
+			device.apiServer = &APIServer{device: device, sharedTLSCert: sm.sharedTLSCert}
 
 			// Start device services
 			if err := device.Start(); err != nil {
@@ -474,7 +474,7 @@ func (sm *SimulatorManager) createSingleDevice(deviceIndex int, deviceIP net.IP,
 		v3Config: v3Config,
 	}
 	device.sshServer = &SSHServer{device: device, signer: sm.sharedSSHSigner}
-	device.apiServer = &APIServer{device: device}
+	device.apiServer = &APIServer{device: device, sharedTLSCert: sm.sharedTLSCert}
 
 	// Start device services
 	if err := device.Start(); err != nil {

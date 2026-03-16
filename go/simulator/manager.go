@@ -18,11 +18,15 @@ package main
 import (
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/tls"
 	"crypto/x509"
+	"crypto/x509/pkix"
 	"encoding/pem"
 	"fmt"
 	"log"
+	"math/big"
 	mathrand "math/rand"
+	"net"
 	"strings"
 	"time"
 
@@ -69,6 +73,9 @@ func NewSimulatorManagerWithOptions(useNamespace bool) *SimulatorManager {
 	// Pre-generate shared SSH host key for all devices
 	sm.generateSharedSSHKey()
 
+	// Pre-generate shared TLS certificate for all API servers
+	sm.generateSharedTLSCert()
+
 	return sm
 }
 
@@ -104,6 +111,85 @@ func (sm *SimulatorManager) generateSharedSSHKey() {
 	sm.sharedSSHSigner = signer
 	elapsed := time.Since(startTime)
 	log.Printf("Shared SSH host key generated in %v", elapsed)
+}
+
+// generateSharedTLSCert generates a single TLS certificate to be shared by all API servers.
+// This avoids expensive per-device 4096-bit RSA key generation (~10-20s each).
+func (sm *SimulatorManager) generateSharedTLSCert() {
+	log.Println("Generating shared TLS certificate for all API servers...")
+	startTime := time.Now()
+
+	// Generate a 2048-bit CA key (sufficient for simulation, ~10x faster than 4096-bit)
+	caKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		log.Printf("WARNING: Failed to generate shared TLS CA key: %v", err)
+		return
+	}
+
+	caTemplate := &x509.Certificate{
+		SerialNumber: big.NewInt(2025),
+		Subject: pkix.Name{
+			CommonName:   "opensim-ca",
+			Organization: []string{"OpenSim"},
+		},
+		NotBefore:             time.Now(),
+		NotAfter:              time.Now().AddDate(10, 0, 0),
+		IsCA:                  true,
+		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
+		BasicConstraintsValid: true,
+	}
+
+	caBytes, err := x509.CreateCertificate(rand.Reader, caTemplate, caTemplate, &caKey.PublicKey, caKey)
+	if err != nil {
+		log.Printf("WARNING: Failed to create shared TLS CA: %v", err)
+		return
+	}
+
+	ca, err := x509.ParseCertificate(caBytes)
+	if err != nil {
+		log.Printf("WARNING: Failed to parse shared TLS CA: %v", err)
+		return
+	}
+
+	// Generate a server certificate signed by the CA
+	serverKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		log.Printf("WARNING: Failed to generate shared TLS server key: %v", err)
+		return
+	}
+
+	serverTemplate := &x509.Certificate{
+		SerialNumber: big.NewInt(1),
+		Subject: pkix.Name{
+			CommonName:   "opensim-device",
+			Organization: []string{"OpenSim"},
+		},
+		// Use wildcard-style: accept any IP by including 0.0.0.0
+		IPAddresses: []net.IP{net.IPv4zero, net.IPv6zero},
+		NotBefore:   time.Now(),
+		NotAfter:    time.Now().AddDate(10, 0, 0),
+		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		KeyUsage:    x509.KeyUsageDigitalSignature,
+	}
+
+	serverCertBytes, err := x509.CreateCertificate(rand.Reader, serverTemplate, ca, &serverKey.PublicKey, caKey)
+	if err != nil {
+		log.Printf("WARNING: Failed to create shared TLS cert: %v", err)
+		return
+	}
+
+	certPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: serverCertBytes})
+	keyPEM := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(serverKey)})
+
+	tlsCert, err := tls.X509KeyPair(certPEM, keyPEM)
+	if err != nil {
+		log.Printf("WARNING: Failed to load shared TLS cert: %v", err)
+		return
+	}
+
+	sm.sharedTLSCert = &tlsCert
+	elapsed := time.Since(startTime)
+	log.Printf("Shared TLS certificate generated in %v", elapsed)
 }
 
 func (sm *SimulatorManager) ListDevices() []DeviceInfo {

@@ -16,6 +16,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"net"
 	"sync"
 	"sync/atomic"
@@ -137,9 +138,10 @@ type SSHServer struct {
 }
 
 type APIServer struct {
-	device   *DeviceSimulator
-	listener net.Listener
-	running  bool
+	device        *DeviceSimulator
+	listener      net.Listener
+	running       bool
+	sharedTLSCert *tls.Certificate // Shared TLS cert from SimulatorManager
 }
 
 // Manager for all simulated devices
@@ -150,6 +152,7 @@ type SimulatorManager struct {
 	deviceResources *DeviceResources
 	resourcesCache  map[string]*DeviceResources // Cache for loaded resource files
 	sharedSSHSigner ssh.Signer                   // Shared SSH host key for all devices
+	sharedTLSCert   *tls.Certificate             // Shared TLS certificate for all API servers
 
 	// Network namespace for device isolation (prevents systemd-networkd overhead)
 	netNamespace    *NetNamespace // Network namespace for all simulated devices
