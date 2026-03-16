@@ -91,12 +91,14 @@ func compareOIDs(oid1, oid2 string) int {
 
 // Find the next OID in lexicographic order for SNMP GetNext requests
 func (s *SNMPServer) findNextOID(currentOID string) (string, string) {
-	// Try pre-computed next OID map first (lock-free)
+	// Pre-computed next static OID (used as candidate, not early return)
+	var precomputedNextOID string
+	var precomputedNextResp string
 	if s.device.resources.oidNextMap != nil {
 		if nextOID, exists := s.device.resources.oidNextMap.Load(currentOID); exists {
-			// Found pre-computed next OID, now get its response
 			if response, exists := s.device.resources.oidIndex.Load(nextOID); exists {
-				return nextOID.(string), response.(string)
+				precomputedNextOID = nextOID.(string)
+				precomputedNextResp = response.(string)
 			}
 		}
 	}
@@ -148,8 +150,14 @@ func (s *SNMPServer) findNextOID(currentOID string) (string, string) {
 	// Check candidates: next static OID, dynamic sysName/sysLocation, and metric OIDs
 	candidates := make([]struct{ oid, resp string }, 0, 8)
 
-	// Add next static OID if found
-	if left < len(sortedOIDs) {
+	// Add pre-computed next static OID if available
+	if precomputedNextOID != "" {
+		candidates = append(candidates, struct{ oid, resp string }{
+			oid:  precomputedNextOID,
+			resp: precomputedNextResp,
+		})
+	} else if left < len(sortedOIDs) {
+		// Fallback to binary search result
 		staticOID := sortedOIDs[left]
 		// Skip dynamic OIDs that might be in the sorted list
 		if staticOID != sysNameOID && staticOID != sysLocationOID {
