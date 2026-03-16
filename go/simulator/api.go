@@ -16,12 +16,16 @@
 package main
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net"
 	"net/http"
+	"os"
 	"strings"
+
+	"github.com/saichler/l8utils/go/utils/certs"
 )
 
 // APIServer implementation for storage device REST APIs
@@ -70,10 +74,25 @@ func (s *APIServer) Start() error {
 		return fmt.Errorf("failed to start API server on %s: %v", addr, err)
 	}
 
+	// Generate self-signed TLS certificate if missing
+	certName := fmt.Sprintf("opensim-%s", s.device.IP.String())
+	if _, err := os.Open(certName + ".crt"); err != nil {
+		certs.CreateLayer8Crt(certName, s.device.IP.String(), int64(s.device.APIPort))
+	}
+
+	cert, err := tls.LoadX509KeyPair(certName+".crt", certName+".crtKey")
+	if err != nil {
+		return fmt.Errorf("failed to load TLS cert for %s: %v", addr, err)
+	}
+	tlsConfig := &tls.Config{
+		Certificates: []tls.Certificate{cert},
+	}
+	listener = tls.NewListener(listener, tlsConfig)
+
 	s.listener = listener
 	s.running = true
 
-	// Start HTTP server in background
+	// Start HTTPS server in background
 	go func() {
 		server := &http.Server{
 			Handler: mux,
