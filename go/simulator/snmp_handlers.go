@@ -91,7 +91,7 @@ func compareOIDs(oid1, oid2 string) int {
 
 // Find the next OID in lexicographic order for SNMP GetNext requests
 func (s *SNMPServer) findNextOID(currentOID string) (string, string) {
-	// Pre-computed next static OID (used as candidate, not early return)
+	// Try pre-computed next OID map first (O(1) lookup)
 	var precomputedNextOID string
 	var precomputedNextResp string
 	if s.device.resources.oidNextMap != nil {
@@ -103,6 +103,29 @@ func (s *SNMPServer) findNextOID(currentOID string) (string, string) {
 		}
 	}
 
+	// Fast path: if this device has no dynamic metric OIDs and we have a
+	// pre-computed next OID, return it immediately (O(1)).
+	sortedMetricOIDs := GetSortedMetricOIDs(s.device.resourceFile)
+	if len(sortedMetricOIDs) == 0 && precomputedNextOID != "" {
+		return precomputedNextOID, precomputedNextResp
+	}
+
+	// If we have a pre-computed next OID and it's lexicographically before
+	// the first dynamic metric OID, no metric OID can fall between current
+	// and next — safe to return immediately.
+	if precomputedNextOID != "" && len(sortedMetricOIDs) > 0 {
+		firstMetricOID := sortedMetricOIDs[0]
+		if compareOIDs(precomputedNextOID, firstMetricOID) <= 0 {
+			return precomputedNextOID, precomputedNextResp
+		}
+		// Also safe if currentOID is already past all metric OIDs
+		lastMetricOID := sortedMetricOIDs[len(sortedMetricOIDs)-1]
+		if compareOIDs(currentOID, lastMetricOID) >= 0 {
+			return precomputedNextOID, precomputedNextResp
+		}
+	}
+
+	// Slow path: need to consider dynamic metric OIDs as candidates.
 	// Dynamic OIDs - check these with lock-free access
 	sysNameOID := "1.3.6.1.2.1.1.5.0"
 	sysLocationOID := "1.3.6.1.2.1.1.6.0"
@@ -184,10 +207,9 @@ func (s *SNMPServer) findNextOID(currentOID string) (string, string) {
 		})
 	}
 
-	// Add dynamic metric OIDs as candidates for walks
-	if s.device.metricsCycler != nil {
-		metricOIDs := GetAllMetricOIDsForDevice(s.device.resourceFile)
-		for _, mOID := range metricOIDs {
+	// Add dynamic metric OIDs as candidates for walks (uses cached sorted slice)
+	if s.device.metricsCycler != nil && len(sortedMetricOIDs) > 0 {
+		for _, mOID := range sortedMetricOIDs {
 			if compareOIDs(mOID, currentOID) > 0 {
 				val := s.getMetricValue(mOID)
 				if val != "" {

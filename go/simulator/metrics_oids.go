@@ -244,24 +244,30 @@ func GetMetricOIDs(resourceFile string) map[string]MetricOIDType {
 	return nil
 }
 
-// GetAllMetricOIDsForDevice returns a sorted list of metric OID strings
-// for a given device type. Used by findNextOID to include them in walks.
-func GetAllMetricOIDsForDevice(resourceFile string) []string {
-	m := GetMetricOIDs(resourceFile)
-	if m == nil {
-		return nil
-	}
-	oids := make([]string, 0, len(m))
-	for oid := range m {
-		oids = append(oids, oid)
-	}
-	// Sort OIDs for consistent walk ordering
-	for i := 0; i < len(oids); i++ {
-		for j := i + 1; j < len(oids); j++ {
-			if compareOIDs(oids[i], oids[j]) > 0 {
-				oids[i], oids[j] = oids[j], oids[i]
+// cachedSortedMetricOIDs stores pre-sorted metric OID slices per device type.
+// Computed once at init time to avoid repeated allocation and O(n²) sorting.
+var cachedSortedMetricOIDs = map[string][]string{}
+
+func init() {
+	for resourceFile, m := range vendorOIDs {
+		oids := make([]string, 0, len(m))
+		for oid := range m {
+			oids = append(oids, oid)
+		}
+		// Sort OIDs using bubble sort (small slices, done once at startup)
+		for i := 0; i < len(oids); i++ {
+			for j := i + 1; j < len(oids); j++ {
+				if compareOIDs(oids[i], oids[j]) > 0 {
+					oids[i], oids[j] = oids[j], oids[i]
+				}
 			}
 		}
+		cachedSortedMetricOIDs[resourceFile] = oids
 	}
-	return oids
+}
+
+// GetSortedMetricOIDs returns a pre-sorted list of metric OID strings
+// for a given device type. The result is cached at init time.
+func GetSortedMetricOIDs(resourceFile string) []string {
+	return cachedSortedMetricOIDs[resourceFile]
 }
