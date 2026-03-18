@@ -316,6 +316,8 @@ func (sm *SimulatorManager) CreateDevicesWithOptions(startIP string, count int, 
 		if err := sm.SetupRoutesFromDevices(netmask); err != nil {
 			log.Printf("Warning: failed to setup some routes: %v", err)
 		}
+		// Ensure all subnets between startIP and currentIP have routes
+		sm.ensureAllSubnetRoutes(ip, netmask)
 	}
 
 	return nil

@@ -337,24 +337,11 @@ func (ns *NetNamespace) AddRouteForDevices(startIP string, count int, netmask st
 
 // addHostRoute adds a single route on the host to reach a network through the namespace
 func (ns *NetNamespace) addHostRoute(cidr string) error {
-	// First check if route already exists
-	cmd := exec.Command("ip", "route", "show", cidr)
-	output, _ := cmd.CombinedOutput()
-	if strings.Contains(string(output), cidr) {
-		return nil // Route already exists
-	}
-
-	// Add the route
-	cmd = exec.Command("ip", "route", "add", cidr, "via", VETH_NS_IP)
+	cmd := exec.Command("ip", "route", "replace", cidr, "via", VETH_NS_IP)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		if strings.Contains(string(output), "File exists") {
-			return nil
-		}
 		return fmt.Errorf("failed to add route: %v, output: %s", err, string(output))
 	}
-
-	log.Printf("Added host route: %s via %s (for external access)", cidr, VETH_NS_IP)
 	return nil
 }
 

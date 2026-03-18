@@ -412,6 +412,35 @@ func (sm *SimulatorManager) SetupRoutesFromDevices(netmask string) error {
 	return nil
 }
 
+// ensureAllSubnetRoutes adds host routes for every /24 subnet between startIP and currentIP.
+func (sm *SimulatorManager) ensureAllSubnetRoutes(startIP net.IP, netmask string) {
+	if sm.netNamespace == nil {
+		return
+	}
+
+	start := startIP.To4()
+	if start == nil {
+		return
+	}
+
+	sm.mu.RLock()
+	end := sm.currentIP.To4()
+	if end == nil {
+		sm.mu.RUnlock()
+		return
+	}
+	endCopy := make(net.IP, 4)
+	copy(endCopy, end)
+	sm.mu.RUnlock()
+
+	for o3 := int(start[2]); o3 <= int(endCopy[2]); o3++ {
+		cidr := fmt.Sprintf("%d.%d.%d.0/%s", start[0], start[1], o3, netmask)
+		sm.netNamespace.addHostRoute(cidr)
+	}
+	log.Printf("ensureAllSubnetRoutes: added routes for %d.%d.%d.0 - %d.%d.%d.0",
+		start[0], start[1], start[2], endCopy[0], endCopy[1], endCopy[2])
+}
+
 // IsUsingNamespace returns whether namespace isolation is active
 func (sm *SimulatorManager) IsUsingNamespace() bool {
 	return sm.useNamespace && sm.netNamespace != nil
