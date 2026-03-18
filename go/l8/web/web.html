@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OpenSim - Network Device Simulator</title>
-    <meta name="description" content="OpenSim: A powerful, scalable network device simulator providing realistic SNMP and SSH interfaces for testing network management applications.">
-    <meta name="keywords" content="network simulator, SNMP, SSH, network testing, device simulation, TUN/TAP, network management">
+    <meta name="description" content="OpenSim: A powerful, scalable network and GPU infrastructure simulator providing realistic SNMP v2c/v3, SSH, and HTTPS REST API interfaces for testing network management applications.">
+    <meta name="keywords" content="network simulator, SNMP, SNMPv3, SSH, HTTPS, GPU simulation, NVIDIA, network testing, device simulation, TUN/TAP, network management">
     <link rel="icon" href="/logo2.png" type="image/png">
     <link rel="stylesheet" href="web_base.css">
     <link rel="stylesheet" href="web_components.css">
@@ -39,8 +39,9 @@
         <div class="hero-container">
             <h1 class="floating">OpenSim</h1>
             <p class="hero-subtitle">
-                A powerful, scalable network device simulator with enhanced polling system support, robust SNMP/SSH interfaces,
-                and comprehensive device simulation for testing network management applications, monitoring systems, and automation tools.
+                A powerful, scalable network and infrastructure simulator with SNMP v2c/v3, SSH with VT100, HTTPS REST APIs,
+                GPU server simulation, dynamic metrics, and 28 device types for testing network management applications,
+                monitoring systems, and automation tools.
             </p>
 
             <div class="hero-cta">
@@ -58,7 +59,7 @@
                     <div class="stat-label">Concurrent Devices</div>
                 </div>
                 <div class="stat-card fade-in-up">
-                    <div class="stat-number">25</div>
+                    <div class="stat-number">28</div>
                     <div class="stat-label">Device Types</div>
                 </div>
                 <div class="stat-card fade-in-up">
@@ -86,9 +87,9 @@
             <div class="features-grid">
                 <div class="feature-card">
                     <div class="feature-icon">🌐</div>
-                    <h3 class="feature-title">Enhanced Protocol Support</h3>
+                    <h3 class="feature-title">Multi-Protocol Support</h3>
                     <p class="feature-description">
-                        Full SNMP v2c and SSH protocol simulation with improved ASN.1 encoding, comprehensive OID coverage, and realistic device behavior.
+                        SNMP v2c/v3 (MD5/SHA1 auth, DES/AES128 privacy), SSH with VT100 terminal emulation, and HTTPS REST API simulation.
                     </p>
                 </div>
 
@@ -96,55 +97,55 @@
                     <div class="feature-icon">📈</div>
                     <h3 class="feature-title">Massive Scalability</h3>
                     <p class="feature-description">
-                        Simulate up to 25,000+ concurrent devices with optimized resource usage and shared TUN interfaces.
+                        Simulate 25,000+ concurrent devices with network namespace isolation, pre-generated metrics, and lock-free atomic indexing.
                     </p>
                 </div>
 
                 <div class="feature-card">
-                    <div class="feature-icon">🔧</div>
-                    <h3 class="feature-title">TUN/TAP Integration</h3>
+                    <div class="feature-icon">🎮</div>
+                    <h3 class="feature-title">GPU Server Simulation</h3>
                     <p class="feature-description">
-                        Each simulated device gets its own IP address using TUN interfaces for realistic network topology.
-                    </p>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">💻</div>
-                    <h3 class="feature-title">Web Management</h3>
-                    <p class="feature-description">
-                        Beautiful web interface for device management with real-time monitoring and export capabilities.
-                    </p>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">🔄</div>
-                    <h3 class="feature-title">RESTful API</h3>
-                    <p class="feature-description">
-                        Complete REST API for programmatic control, automation, and integration with existing systems.
-                    </p>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">⚡</div>
-                    <h3 class="feature-title">High Performance & Reliability</h3>
-                    <p class="feature-description">
-                        Optimized for minimal resource usage with ~50MB base memory, ~1KB per device, and enhanced stability with bug fixes for critical SNMP operations.
+                        NVIDIA DGX-A100, DGX-H100, and HGX-H200 with per-GPU utilization, VRAM, temperature, power, fan speed, and clock speed metrics via DCGM OIDs.
                     </p>
                 </div>
 
                 <div class="feature-card">
                     <div class="feature-icon">📊</div>
-                    <h3 class="feature-title">Comprehensive Device Coverage</h3>
+                    <h3 class="feature-title">Dynamic Metrics</h3>
                     <p class="feature-description">
-                        Support for 25 device types including Cisco, Juniper, Palo Alto, Arista, Fortinet, Huawei, Nokia, storage systems, and Linux servers with complete polling system compatibility.
+                        Realistic CPU, memory, temperature, and GPU metrics with sine-wave cycling patterns and per-device-category profiles.
                     </p>
                 </div>
 
                 <div class="feature-card">
-                    <div class="feature-icon">🔍</div>
-                    <h3 class="feature-title">Enhanced Monitoring</h3>
+                    <div class="feature-icon">🔧</div>
+                    <h3 class="feature-title">Network Namespace Isolation</h3>
                     <p class="feature-description">
-                        Complete physical inventory monitoring with chassis, power supply, fan, and temperature sensor simulation for realistic network testing.
+                        Each device runs in its own Linux network namespace with a dedicated TUN interface and IP address for realistic isolation.
+                    </p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🔄</div>
+                    <h3 class="feature-title">RESTful API & Web UI</h3>
+                    <p class="feature-description">
+                        Complete REST API with round-robin and category-based device creation, plus a web interface for real-time management.
+                    </p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3 class="feature-title">28 Device Types</h3>
+                    <p class="feature-description">
+                        Routers, switches, firewalls, servers, GPU servers, and storage systems from Cisco, Juniper, NVIDIA, Palo Alto, Arista, Fortinet, and more.
+                    </p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🔒</div>
+                    <h3 class="feature-title">HTTPS Storage APIs</h3>
+                    <p class="feature-description">
+                        Secure REST API endpoints for Pure Storage, NetApp ONTAP, Dell EMC Unity, and AWS S3 with shared TLS certificates.
                     </p>
                 </div>
             </div>
@@ -164,32 +165,32 @@
             <div class="use-cases-grid">
                 <div class="use-case-card">
                     <h4 class="use-case-title">🔍 Network Monitoring Testing</h4>
-                    <p class="use-case-description">Test SNMP polling applications and monitoring systems with realistic device responses.</p>
+                    <p class="use-case-description">Test SNMP v2c/v3 polling applications with dynamic CPU, memory, and temperature metrics.</p>
+                </div>
+
+                <div class="use-case-card">
+                    <h4 class="use-case-title">🎮 GPU Infrastructure Monitoring</h4>
+                    <p class="use-case-description">Validate GPU monitoring tools against NVIDIA DCGM OIDs with realistic VRAM, utilization, and power metrics.</p>
                 </div>
 
                 <div class="use-case-card">
                     <h4 class="use-case-title">🤖 Automation Development</h4>
-                    <p class="use-case-description">Develop and test SSH-based network automation scripts in a safe, controlled environment.</p>
+                    <p class="use-case-description">Develop SSH-based automation with VT100 terminal emulation, OSPF, BGP, and VRF support.</p>
                 </div>
 
                 <div class="use-case-card">
                     <h4 class="use-case-title">📊 Load Testing</h4>
-                    <p class="use-case-description">Simulate large network topologies to test application performance under scale.</p>
-                </div>
-
-                <div class="use-case-card">
-                    <h4 class="use-case-title">🎓 Training & Education</h4>
-                    <p class="use-case-description">Perfect for learning network management concepts and practicing with realistic scenarios.</p>
+                    <p class="use-case-description">Simulate 25,000+ devices with network namespace isolation to test application performance at scale.</p>
                 </div>
 
                 <div class="use-case-card">
                     <h4 class="use-case-title">🔄 CI/CD Testing</h4>
-                    <p class="use-case-description">Integrate into continuous integration pipelines for automated network application testing.</p>
+                    <p class="use-case-description">Integrate into continuous integration pipelines for automated network and storage application testing.</p>
                 </div>
 
                 <div class="use-case-card">
                     <h4 class="use-case-title">🏢 Enterprise Testing</h4>
-                    <p class="use-case-description">Test network management tools against thousands of devices without hardware costs.</p>
+                    <p class="use-case-description">Test network management tools against thousands of devices across 9 categories without hardware costs.</p>
                 </div>
             </div>
         </div>
@@ -255,13 +256,13 @@ curl -X POST http://localhost:8080/api/v1/devices \
                     </p>
 
                     <ul class="demo-features">
-                        <li>Real-time device status monitoring</li>
-                        <li>Interactive device creation with 25 device types</li>
-                        <li>CSV export and routing script generation</li>
-                        <li>Advanced filtering and pagination</li>
-                        <li>SSH and SNMP testing tools with enhanced reliability</li>
-                        <li>Entity MIB alignment for accurate network topology</li>
-                        <li>Comprehensive polling system compatibility</li>
+                        <li>Real-time device status and system stats monitoring</li>
+                        <li>28 device types across 9 categories with round-robin creation</li>
+                        <li>GPU server simulation with NVIDIA DGX/HGX metrics</li>
+                        <li>SNMPv3 support with authentication and privacy</li>
+                        <li>Dynamic CPU, memory, temperature, and GPU metrics</li>
+                        <li>CSV export, routing scripts, and advanced filtering</li>
+                        <li>HTTPS REST APIs for storage device simulation</li>
                     </ul>
 
                     <a href="/ui" class="btn btn-primary" target="_blank">🎮 Launch Web UI</a>

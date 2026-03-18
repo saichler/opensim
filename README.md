@@ -2,30 +2,33 @@
 
 ![OpenSim Logo](opensim.png)
 
-A powerful, scalable network and infrastructure simulator that provides realistic SNMP, SSH, and REST API interfaces for testing network management applications, monitoring systems, and automation tools. OpenSim can simulate thousands of network devices, storage systems, and Linux servers with dedicated IP addresses using TUN/TAP interfaces.
+A powerful, scalable network and infrastructure simulator that provides realistic SNMP v2c/v3, SSH, and HTTPS REST API interfaces for testing network management applications, monitoring systems, and automation tools. OpenSim can simulate thousands of network devices, GPU servers, storage systems, and Linux servers with dedicated IP addresses using TUN interfaces and Linux network namespaces.
 
-## 🌟 Features
+## Features
 
-- **Multi-Protocol Support**: SNMP v2c, SSH, and REST API simulation
-- **Scalable Architecture**: Support for 10,000+ simulated devices
-- **Realistic Device Behavior**: Configurable SNMP OIDs, SSH commands, and API responses
+- **Multi-Protocol Support**: SNMP v2c/v3 (MD5/SHA1 auth, DES/AES128 privacy), SSH with VT100 terminal emulation, and HTTPS REST API simulation
+- **Scalable Architecture**: Support for 25,000+ concurrent simulated devices
+- **28 Device Types**: Routers, switches, firewalls, servers, GPU servers (NVIDIA DGX/HGX), storage systems, and Linux servers
+- **GPU Server Simulation**: NVIDIA DGX-A100, DGX-H100, and HGX-H200 with per-GPU metrics (utilization, VRAM, temperature, power, fan speed, clock speeds)
+- **Dynamic Metrics**: Realistic CPU, memory, temperature, and GPU metrics with sine-wave cycling patterns
+- **Device Categories**: Organize devices by category (core routers, edge routers, DC switches, campus switches, firewalls, servers, GPU servers, storage)
+- **Network Namespace Isolation**: Each device runs in its own Linux network namespace for realistic isolation
 - **TUN/TAP Integration**: Each device gets its own IP address via TUN interfaces
-- **Web Management UI**: Beautiful web interface for device management
-- **RESTful API**: Complete REST API for programmatic control
-- **High Performance**: Optimized for minimal resource usage
+- **HTTPS Storage APIs**: Secure REST API endpoints for storage device simulation with shared TLS certificates
+- **Web Management UI**: Web interface for device management with real-time monitoring
+- **RESTful API**: Complete REST API for programmatic control with round-robin and category-based device creation
+- **High Performance**: Optimized with pre-generated metrics, lock-free atomic indexing, and shared SSH/TLS keys
 - **Device Export**: Export device configurations to CSV and routing scripts
-- **Customizable Resources**: JSON-based configuration for SNMP, SSH, and API responses
-- **Enhanced Polling System**: Comprehensive OID coverage for network monitoring applications
-- **Robust SNMP Engine**: Improved stability with proper ASN.1 encoding and error handling
-- **Storage System Simulation**: AWS S3, Pure Storage, NetApp ONTAP, Dell EMC Unity with REST APIs
+- **Routing Protocol Support**: OSPF, BGP, and VRF simulation via SSH commands
+- **Storage System Simulation**: AWS S3, Pure Storage, NetApp ONTAP, Dell EMC Unity with HTTPS REST APIs
 - **Linux Server Simulation**: Comprehensive Ubuntu server with 36+ SSH commands
 - **CDP & LLDP Support**: Cisco Discovery Protocol and LLDP for network topology discovery
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
-- Linux system with root access (required for TUN interface creation)
+- Linux system with root access (required for TUN interface and network namespace creation)
 - Go 1.23+ installed
 - Basic networking tools (`ip`, `iptables`)
 
@@ -64,7 +67,7 @@ sudo ./ubuntu_setup.sh
 
 This script installs all dependencies, configures system limits, and sets up TUN/TAP support.
 
-## 📖 Usage
+## Usage
 
 ### Command Line Options
 
@@ -72,11 +75,15 @@ This script installs all dependencies, configures system limits, and sets up TUN
 sudo ./simulator [options]
 
 Options:
-  -auto-start-ip string    Auto-create devices starting from this IP (e.g., 192.168.100.1)
-  -auto-count int         Number of devices to auto-create (requires -auto-start-ip)
-  -auto-netmask string    Netmask for auto-created devices (default: "24")
-  -port string           Server port (default: "8080")
-  -help                  Show help message
+  -auto-start-ip string       Auto-create devices starting from this IP (e.g., 192.168.100.1)
+  -auto-count int             Number of devices to auto-create (requires -auto-start-ip)
+  -auto-netmask string        Netmask for auto-created devices (default: "24")
+  -port string                Server port (default: "8080")
+  -snmpv3-engine-id string    Enable SNMPv3 with specified engine ID
+  -snmpv3-auth string         SNMPv3 auth protocol: none, md5, sha1 (default: "md5")
+  -snmpv3-priv string         SNMPv3 privacy protocol: none, des, aes128 (default: "none")
+  -no-namespace               Disable network namespace isolation (use root namespace)
+  -help                       Show help message
 ```
 
 ### Examples
@@ -90,28 +97,65 @@ sudo ./simulator -auto-start-ip 192.168.100.1 -auto-count 5
 
 # Custom port and subnet
 sudo ./simulator -auto-start-ip 10.10.10.1 -auto-count 100 -port 9090
+
+# Enable SNMPv3 with MD5 authentication and AES128 privacy
+sudo ./simulator -snmpv3-engine-id 0x80001234 -snmpv3-auth md5 -snmpv3-priv aes128
+
+# Disable network namespace isolation
+sudo ./simulator -no-namespace -auto-start-ip 192.168.100.1 -auto-count 10
 ```
 
-## 🌐 Web Interface
+## Web Interface
 
 Access the web UI at `http://localhost:8080/` for:
 
-- Create and manage simulated devices
-- View device status and configurations
+- Create and manage simulated devices with category filtering
+- Choose specific device types or round-robin across all 28 types
+- View device status, system stats (memory, CPU, load average)
 - Export device lists to CSV
 - Generate routing scripts
-- Real-time device monitoring
+- Filter devices by ID, IP, interface, type, ports, or status
 
-## 📡 API Reference
+## API Reference
 
 ### Create Devices
 ```bash
+# Create 10 devices with default round-robin
 curl -X POST http://localhost:8080/api/v1/devices \
   -H "Content-Type: application/json" \
   -d '{
     "start_ip": "192.168.100.1",
     "device_count": 10,
-    "netmask": "24"
+    "netmask": "24",
+    "round_robin": true
+  }'
+
+# Create devices filtered by category
+curl -X POST http://localhost:8080/api/v1/devices \
+  -H "Content-Type: application/json" \
+  -d '{
+    "start_ip": "192.168.100.1",
+    "device_count": 3,
+    "netmask": "24",
+    "round_robin": true,
+    "category": "GPU Servers"
+  }'
+
+# Create devices with SNMPv3
+curl -X POST http://localhost:8080/api/v1/devices \
+  -H "Content-Type: application/json" \
+  -d '{
+    "start_ip": "192.168.100.1",
+    "device_count": 5,
+    "netmask": "24",
+    "snmpv3": {
+      "enabled": true,
+      "engine_id": "0x80001234",
+      "username": "admin",
+      "password": "authpass123",
+      "auth_protocol": "md5",
+      "priv_protocol": "aes128"
+    }
   }'
 ```
 
@@ -140,11 +184,11 @@ curl -X DELETE http://localhost:8080/api/v1/devices/{device-id}
 curl -X DELETE http://localhost:8080/api/v1/devices
 ```
 
-## 🔧 Device Interaction
+## Device Interaction
 
 ### SSH Access
 ```bash
-# Connect to any simulated device
+# Connect to any simulated device (VT100 terminal emulation)
 ssh simadmin@192.168.100.1
 # Password: simadmin
 
@@ -157,11 +201,25 @@ ping 8.8.8.8
 
 ### SNMP Queries
 ```bash
-# Query device system information
+# SNMPv2c query
 snmpget -v2c -c public 192.168.100.1 1.3.6.1.2.1.1.1.0
 
 # Walk interface table
 snmpwalk -v2c -c public 192.168.100.1 1.3.6.1.2.1.2.2.1
+
+# SNMPv3 query (when enabled)
+snmpget -v3 -l authPriv -u admin -a MD5 -A authpass123 -x AES -X privpass123 \
+  -e 0x80001234 192.168.100.1 1.3.6.1.2.1.1.1.0
+```
+
+### Routing Protocol Commands
+```bash
+# On supported router devices
+ssh simadmin@192.168.100.1
+
+show ip ospf neighbor         # OSPF neighbors
+show ip bgp summary          # BGP peering summary
+show ip vrf                  # VRF instances
 ```
 
 ### Linux Server Commands
@@ -191,9 +249,9 @@ show cdp neighbors detail    # Detailed neighbor info
 show lldp neighbors          # LLDP neighbor discovery
 ```
 
-## 💾 Storage System Simulation
+## Storage System Simulation
 
-OpenSim supports enterprise storage system simulation with REST API endpoints on port 8443.
+OpenSim supports enterprise storage system simulation with HTTPS REST API endpoints on port 8443 using shared TLS certificates.
 
 ### Supported Storage Systems
 
@@ -262,55 +320,86 @@ curl -X POST http://localhost:8080/api/v1/devices \
   }'
 ```
 
-## ⚙️ Configuration
+## Configuration
 
 ### Device Resources
 
 The simulator uses a directory-based JSON resource structure for device definitions. Each device type has its own directory under `go/simulator/resources/` with JSON files split for maintainability (max 500 lines per file).
 
-**Available Device Types (25 devices):**
+**Available Device Types (28 devices across 9 categories):**
 
-*Network Devices (20):*
+*Core Routers:*
 | Device | Ports | Description |
 |--------|-------|-------------|
 | Cisco ASR9K | 48 | High-end service provider router |
-| Cisco Catalyst 9500 | 48 | Enterprise core switch |
-| Cisco Nexus 9500 | 48 | Data center spine switch |
 | Cisco CRS-X | 144 | Carrier-class router |
-| Cisco IOS | 4 | Standard IOS router |
-| Juniper MX960 | 96 | Service provider edge router |
-| Juniper MX240 | 24 | Compact modular router |
-| Palo Alto PA-3220 | 12 | Next-gen firewall |
-| Arista 7280R3 | 32 | High-performance switch |
-| Fortinet FortiGate-600E | 20 | Enterprise firewall |
 | Huawei NE8000 | 96 | Carrier-class router |
 | Nokia 7750 SR-12 | 72 | IP/MPLS service router |
+| Juniper MX960 | 96 | Service provider edge router |
+
+*Edge Routers:*
+| Device | Ports | Description |
+|--------|-------|-------------|
+| Juniper MX240 | 24 | Compact modular router |
+| NEC IX3315 | 48 | Enterprise router |
+| Cisco IOS | 4 | Standard IOS router |
+
+*Data Center Switches:*
+| Device | Ports | Description |
+|--------|-------|-------------|
+| Cisco Nexus 9500 | 48 | Data center spine switch |
+| Arista 7280R3 | 32 | High-performance switch |
+
+*Campus Switches:*
+| Device | Ports | Description |
+|--------|-------|-------------|
+| Cisco Catalyst 9500 | 48 | Enterprise core switch |
 | Extreme VSP4450 | 48 | Campus switch |
 | D-Link DGS-3630 | 52 | L3 managed switch |
-| NEC IX3315 | 48 | Enterprise router |
-| Check Point 15600 | 24 | Security gateway |
+
+*Firewalls:*
+| Device | Ports | Description |
+|--------|-------|-------------|
+| Palo Alto PA-3220 | 12 | Next-gen firewall |
+| Fortinet FortiGate-600E | 20 | Enterprise firewall |
 | SonicWall NSa 6700 | 16 | Next-gen firewall |
+| Check Point 15600 | 24 | Security gateway |
+
+*Servers:*
+| Device | Ports | Description |
+|--------|-------|-------------|
 | Dell PowerEdge R750 | 4 | Server BMC/iDRAC |
 | HPE ProLiant DL380 | 4 | Server iLO interface |
 | IBM Power S922 | 4 | Power Systems server |
+| Linux Server | - | Ubuntu 24.04 LTS (SNMP, SSH) |
 
-*Storage Systems (5):*
+*GPU Servers:*
+| Device | GPUs | VRAM/GPU | Description |
+|--------|------|----------|-------------|
+| NVIDIA DGX-A100 | 8 | 80 GB | A100 GPU training system |
+| NVIDIA DGX-H100 | 8 | 80 GB | H100 GPU training system |
+| NVIDIA HGX-H200 | 8 | 141 GB | H200 GPU inference system |
+
+*Storage Systems:*
 | Device | Type | Protocols |
 |--------|------|-----------|
-| AWS S3 Storage | Object storage | SNMP, SSH, REST |
-| Pure Storage FlashArray | All-flash array | SNMP, SSH, REST |
-| NetApp ONTAP | Unified storage | SNMP, SSH, REST |
-| Dell EMC Unity | Unified storage | SNMP, SSH, REST |
-| Linux Server | Ubuntu 24.04 LTS | SNMP, SSH |
+| AWS S3 Storage | Object storage | SNMP, SSH, HTTPS REST |
+| Pure Storage FlashArray | All-flash array | SNMP, SSH, HTTPS REST |
+| NetApp ONTAP | Unified storage | SNMP, SSH, HTTPS REST |
+| Dell EMC Unity | Unified storage | SNMP, SSH, HTTPS REST |
 
 **Enhanced Features:**
 - **Entity MIB Alignment**: All network devices have properly aligned ifTable and Entity MIB data
 - **Complete physical inventory**: Chassis, line cards, power supplies, fans, temperature sensors
 - **entAliasMappingTable**: Proper mapping between physical ports and logical interfaces
+- **Dynamic metrics**: Realistic CPU, memory, and temperature cycling with sine-wave patterns
+- **GPU metrics via NVIDIA DCGM OIDs**: Per-GPU utilization, VRAM, temperature, power, fan speed, clock speeds
+- **SNMPv3 support**: Engine ID, MD5/SHA1 authentication, DES/AES128 privacy
 - Interface statistics and operational status
 - System information and hardware details
 - Vendor-specific OID implementations
 - CDP & LLDP support for network topology discovery
+- OSPF, BGP, and VRF routing protocol simulation via SSH
 
 ### Example Resource Configuration
 ```json
@@ -340,18 +429,25 @@ The simulator uses a directory-based JSON resource structure for device definiti
 
 *Note: The `api` section is optional and used primarily for storage device simulation.*
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 opensim/
 ├── go/                              # Go source code
-│   ├── simulator/                   # Main simulator package
-│   │   ├── main.go                  # Entry point
-│   │   ├── manager.go               # Device management
+│   ├── simulator/                   # Main simulator package (~28 Go files)
+│   │   ├── simulator.go             # Entry point, CLI flags
+│   │   ├── manager.go               # Device management, shared TLS/SSH keys
 │   │   ├── device.go                # Device lifecycle
-│   │   ├── snmp.go                  # SNMP server implementation
-│   │   ├── ssh.go                   # SSH server implementation
+│   │   ├── snmp.go                  # SNMP v2c/v3 server
+│   │   ├── snmpv3_crypto.go         # SNMPv3 auth/priv encryption
+│   │   ├── snmp_handlers.go         # OID-specific response handlers
+│   │   ├── ssh.go                   # SSH server with VT100
 │   │   ├── api.go                   # REST API handlers
+│   │   ├── device_profiles.go       # Device metric profiles by category
+│   │   ├── gpu_metrics.go           # Per-GPU metric generation
+│   │   ├── metrics_cycler.go        # CPU/memory/temp metric cycling
+│   │   ├── metrics_oids.go          # SNMP handlers for dynamic metrics
+│   │   ├── netns.go                 # Network namespace management
 │   │   ├── resources.go             # Resource loading logic
 │   │   ├── types.go                 # Data structures
 │   │   ├── web/                     # Web UI static files
@@ -360,15 +456,19 @@ opensim/
 │   │   │   └── app_api.js           # API JavaScript
 │   │   └── resources/               # Device resource definitions
 │   │       ├── asr9k/               # Cisco ASR9K (48 ports)
-│   │       │   ├── asr9k_snmp_1.json
-│   │       │   ├── asr9k_snmp_2.json
-│   │       │   └── ...
-│   │       ├── cisco_nexus_9500/    # Cisco Nexus 9500 (48 ports)
-│   │       ├── juniper_mx960/       # Juniper MX960 (96 ports)
+│   │       ├── nvidia_dgx_a100/     # NVIDIA DGX-A100 (8 GPUs)
+│   │       ├── nvidia_dgx_h100/     # NVIDIA DGX-H100 (8 GPUs)
+│   │       ├── nvidia_hgx_h200/     # NVIDIA HGX-H200 (8 GPUs)
 │   │       ├── pure_storage_flasharray/
 │   │       ├── linux_server/
-│   │       └── ...                  # 25 device directories total
-│   ├── l8/                          # Layer 8 proxy service
+│   │       └── ...                  # 28 device directories total
+│   ├── l8/                          # Layer 8 service (vnet + HTTPS web proxy)
+│   │   ├── main.go                  # vnet, vnic, web service
+│   │   ├── web/                     # Landing page
+│   │   ├── Dockerfile               # Multi-stage Docker build
+│   │   └── opensim.yaml             # K8s StatefulSet manifest
+│   ├── proxy/                       # HTTP proxy to simulator
+│   ├── tests/                       # Device and polling tests
 │   ├── go.mod                       # Go module definition
 │   └── go.sum                       # Go module checksums
 ├── *.md                             # Documentation files
@@ -394,7 +494,7 @@ resources/
 
 The loader automatically merges all JSON files in a device directory, allowing large configurations to be split across multiple files for maintainability.
 
-## 🔍 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
@@ -423,18 +523,19 @@ htop
 - System logs: `journalctl -u <service-name>`
 - Web access logs: Built into the application
 
-## 📊 Performance & Scaling
+## Performance & Scaling
 
 The simulator is optimized for high-scale deployments:
 
-- **Tested**: Up to 10,000 concurrent devices
+- **Tested**: Up to 25,000+ concurrent devices
 - **Memory**: ~50MB base + ~1KB per device
 - **CPU**: Minimal usage during steady state
-- **Network**: Shared TUN interfaces reduce overhead
+- **Network**: Network namespace isolation prevents systemd-networkd overhead
+- **Optimization**: Pre-generated metrics, lock-free atomic indexing, shared SSH/TLS keys
 
 See [SCALING_GUIDE.md](SCALING_GUIDE.md) for detailed performance tuning.
 
-## 🛠️ Development
+## Development
 
 ### Building from Source
 
@@ -458,7 +559,7 @@ go test ./...
 4. Test thoroughly
 5. Submit a pull request
 
-## 📚 Documentation
+## Documentation
 
 - [Ubuntu Requirements](UBUNTU_REQUIREMENTS.md) - System setup for Ubuntu
 - [Scaling Guide](SCALING_GUIDE.md) - High-scale deployment tips
@@ -468,22 +569,23 @@ go test ./...
 - [Device Mock Data Requirements](go/simulator/DEVICE_MOCK_DATA_REQUIREMENTS.md) - Device simulation coverage
 - [Physical Inventory Coverage](go/simulator/PHYSICAL_INVENTORY_COVERAGE.md) - Hardware monitoring OIDs
 
-## 🤝 Use Cases
+## Use Cases
 
-- **Network Monitoring Testing**: Test SNMP polling applications
-- **Automation Development**: Develop SSH-based network automation
-- **Load Testing**: Simulate large network topologies
+- **Network Monitoring Testing**: Test SNMP v2c/v3 polling applications with dynamic metrics
+- **GPU Infrastructure Monitoring**: Validate GPU monitoring tools against NVIDIA DCGM OIDs
+- **Automation Development**: Develop SSH-based network automation with VT100 terminal support
+- **Load Testing**: Simulate large network topologies with 25,000+ devices
 - **Training**: Network management skill development
 - **CI/CD Testing**: Automated testing of network applications
-- **Storage Management Testing**: Validate storage monitoring and provisioning tools
-- **Infrastructure Monitoring**: Test Linux server monitoring and metrics collection
+- **Storage Management Testing**: Validate storage monitoring and provisioning tools via HTTPS APIs
+- **Infrastructure Monitoring**: Test Linux server and GPU server monitoring and metrics collection
 - **Topology Discovery**: Validate CDP/LLDP-based network mapping tools
 
-## 📄 License
+## License
 
 Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) for details.
 
-## 🙋 Support
+## Support
 
 For issues, questions, or contributions:
 
