@@ -313,7 +313,7 @@ func (sm *SimulatorManager) CreateDevicesWithOptions(startIP string, count int, 
 	// Setup host routes for external access if using namespace
 	if sm.useNamespace && sm.netNamespace != nil && successCount > 0 {
 		log.Printf("Setting up host routes for external access...")
-		if err := sm.SetupRoutesForDevices(startIP, successCount, netmask); err != nil {
+		if err := sm.SetupRoutesFromDevices(netmask); err != nil {
 			log.Printf("Warning: failed to setup some routes: %v", err)
 		}
 	}

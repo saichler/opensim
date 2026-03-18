@@ -383,6 +383,35 @@ func (sm *SimulatorManager) SetupRoutesForDevices(startIP string, count int, net
 	return sm.netNamespace.AddRouteForDevices(startIP, count, netmask)
 }
 
+// SetupRoutesFromDevices adds host routes based on actual device IPs rather than
+// calculating from startIP + count, ensuring no subnets are missed.
+func (sm *SimulatorManager) SetupRoutesFromDevices(netmask string) error {
+	if !sm.useNamespace || sm.netNamespace == nil {
+		return nil
+	}
+
+	sm.mu.RLock()
+	// Collect unique /24 subnets from all devices
+	subnets := make(map[string]bool)
+	for _, device := range sm.devices {
+		ip := device.IP.To4()
+		if ip == nil {
+			continue
+		}
+		subnet := fmt.Sprintf("%d.%d.%d.0/%s", ip[0], ip[1], ip[2], netmask)
+		subnets[subnet] = true
+	}
+	sm.mu.RUnlock()
+
+	for subnet := range subnets {
+		if err := sm.netNamespace.addHostRoute(subnet); err != nil {
+			log.Printf("Warning: failed to add route for %s: %v", subnet, err)
+		}
+	}
+
+	return nil
+}
+
 // IsUsingNamespace returns whether namespace isolation is active
 func (sm *SimulatorManager) IsUsingNamespace() bool {
 	return sm.useNamespace && sm.netNamespace != nil
