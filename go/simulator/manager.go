@@ -316,16 +316,22 @@ func (sm *SimulatorManager) DeleteAllDevices() error {
 // Shutdown cleans up all resources including the network namespace
 func (sm *SimulatorManager) Shutdown() error {
 	log.Println("Shutting down simulator manager...")
+	startTime := time.Now()
 
-	// Delete all devices first
-	if err := sm.DeleteAllDevices(); err != nil {
-		log.Printf("Warning: errors deleting devices during shutdown: %v", err)
+	if sm.useNamespace && sm.netNamespace != nil {
+		// Fast path: when using a namespace, deleting it instantly destroys all
+		// TUN interfaces inside it. No need to delete them one by one.
+		// Just close file descriptors and stop listeners in-process, then nuke the namespace.
+		sm.shutdownFast()
+	} else {
+		// Slow path: no namespace, must delete interfaces individually
+		if err := sm.DeleteAllDevices(); err != nil {
+			log.Printf("Warning: errors deleting devices during shutdown: %v", err)
+		}
+		sm.CleanupPreAllocatedInterfaces()
 	}
 
-	// Cleanup pre-allocated interfaces
-	sm.CleanupPreAllocatedInterfaces()
-
-	// Cleanup network namespace
+	// Cleanup network namespace (deletes all interfaces inside it)
 	if sm.netNamespace != nil {
 		if err := sm.netNamespace.Close(); err != nil {
 			log.Printf("Warning: failed to close network namespace: %v", err)
@@ -333,8 +339,38 @@ func (sm *SimulatorManager) Shutdown() error {
 		sm.netNamespace = nil
 	}
 
-	log.Println("Simulator manager shutdown complete")
+	elapsed := time.Since(startTime)
+	log.Printf("Simulator manager shutdown complete in %v", elapsed)
 	return nil
+}
+
+// shutdownFast stops all device listeners and closes FDs without deleting TUN interfaces.
+// The caller is responsible for deleting the namespace, which destroys all interfaces at once.
+func (sm *SimulatorManager) shutdownFast() {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+
+	deviceCount := len(sm.devices)
+	log.Printf("Fast shutdown: closing %d devices (namespace deletion will clean up TUN interfaces)...", deviceCount)
+
+	// Stop all device services (closes UDP/TCP listeners and TUN FDs)
+	for _, device := range sm.devices {
+		device.stopListenersOnly()
+	}
+
+	// Clear maps
+	sm.devices = make(map[string]*DeviceSimulator)
+	sm.tunPoolMutex.Lock()
+	// Close pre-allocated TUN FDs
+	for _, tunIface := range sm.tunInterfacePool {
+		if tunIface != nil {
+			tunIface.destroy()
+		}
+	}
+	sm.tunInterfacePool = make(map[string]*TunInterface)
+	sm.tunPoolMutex.Unlock()
+
+	log.Printf("Fast shutdown: all %d device listeners closed", deviceCount)
 }
 
 // SetupRoutesForDevices adds host routes to make devices accessible from external machines

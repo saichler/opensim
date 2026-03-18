@@ -610,3 +610,28 @@ func (d *DeviceSimulator) Stop() error {
 	}
 	return nil
 }
+
+// stopListenersOnly closes all network listeners and TUN FDs without deleting TUN interfaces.
+// Used during fast shutdown when the namespace will be deleted to clean up all interfaces at once.
+func (d *DeviceSimulator) stopListenersOnly() {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	if !d.running {
+		return
+	}
+
+	if d.snmpServer != nil {
+		d.snmpServer.Stop()
+	}
+	if d.sshServer != nil {
+		d.sshServer.Stop()
+	}
+	if d.apiServer != nil {
+		d.apiServer.Stop()
+	}
+	if d.tunIface != nil {
+		d.tunIface.destroy() // Close FD only, no ip link delete
+	}
+	d.running = false
+}
