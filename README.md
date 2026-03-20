@@ -29,7 +29,7 @@ A powerful, scalable network and infrastructure simulator that provides realisti
 ### Prerequisites
 
 - Linux system with root access (required for TUN interface and network namespace creation)
-- Go 1.23+ installed
+- Go 1.25+ installed
 - Basic networking tools (`ip`, `iptables`)
 
 ### Installation
@@ -326,7 +326,7 @@ curl -X POST http://localhost:8080/api/v1/devices \
 
 The simulator uses a directory-based JSON resource structure for device definitions. Each device type has its own directory under `go/simulator/resources/` with JSON files split for maintainability (max 500 lines per file).
 
-**Available Device Types (28 devices across 9 categories):**
+**Available Device Types (28 devices across 8 categories):**
 
 *Core Routers:*
 | Device | Ports | Description |
@@ -434,27 +434,43 @@ The simulator uses a directory-based JSON resource structure for device definiti
 ```
 opensim/
 ├── go/                              # Go source code
-│   ├── simulator/                   # Main simulator package (~28 Go files)
+│   ├── simulator/                   # Main simulator package (29 Go files, ~8,850 lines)
 │   │   ├── simulator.go             # Entry point, CLI flags
 │   │   ├── manager.go               # Device management, shared TLS/SSH keys
 │   │   ├── device.go                # Device lifecycle
-│   │   ├── snmp.go                  # SNMP v2c/v3 server
-│   │   ├── snmpv3_crypto.go         # SNMPv3 auth/priv encryption
-│   │   ├── snmp_handlers.go         # OID-specific response handlers
-│   │   ├── ssh.go                   # SSH server with VT100
-│   │   ├── api.go                   # REST API handlers
-│   │   ├── device_profiles.go       # Device metric profiles by category
-│   │   ├── gpu_metrics.go           # Per-GPU metric generation
-│   │   ├── metrics_cycler.go        # CPU/memory/temp metric cycling
-│   │   ├── metrics_oids.go          # SNMP handlers for dynamic metrics
-│   │   ├── netns.go                 # Network namespace management
-│   │   ├── resources.go             # Resource loading logic
+│   │   ├── constants.go             # Protocol and configuration constants
 │   │   ├── types.go                 # Data structures
+│   │   ├── names.go                 # Realistic device naming
+│   │   ├── cities.go                # City name data for device locations
+│   │   ├── snmp.go                  # SNMP v2c/v3 protocol handling
+│   │   ├── snmp_server.go           # SNMP UDP listener (per-device namespace)
+│   │   ├── snmp_handlers.go         # OID lookup and GetNext/walk support
+│   │   ├── snmp_response.go         # ASN.1 BER response encoding
+│   │   ├── snmp_encoding.go         # ASN.1 BER/DER encoding/decoding
+│   │   ├── snmpv3.go                # SNMPv3 request parsing
+│   │   ├── snmpv3_crypto.go         # SNMPv3 auth/priv (MD5/SHA1, DES/AES128)
+│   │   ├── ssh.go                   # SSH server with VT100 terminal emulation
+│   │   ├── api.go                   # HTTPS REST API handlers (storage/GPU)
+│   │   ├── device_profiles.go       # Device metric profiles by category
+│   │   ├── gpu_metrics.go           # Per-GPU metric generation (NVIDIA DCGM)
+│   │   ├── metrics_cycler.go        # CPU/memory/temp sine-wave cycling
+│   │   ├── metrics_oids.go          # SNMP handlers for dynamic metrics
+│   │   ├── system_stats.go          # Process-level stats (FDs, memory)
+│   │   ├── netns.go                 # Network namespace management
+│   │   ├── tun.go                   # TUN interface creation and routing
+│   │   ├── prealloc.go              # Optimized device pre-allocation
+│   │   ├── resources.go             # Resource loading and OID/SSH indexing
+│   │   ├── web.go                   # Web server setup and routing
+│   │   ├── web_routes.go            # API route handlers
+│   │   ├── web_routes_linux.go      # Linux-specific route handlers
+│   │   ├── web_routes_utils.go      # Route handler utilities
 │   │   ├── web/                     # Web UI static files
 │   │   │   ├── index.html           # Main UI page
+│   │   │   ├── styles.css           # UI styles
 │   │   │   ├── app_ui.js            # UI JavaScript
-│   │   │   └── app_api.js           # API JavaScript
-│   │   └── resources/               # Device resource definitions
+│   │   │   ├── app_api.js           # API JavaScript
+│   │   │   └── logo.png             # Logo image
+│   │   └── resources/               # 341 JSON device resource files
 │   │       ├── asr9k/               # Cisco ASR9K (48 ports)
 │   │       ├── nvidia_dgx_a100/     # NVIDIA DGX-A100 (8 GPUs)
 │   │       ├── nvidia_dgx_h100/     # NVIDIA DGX-H100 (8 GPUs)
@@ -463,16 +479,17 @@ opensim/
 │   │       ├── linux_server/
 │   │       └── ...                  # 28 device directories total
 │   ├── l8/                          # Layer 8 service (vnet + HTTPS web proxy)
-│   │   ├── main.go                  # vnet, vnic, web service
+│   │   ├── main.go                  # vnet, vnic, web service (port 9095)
 │   │   ├── web/                     # Landing page
 │   │   ├── Dockerfile               # Multi-stage Docker build
 │   │   └── opensim.yaml             # K8s StatefulSet manifest
-│   ├── proxy/                       # HTTP proxy to simulator
+│   ├── proxy/                       # HTTP reverse proxy to simulator
+│   │   └── Proxy.go                 # HTTP forwarding
 │   ├── tests/                       # Device and polling tests
 │   ├── go.mod                       # Go module definition
 │   └── go.sum                       # Go module checksums
 ├── *.md                             # Documentation files
-├── *.sh                             # Setup and test scripts
+├── *.sh                             # Setup and diagnostic scripts
 └── opensim.png                      # Project logo
 ```
 
@@ -492,7 +509,7 @@ resources/
 └── ...
 ```
 
-The loader automatically merges all JSON files in a device directory, allowing large configurations to be split across multiple files for maintainability.
+The loader automatically merges all JSON files in a device directory, allowing large configurations to be split across multiple files for maintainability. There are currently 341 JSON resource files across 28 device types.
 
 ## Troubleshooting
 
@@ -531,7 +548,8 @@ The simulator is optimized for high-scale deployments:
 - **Memory**: ~50MB base + ~1KB per device
 - **CPU**: Minimal usage during steady state
 - **Network**: Network namespace isolation prevents systemd-networkd overhead
-- **Optimization**: Pre-generated metrics, lock-free atomic indexing, shared SSH/TLS keys
+- **Optimization**: Pre-generated metrics (100-point sine-wave curves), lock-free atomic indexing, shared SSH/TLS keys, SNMP buffer pool
+- **Pre-allocation**: Automatic worker-pool pre-allocation for bulk device creation (10+ devices)
 
 See [SCALING_GUIDE.md](SCALING_GUIDE.md) for detailed performance tuning.
 
@@ -541,13 +559,29 @@ See [SCALING_GUIDE.md](SCALING_GUIDE.md) for detailed performance tuning.
 
 ```bash
 cd go/simulator
-go mod download
+go mod tidy
 go build -o simulator .
 ```
+
+### Docker Build
+
+```bash
+cd go/l8
+docker build --no-cache --platform=linux/amd64 -t saichler/opensim-web:latest .
+```
+
+### Kubernetes Deployment
+
+```bash
+kubectl apply -f go/l8/opensim.yaml
+```
+
+The K8s manifest deploys a StatefulSet in the `opensim` namespace with `hostNetwork: true` and a `/data` hostPath volume.
 
 ### Running Tests
 
 ```bash
+cd go
 go test ./...
 ```
 
@@ -558,6 +592,21 @@ go test ./...
 3. Make your changes
 4. Test thoroughly
 5. Submit a pull request
+
+## REST API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/v1/devices` | POST | Create devices (bulk, round-robin, category-based) |
+| `/api/v1/devices` | GET | List all devices |
+| `/api/v1/devices/{id}` | DELETE | Delete a specific device |
+| `/api/v1/devices` | DELETE | Delete all devices |
+| `/api/v1/devices/export` | GET | Export device list to CSV |
+| `/api/v1/devices/routes` | GET | Generate routing script |
+| `/api/v1/resources` | GET | List available device resource types |
+| `/api/v1/status` | GET | Manager status |
+| `/api/v1/system-stats` | GET | System stats (file descriptors, memory) |
+| `/health` | GET | Health check endpoint |
 
 ## Documentation
 
