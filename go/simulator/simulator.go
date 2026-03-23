@@ -104,7 +104,7 @@ func main() {
 
 	// Show help if requested
 	if *showHelp {
-		fmt.Println("Network Device Simulator with TUN/TAP support")
+		fmt.Println("Layer 8 Data Center Simulator with TUN/TAP support")
 		fmt.Println()
 		fmt.Println("Usage:")
 		fmt.Printf("  %s [options]\n", os.Args[0])
@@ -130,7 +130,7 @@ func main() {
 		return
 	}
 
-	log.Println("Network Device Simulator with TUN/TAP support starting...")
+	log.Println("Layer 8 Data Center Simulator with TUN/TAP support starting...")
 
 	// Check if running as root
 	if os.Geteuid() != 0 {
@@ -173,7 +173,7 @@ func main() {
 
 	// Start API server in background
 	apiPort := ":" + *port
-	log.Printf("Network Device Simulator server starting on port %s", apiPort)
+	log.Printf("Layer 8 Data Center Simulator server starting on port %s", apiPort)
 	log.Println()
 	log.Println("Web UI:")
 	log.Printf("  http://localhost%s/", apiPort)

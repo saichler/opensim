@@ -1,4 +1,4 @@
-# OpenSim - Network Device Simulator
+# OpenSim - Layer 8 Data Center Simulator
 
 ![OpenSim Logo](opensim.png)
 

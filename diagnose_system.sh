@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# System Diagnostic Script for Network Device Simulator
+# System Diagnostic Script for Layer 8 Data Center Simulator
 # Run this on the fresh Ubuntu server to identify missing components
 
-echo "🔍 Network Device Simulator - System Diagnostics"
+echo "🔍 Layer 8 Data Center Simulator - System Diagnostics"
 echo "================================================="
 echo ""
 
@@ -173,7 +173,7 @@ fi
 
 echo ""
 if [ $total_issues -eq 0 ]; then
-    echo "🎉 System appears ready for Network Device Simulator!"
+    echo "🎉 System appears ready for Layer 8 Data Center Simulator!"
     echo ""
     echo "✅ Next steps:"
     echo "1. Build the simulator: go build -o simulator/simulator ./simulator"

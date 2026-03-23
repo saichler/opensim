@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# Ubuntu Server Setup Script for Network Device Simulator
+# Ubuntu Server Setup Script for Layer 8 Data Center Simulator
 # This script installs all required dependencies and configures the system
 
 set -e  # Exit on any error
 
-echo "🚀 Setting up Network Device Simulator on Ubuntu Server..."
+echo "🚀 Setting up Layer 8 Data Center Simulator on Ubuntu Server..."
 echo "========================================================"
 
 # Check if running as root
@@ -72,7 +72,7 @@ sysctl -p
 # Configure system limits for high file descriptor usage
 echo "🔧 Configuring system limits..."
 cat >> /etc/security/limits.conf << EOF
-# Network Device Simulator limits
+# Layer 8 Data Center Simulator limits
 * soft nofile 65536
 * hard nofile 65536
 * soft nproc 32768
@@ -98,7 +98,7 @@ systemctl daemon-reload
 echo "🔧 Configuring kernel networking parameters..."
 cat >> /etc/sysctl.conf << EOF
 
-# Network Device Simulator kernel parameters
+# Layer 8 Data Center Simulator kernel parameters
 net.core.rmem_default = 262144
 net.core.rmem_max = 16777216
 net.core.wmem_default = 262144

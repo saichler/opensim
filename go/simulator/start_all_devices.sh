@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Network Device Simulator - System Optimization and Device Startup Script
+# Layer 8 Data Center Simulator - System Optimization and Device Startup Script
 # This script optimizes system settings for high-load SNMP operations before starting devices
 # Optimized for handling 1000+ parallel SNMP walks
 
@@ -34,7 +34,7 @@ print_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
-echo -e "${BLUE}🚀 Network Device Simulator - System Optimization & Startup${NC}"
+echo -e "${BLUE}🚀 Layer 8 Data Center Simulator - System Optimization & Startup${NC}"
 echo "============================================================"
 
 # ========================================
@@ -171,7 +171,7 @@ if [ "$available_mem" -lt 2 ]; then
     print_warn "Less than 2GB available memory. May experience issues with many devices"
 fi
 
-echo -e "${BLUE}🚀 Starting Network Device Simulator${NC}"
+echo -e "${BLUE}🚀 Starting Layer 8 Data Center Simulator${NC}"
 echo "====================================="
 echo "Server Port: $SERVER_PORT"
 echo "Starting IP: ${BASE_IP}.${START_IP_LAST_OCTET}"

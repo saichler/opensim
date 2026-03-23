@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Network Device Simulator - Stop All Devices and Server
+# Layer 8 Data Center Simulator - Stop All Devices and Server
 # This script stops the simulator server and cleans up all devices
 
 set -e  # Exit on any error
@@ -17,7 +17,7 @@ BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-echo -e "${BLUE}🛑 Network Device Simulator - Stopping All Devices${NC}"
+echo -e "${BLUE}🛑 Layer 8 Data Center Simulator - Stopping All Devices${NC}"
 echo "=================================================="
 
 # Function to delete all devices via API

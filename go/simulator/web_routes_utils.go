@@ -131,7 +131,7 @@ verify_persistent_configuration() {
     fi
 
     # Check for traditional interfaces file
-    if grep -q "Network Device Simulator" /etc/network/interfaces 2>/dev/null; then
+    if grep -q "Layer 8 Data Center Simulator" /etc/network/interfaces 2>/dev/null; then
         echo -e "${GREEN}✅ Found routes in /etc/network/interfaces${NC}"
         config_found=true
     fi
@@ -151,7 +151,7 @@ verify_persistent_configuration() {
 // generateMainExecutionSection generates the main execution section of the script
 func generateMainExecutionSection() string {
 	return `# Main execution
-echo -e "${BLUE}🚀 Network Device Simulator Route Configuration${NC}"
+echo -e "${BLUE}🚀 Layer 8 Data Center Simulator Route Configuration${NC}"
 echo -e "${BLUE}================================================${NC}"
 echo ""
 
