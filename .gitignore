@@ -30,3 +30,8 @@ go.work.sum
 # Editor/IDE
 .idea/
 .vscode/
+vendor
+go/simulator/simulator
+go/simulator/simulator.pid
+go/simulator/startup.log
+
