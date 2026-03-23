@@ -1,6 +1,7 @@
 # OpenSim - Layer 8 Data Center Simulator
 
 ![OpenSim Logo](opensim.png)
+![OpenSim Logo1](opensim1.png)
 
 A powerful, scalable network and infrastructure simulator that provides realistic SNMP v2c/v3, SSH, and HTTPS REST API interfaces for testing network management applications, monitoring systems, and automation tools. OpenSim can simulate thousands of network devices, GPU servers, storage systems, and Linux servers with dedicated IP addresses using TUN interfaces and Linux network namespaces.
 
