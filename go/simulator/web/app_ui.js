@@ -168,14 +168,14 @@ function renderDevices() {
     // Filter controls are always visible
 
     if (devices.length === 0) {
-        elements.deviceTable.innerHTML = '<div class="empty-state"><div style="font-size: 4em; margin-bottom: 20px;">📱</div><h3>No Devices Found</h3><p>Create your first simulated network device to get started</p></div>';
+        elements.deviceTable.innerHTML = '<div class="empty-state"><h3>No devices yet</h3><p>Create a device set to populate the simulator inventory.</p></div>';
         updatePaginationControls();
         return;
     }
 
     const filteredDevices = getFilteredDevices();
     if (filteredDevices.length === 0) {
-        elements.deviceTable.innerHTML = '<div class="empty-state"><div style="font-size: 4em; margin-bottom: 20px;">🔍</div><h3>No Devices Match Filters</h3><p>Try adjusting your filter criteria or clear filters to see all devices</p></div>';
+        elements.deviceTable.innerHTML = '<div class="empty-state"><h3>No matching devices</h3><p>Adjust the filters or clear them to review the full fleet.</p></div>';
         updatePaginationControls();
         return;
     }
@@ -199,13 +199,13 @@ function renderDevices() {
             '<td><span class="device-ip">' + device.ip + '</span></td>' +
             '<td><span class="device-interface">' + (device.interface || 'N/A') + '</span></td>' +
             '<td><span class="device-type">' + (device.device_type || 'Unknown') + '</span></td>' +
-            '<td><span class="device-ports">SNMP:' + device.snmp_port + ' SSH:' + device.ssh_port + '</span></td>' +
+            '<td><span class="device-ports">SNMP ' + device.snmp_port + ' · SSH ' + device.ssh_port + '</span></td>' +
             '<td><span class="device-status ' + (device.running ? 'status-running' : 'status-stopped') + '">' +
-            (device.running ? '● RUNNING' : '● STOPPED') + '</span></td>' +
+            (device.running ? 'Running' : 'Stopped') + '</span></td>' +
             '<td><div class="device-actions">' +
-            '<button class="btn btn-small" data-action="test-ssh" data-ip="' + device.ip + '" data-port="' + device.ssh_port + '">🔗 SSH</button>' +
-            '<button class="btn btn-small" data-action="ping" data-ip="' + device.ip + '">📡 Ping</button>' +
-            '<button class="btn btn-danger btn-small" data-action="delete" data-device-id="' + device.id + '">🗑️ Delete</button>' +
+            '<button class="btn btn-secondary btn-small" data-action="test-ssh" data-ip="' + device.ip + '" data-port="' + device.ssh_port + '">SSH</button>' +
+            '<button class="btn btn-secondary btn-small" data-action="ping" data-ip="' + device.ip + '">Ping</button>' +
+            '<button class="btn btn-danger btn-small" data-action="delete" data-device-id="' + device.id + '">Delete</button>' +
             '</div></td>' +
             '</tr>'
         ).join('') +
@@ -316,5 +316,4 @@ document.addEventListener('DOMContentLoaded', () => {
     loadResources();
     loadSystemStats(); // Initial system stats load
     checkStatus(); // Initial status check
-    showAlert('Network Device Simulator Web UI loaded successfully!', 'success');
 });

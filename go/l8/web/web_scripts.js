@@ -42,7 +42,7 @@ function copyToClipboard(button) {
     });
 }
 
-// Animate elements on scroll
+// Reveal elements on scroll
 const observerOptions = {
     threshold: 0.1,
     rootMargin: '0px 0px -100px 0px'
@@ -51,38 +51,18 @@ const observerOptions = {
 const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
         if (entry.isIntersecting) {
-            entry.target.style.opacity = '1';
-            entry.target.style.transform = 'translateY(0)';
+            entry.target.classList.add('is-visible');
+            observer.unobserve(entry.target);
         }
     });
 }, observerOptions);
 
 // Observe elements for animation
 document.addEventListener('DOMContentLoaded', () => {
-    const animatedElements = document.querySelectorAll('.feature-card, .use-case-card, .step-card, .doc-card');
+    const animatedElements = document.querySelectorAll('.reveal');
 
     animatedElements.forEach(el => {
-        el.style.opacity = '0';
-        el.style.transform = 'translateY(30px)';
-        el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
         observer.observe(el);
-    });
-
-    // Add floating animation to hero icon
-    const heroIcon = document.querySelector('.floating');
-    if (heroIcon) {
-        heroIcon.style.animationDelay = '0.5s';
-    }
-});
-
-// Feature card hover effects
-document.querySelectorAll('.feature-card').forEach(card => {
-    card.addEventListener('mouseenter', () => {
-        card.style.transform = 'translateY(-10px) scale(1.02)';
-    });
-
-    card.addEventListener('mouseleave', () => {
-        card.style.transform = 'translateY(-5px) scale(1)';
     });
 });
 
@@ -133,7 +113,7 @@ const statsObserver = new IntersectionObserver((entries) => {
 }, { threshold: 0.5 });
 
 document.addEventListener('DOMContentLoaded', () => {
-    const heroStats = document.querySelector('.hero-stats');
+    const heroStats = document.querySelector('.signal-grid');
     if (heroStats) {
         statsObserver.observe(heroStats);
     }

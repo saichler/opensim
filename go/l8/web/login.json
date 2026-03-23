@@ -1,7 +1,7 @@
 {
     "login": {
         "appTitle": "OpenSim",
-        "appDescription": "Find and Connect With Businesses",
+        "appDescription": "Operate Layer 8 device simulation environments",
         "authEndpoint": "/auth",
         "redirectUrl": "/",
         "showRememberMe": true,

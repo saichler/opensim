@@ -4,6 +4,7 @@ const API_BASE = '/api/v1';
 let devices = [];
 let resources = [];
 let isStatusPolling = false;
+let statusAlertMessage = '';
 
 // Pagination state
 const DEVICES_PER_PAGE = 50;
@@ -85,10 +86,20 @@ function stopStatusPolling() {
 function updateStatusDisplay(status) {
     if (status.is_pre_allocating) {
         const progress = status.pre_alloc_total > 0 ? Math.round((status.pre_alloc_progress / status.pre_alloc_total) * 100) : 0;
-        showAlert('Pre-allocating TUN interfaces: ' + status.pre_alloc_progress + '/' + status.pre_alloc_total + ' (' + progress + '%)', 'warning');
+        const nextMessage = 'Preparing interfaces: ' + status.pre_alloc_progress + ' of ' + status.pre_alloc_total + ' (' + progress + '%)';
+        if (statusAlertMessage !== nextMessage) {
+            showAlert(nextMessage, 'warning');
+            statusAlertMessage = nextMessage;
+        }
     } else if (status.is_creating_devices) {
         const progress = status.device_create_total > 0 ? Math.round((status.device_create_progress / status.device_create_total) * 100) : 0;
-        showAlert('Creating devices: ' + status.device_create_progress + '/' + status.device_create_total + ' (' + progress + '%)', 'warning');
+        const nextMessage = 'Creating devices: ' + status.device_create_progress + ' of ' + status.device_create_total + ' (' + progress + '%)';
+        if (statusAlertMessage !== nextMessage) {
+            showAlert(nextMessage, 'warning');
+            statusAlertMessage = nextMessage;
+        }
+    } else {
+        statusAlertMessage = '';
     }
 }
 
@@ -108,7 +119,7 @@ function populateResourceSelect() {
 
     // Build unique sorted category list
     const categories = [...new Set(resources.map(r => r.category))].sort();
-    categorySelect.innerHTML = '<option value="">All Categories</option>';
+    categorySelect.innerHTML = '<option value="">All categories</option>';
     categories.forEach(cat => {
         const option = document.createElement('option');
         option.value = cat;
@@ -129,7 +140,7 @@ function updateDeviceTypeDropdown(category) {
     const select = document.getElementById('resourceFile');
     const filtered = category ? resources.filter(r => r.category === category) : resources;
     const count = filtered.length;
-    const label = category ? category : 'All ' + count + ' Types';
+    const label = category ? category : 'All ' + count + ' types';
     select.innerHTML = '<option value="">Default (Auto-detect)</option><option value="__round_robin__">Round Robin (' + label + ')</option>';
 
     filtered.forEach(resource => {
@@ -189,7 +200,7 @@ async function deleteDevice(deviceId) {
 }
 
 async function deleteAllDevices() {
-    if (!confirm('Are you sure you want to delete all devices?')) return;
+    if (!confirm('Delete all simulated devices?')) return;
     try {
         setLoading('deleteAllLoading', true);
         const response = await apiCall('/devices', { method: 'DELETE' });
@@ -246,7 +257,7 @@ function downloadRouteScript() {
         link.click();
         document.body.removeChild(link);
 
-        showAlert('Permanent route script downloaded successfully! Routes will persist after reboot.', 'success');
+        showAlert('Route script downloaded. The routes will persist after reboot.', 'success');
     } catch (error) {
         showAlert('Failed to download route script: ' + error.message, 'error');
     } finally {
@@ -255,11 +266,11 @@ function downloadRouteScript() {
 }
 
 function testConnection(ip, port) {
-    showAlert('SSH test: ssh simadmin@' + ip + ' (password: simadmin)', 'warning');
+    showAlert('SSH command: ssh simadmin@' + ip + ' on port ' + port + ' (password: simadmin)', 'warning');
 }
 
 function pingDevice(ip) {
-    showAlert('Ping test for ' + ip + '. Check your terminal: ping ' + ip, 'warning');
+    showAlert('Ping from your terminal with: ping ' + ip, 'warning');
 }
 
 async function loadSystemStats() {
