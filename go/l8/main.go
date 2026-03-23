@@ -19,6 +19,7 @@ import (
 	"github.com/saichler/l8bus/go/overlay/vnet"
 	"github.com/saichler/l8bus/go/overlay/vnic"
 	"github.com/saichler/l8business/go/types/l8business"
+	"github.com/saichler/l8opensim/go/proxy"
 	"github.com/saichler/l8types/go/ifs"
 	"github.com/saichler/l8types/go/types/l8api"
 	"github.com/saichler/l8types/go/types/l8health"
@@ -26,7 +27,6 @@ import (
 	"github.com/saichler/l8utils/go/utils/ipsegment"
 	"github.com/saichler/l8utils/go/utils/shared"
 	"github.com/saichler/l8web/go/web/server"
-	"github.com/saichler/opensim/go/proxy"
 )
 
 func main() {
