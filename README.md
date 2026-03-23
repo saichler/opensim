@@ -8,10 +8,9 @@ A powerful, scalable network and infrastructure simulator that provides realisti
 
 - **Multi-Protocol Support**: SNMP v2c/v3 (MD5/SHA1 auth, DES/AES128 privacy), SSH with VT100 terminal emulation, and HTTPS REST API simulation
 - **Scalable Architecture**: Support for 30,000+ concurrent simulated devices with parallel TUN pre-allocation
-- **28 Device Types**: Routers, switches, firewalls, servers, GPU servers (NVIDIA DGX/HGX), storage systems, and Linux servers across 9 categories
+- **28 Device Types**: Routers, switches, firewalls, servers, GPU servers (NVIDIA DGX/HGX), storage systems, and Linux servers across 8 categories
 - **GPU Server Simulation**: NVIDIA DGX-A100, DGX-H100, and HGX-H200 with per-GPU metrics (utilization, VRAM, temperature, power, fan speed, clock speeds) via NVIDIA DCGM OIDs
 - **Dynamic Metrics**: Realistic CPU, memory, temperature, and GPU metrics with 100-point sine-wave cycling patterns and correlated metric generation
-- **Device Categories**: Core routers, edge routers, DC switches, campus switches, firewalls, servers, GPU servers, storage systems
 - **Network Namespace Isolation**: Devices run in a dedicated `opensim` network namespace for realistic isolation
 - **TUN Interface Integration**: Each device gets its own IP address via TUN interfaces with parallel pre-allocation for fast creation
 - **HTTPS Storage APIs**: Secure REST API endpoints for storage device simulation with shared TLS certificates
@@ -31,11 +30,7 @@ A powerful, scalable network and infrastructure simulator that provides realisti
 ### Prerequisites
 
 - Linux system with root access (required for TUN interface and network namespace creation)
-<<<<<<< HEAD
-- Go 1.25+ installed
-=======
 - Go 1.26+ installed
->>>>>>> 2cbad68 (Update readme file)
 - Basic networking tools (`ip`, `iptables`)
 
 ### Installation
@@ -122,7 +117,22 @@ Access the web UI at `http://localhost:8080/` for:
 - Generate routing scripts
 - Filter devices by ID, IP, interface, type, ports, or status
 
-## API Reference
+## REST API Reference
+
+### Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/v1/devices` | POST | Create devices (bulk, round-robin, category-based) |
+| `/api/v1/devices` | GET | List all devices |
+| `/api/v1/devices/{id}` | DELETE | Delete a specific device |
+| `/api/v1/devices` | DELETE | Delete all devices |
+| `/api/v1/devices/export` | GET | Export device list to CSV |
+| `/api/v1/devices/routes` | GET | Generate routing script |
+| `/api/v1/resources` | GET | List available device resource types |
+| `/api/v1/status` | GET | Manager status |
+| `/api/v1/system-stats` | GET | System stats (file descriptors, memory) |
+| `/health` | GET | Health check endpoint |
 
 ### Create Devices
 ```bash
@@ -352,15 +362,11 @@ Each GPU server simulates per-GPU metrics with correlated sine-wave patterns:
 
 Metrics are exposed via NVIDIA DCGM SNMP OIDs and cycle through 100 pre-generated data points for realistic time-series behavior.
 
-## Configuration
+## Device Types
 
-### Device Resources
+**28 device types across 8 categories:**
 
-The simulator uses a directory-based JSON resource structure for device definitions. Each device type has its own directory under `go/simulator/resources/` with JSON files split for maintainability (max 500 lines per file).
-
-**Available Device Types (28 devices across 8 categories):**
-
-*Core Routers:*
+### Core Routers
 | Device | Ports | Description |
 |--------|-------|-------------|
 | Cisco ASR9K | 48 | High-end service provider router |
@@ -369,27 +375,27 @@ The simulator uses a directory-based JSON resource structure for device definiti
 | Nokia 7750 SR-12 | 72 | IP/MPLS service router |
 | Juniper MX960 | 96 | Service provider edge router |
 
-*Edge Routers:*
+### Edge Routers
 | Device | Ports | Description |
 |--------|-------|-------------|
 | Juniper MX240 | 24 | Compact modular router |
 | NEC IX3315 | 48 | Enterprise router |
 | Cisco IOS | 4 | Standard IOS router |
 
-*Data Center Switches:*
+### Data Center Switches
 | Device | Ports | Description |
 |--------|-------|-------------|
 | Cisco Nexus 9500 | 48 | Data center spine switch |
 | Arista 7280R3 | 32 | High-performance switch |
 
-*Campus Switches:*
+### Campus Switches
 | Device | Ports | Description |
 |--------|-------|-------------|
 | Cisco Catalyst 9500 | 48 | Enterprise core switch |
 | Extreme VSP4450 | 48 | Campus switch |
 | D-Link DGS-3630 | 52 | L3 managed switch |
 
-*Firewalls:*
+### Firewalls
 | Device | Ports | Description |
 |--------|-------|-------------|
 | Palo Alto PA-3220 | 12 | Next-gen firewall |
@@ -397,7 +403,7 @@ The simulator uses a directory-based JSON resource structure for device definiti
 | SonicWall NSa 6700 | 16 | Next-gen firewall |
 | Check Point 15600 | 24 | Security gateway |
 
-*Servers:*
+### Servers
 | Device | Ports | Description |
 |--------|-------|-------------|
 | Dell PowerEdge R750 | 4 | Server BMC/iDRAC |
@@ -405,14 +411,14 @@ The simulator uses a directory-based JSON resource structure for device definiti
 | IBM Power S922 | 4 | Power Systems server |
 | Linux Server | - | Ubuntu 24.04 LTS (SNMP, SSH) |
 
-*GPU Servers:*
+### GPU Servers
 | Device | GPUs | VRAM/GPU | Description |
 |--------|------|----------|-------------|
 | NVIDIA DGX-A100 | 8 | 80 GB | A100 GPU training system |
 | NVIDIA DGX-H100 | 8 | 80 GB | H100 GPU training system |
 | NVIDIA HGX-H200 | 8 | 141 GB | H200 GPU inference system |
 
-*Storage Systems:*
+### Storage Systems
 | Device | Type | Protocols |
 |--------|------|-----------|
 | AWS S3 Storage | Object storage | SNMP, SSH, HTTPS REST |
@@ -420,7 +426,7 @@ The simulator uses a directory-based JSON resource structure for device definiti
 | NetApp ONTAP | Unified storage | SNMP, SSH, HTTPS REST |
 | Dell EMC Unity | Unified storage | SNMP, SSH, HTTPS REST |
 
-**Enhanced Features:**
+### Enhanced Features
 - **Entity MIB Alignment**: All network devices have properly aligned ifTable and Entity MIB data
 - **Complete physical inventory**: Chassis, line cards, power supplies, fans, temperature sensors
 - **entAliasMappingTable**: Proper mapping between physical ports and logical interfaces
@@ -434,7 +440,10 @@ The simulator uses a directory-based JSON resource structure for device definiti
 - CDP & LLDP support for network topology discovery
 - OSPF, BGP, and VRF routing protocol simulation via SSH
 
-### Example Resource Configuration
+### Resource Configuration
+
+Each device type has its own directory under `go/simulator/resources/` with JSON files split for maintainability. The loader automatically merges all JSON files in a device directory. There are currently 341 JSON resource files across 28 device types.
+
 ```json
 {
   "snmp": [
@@ -467,96 +476,43 @@ The simulator uses a directory-based JSON resource structure for device definiti
 ```
 opensim/
 ├── go/                              # Go source code
-<<<<<<< HEAD
-│   ├── simulator/                   # Main simulator package (29 Go files, ~8,850 lines)
-│   │   ├── simulator.go             # Entry point, CLI flags
-│   │   ├── manager.go               # Device management, shared TLS/SSH keys
-│   │   ├── device.go                # Device lifecycle
-│   │   ├── constants.go             # Protocol and configuration constants
-│   │   ├── types.go                 # Data structures
-│   │   ├── names.go                 # Realistic device naming
-│   │   ├── cities.go                # City name data for device locations
-│   │   ├── snmp.go                  # SNMP v2c/v3 protocol handling
-│   │   ├── snmp_server.go           # SNMP UDP listener (per-device namespace)
-│   │   ├── snmp_handlers.go         # OID lookup and GetNext/walk support
-│   │   ├── snmp_response.go         # ASN.1 BER response encoding
-│   │   ├── snmp_encoding.go         # ASN.1 BER/DER encoding/decoding
-│   │   ├── snmpv3.go                # SNMPv3 request parsing
-│   │   ├── snmpv3_crypto.go         # SNMPv3 auth/priv (MD5/SHA1, DES/AES128)
-│   │   ├── ssh.go                   # SSH server with VT100 terminal emulation
-│   │   ├── api.go                   # HTTPS REST API handlers (storage/GPU)
-│   │   ├── device_profiles.go       # Device metric profiles by category
-│   │   ├── gpu_metrics.go           # Per-GPU metric generation (NVIDIA DCGM)
-│   │   ├── metrics_cycler.go        # CPU/memory/temp sine-wave cycling
-│   │   ├── metrics_oids.go          # SNMP handlers for dynamic metrics
-│   │   ├── system_stats.go          # Process-level stats (FDs, memory)
-│   │   ├── netns.go                 # Network namespace management
-│   │   ├── tun.go                   # TUN interface creation and routing
-│   │   ├── prealloc.go              # Optimized device pre-allocation
-│   │   ├── resources.go             # Resource loading and OID/SSH indexing
-│   │   ├── web.go                   # Web server setup and routing
-│   │   ├── web_routes.go            # API route handlers
-│   │   ├── web_routes_linux.go      # Linux-specific route handlers
-│   │   ├── web_routes_utils.go      # Route handler utilities
-│   │   ├── web/                     # Web UI static files
-│   │   │   ├── index.html           # Main UI page
-│   │   │   ├── styles.css           # UI styles
-│   │   │   ├── app_ui.js            # UI JavaScript
-│   │   │   ├── app_api.js           # API JavaScript
-│   │   │   └── logo.png             # Logo image
-│   │   └── resources/               # 341 JSON device resource files
-│   │       ├── asr9k/               # Cisco ASR9K (48 ports)
-│   │       ├── nvidia_dgx_a100/     # NVIDIA DGX-A100 (8 GPUs)
-│   │       ├── nvidia_dgx_h100/     # NVIDIA DGX-H100 (8 GPUs)
-│   │       ├── nvidia_hgx_h200/     # NVIDIA HGX-H200 (8 GPUs)
-│   │       ├── pure_storage_flasharray/
-│   │       ├── linux_server/
-│   │       └── ...                  # 28 device directories total
-│   ├── l8/                          # Layer 8 service (vnet + HTTPS web proxy)
-│   │   ├── main.go                  # vnet, vnic, web service (port 9095)
-│   │   ├── web/                     # Landing page
-│   │   ├── Dockerfile               # Multi-stage Docker build
-│   │   └── opensim.yaml             # K8s StatefulSet manifest
-│   ├── proxy/                       # HTTP reverse proxy to simulator
-│   │   └── Proxy.go                 # HTTP forwarding
-=======
-│   ├── simulator/                   # Main simulator package (29 Go files, ~8,850 LOC)
+│   ├── simulator/                   # Main simulator package (29 Go files)
 │   │   ├── simulator.go             # Entry point, CLI flags, signal handling
 │   │   ├── manager.go               # Device management, shared TLS/SSH keys
 │   │   ├── device.go                # Device lifecycle and creation
 │   │   ├── types.go                 # Data structures (TunInterface, DeviceSimulator, etc.)
+│   │   ├── constants.go             # ASN.1 constants, SNMP tags
+│   │   ├── names.go                 # Device name generation (prefixes, suffixes)
+│   │   ├── cities.go                # World city data loading for sysLocation
 │   │   ├── snmp.go                  # SNMP v2c/v3 request handling
 │   │   ├── snmp_server.go           # SNMP server with buffer pool optimization
 │   │   ├── snmp_handlers.go         # OID lookup (sync.Map), precomputed next-OID mappings
-│   │   ├── snmp_encoding.go         # ASN.1 BER/DER encoding/decoding
 │   │   ├── snmp_response.go         # SNMPv3 response building
+│   │   ├── snmp_encoding.go         # ASN.1 BER/DER encoding/decoding
 │   │   ├── snmpv3.go                # SNMPv3 message parsing
 │   │   ├── snmpv3_crypto.go         # SNMPv3 auth/priv encryption (MD5, SHA1, DES, AES128)
 │   │   ├── ssh.go                   # SSH server with VT100 terminal emulation
 │   │   ├── api.go                   # REST API handlers for storage devices
+│   │   ├── device_profiles.go       # Per-category device metric profiles
+│   │   ├── gpu_metrics.go           # Per-GPU metric generation with correlated cycling
+│   │   ├── metrics_cycler.go        # 100-point pre-generated CPU/memory/temp cycling
+│   │   ├── metrics_oids.go          # SNMP handlers for dynamic metrics OIDs
+│   │   ├── system_stats.go          # System stats (process memory/CPU)
+│   │   ├── netns.go                 # Network namespace management (opensim namespace)
+│   │   ├── tun.go                   # TUN interface creation/management
+│   │   ├── prealloc.go              # Parallel TUN interface pre-allocation for fast scaling
+│   │   ├── resources.go             # Resource file loading and merging
 │   │   ├── web.go                   # HTTP handlers (device CRUD, stats, exports)
 │   │   ├── web_routes.go            # Route script generation (generic)
 │   │   ├── web_routes_linux.go      # Linux-specific route config (Debian/Ubuntu)
 │   │   ├── web_routes_utils.go      # Route script utilities
-│   │   ├── device_profiles.go       # Per-category device metric profiles (CPU/mem/temp baselines)
-│   │   ├── gpu_metrics.go           # Per-GPU metric generation with correlated cycling
-│   │   ├── metrics_cycler.go        # 100-point pre-generated CPU/memory/temp cycling arrays
-│   │   ├── metrics_oids.go          # SNMP handlers for dynamic metrics OIDs
-│   │   ├── tun.go                   # TUN interface creation/management
-│   │   ├── netns.go                 # Network namespace management (opensim namespace)
-│   │   ├── prealloc.go              # Parallel TUN interface pre-allocation for fast scaling
-│   │   ├── resources.go             # Resource file loading and merging
-│   │   ├── constants.go             # ASN.1 constants, SNMP tags
-│   │   ├── names.go                 # Device name generation (prefixes, suffixes)
-│   │   ├── cities.go                # World city data loading for sysLocation
-│   │   ├── system_stats.go          # System stats (process memory/CPU)
 │   │   ├── web/                     # Web UI static files
 │   │   │   ├── index.html           # Main UI page
 │   │   │   ├── styles.css           # UI stylesheet
 │   │   │   ├── app_ui.js            # UI JavaScript
 │   │   │   ├── app_api.js           # API JavaScript
 │   │   │   └── logo.png             # Branding
-│   │   ├── resources/               # Device resource definitions (28 directories)
+│   │   ├── resources/               # Device resource definitions (28 directories, 341 JSON files)
 │   │   │   ├── asr9k/               # Cisco ASR9K (48 ports)
 │   │   │   ├── nvidia_dgx_a100/     # NVIDIA DGX-A100 (8 GPUs)
 │   │   │   ├── nvidia_dgx_h100/     # NVIDIA DGX-H100 (8 GPUs)
@@ -566,33 +522,25 @@ opensim/
 │   │   │   └── ...                  # 28 device type directories total
 │   │   └── worldcities/             # 98 CSV files with world city data
 │   ├── l8/                          # Layer 8 integration service
-│   │   ├── main.go                  # vnet overlay + HTTPS web proxy
-│   │   ├── Dockerfile               # Multi-stage Docker build
+│   │   ├── main.go                  # vnet overlay + HTTPS web proxy (port 9095)
 │   │   ├── build.sh                 # Docker build script
+│   │   ├── Dockerfile               # Multi-stage Docker build
 │   │   ├── opensim.yaml             # K8s StatefulSet manifest
 │   │   └── web/                     # Landing page (login, register)
 │   ├── proxy/                       # HTTP proxy to simulator backend
 │   │   └── Proxy.go                 # Reverse proxy implementation
->>>>>>> 2cbad68 (Update readme file)
 │   ├── tests/                       # Device and polling tests
 │   │   ├── TestDevices_test.go      # Integration tests
 │   │   ├── Devices.go               # Test device utilities
 │   │   └── Polling.go               # Polling test helpers
 │   ├── go.mod                       # Go module (Go 1.26.1)
 │   └── go.sum                       # Go module checksums
-<<<<<<< HEAD
-├── *.md                             # Documentation files
-├── *.sh                             # Setup and diagnostic scripts
-└── opensim.png                      # Project logo
-=======
-├── plans/                           # Design documents and implementation plans
 ├── diagnose_system.sh               # System diagnostics script
 ├── ubuntu_setup.sh                  # Ubuntu automated setup
 ├── increase_file_limits.sh          # File descriptor limit configuration
 ├── opensim.png                      # Project logo
 ├── LICENSE                          # Apache License 2.0
 └── README.md                        # This file
->>>>>>> 2cbad68 (Update readme file)
 ```
 
 ### Resource Directory Structure
@@ -611,8 +559,6 @@ resources/
 └── ...
 ```
 
-The loader automatically merges all JSON files in a device directory, allowing large configurations to be split across multiple files for maintainability. There are currently 341 JSON resource files across 28 device types.
-
 ## Layer 8 Integration
 
 OpenSim includes an optional Layer 8 overlay service (`go/l8/`) for distributed deployment:
@@ -621,6 +567,23 @@ OpenSim includes an optional Layer 8 overlay service (`go/l8/`) for distributed 
 - **HTTPS web proxy**: Serves the simulator UI via the L8 web infrastructure with authentication
 - **Kubernetes-ready**: Includes Dockerfile and K8s StatefulSet manifest (`opensim.yaml`)
 - **Proxy**: Forwards API requests from the L8 web frontend to the simulator backend
+
+## Performance & Scaling
+
+The simulator is optimized for high-scale deployments:
+
+- **Tested**: Up to 30,000+ concurrent devices
+- **Memory**: ~50MB base + ~1KB per device
+- **CPU**: Minimal usage during steady state
+- **Network**: Network namespace isolation prevents systemd-networkd overhead
+- **Optimization**: Pre-generated 100-point metric arrays, lock-free sync.Map for O(1) OID lookups, pre-computed next-OID mappings, buffer pool for SNMP reads, shared SSH/TLS keys, parallel TUN pre-allocation
+
+### Scaling Tips
+
+- Use `./increase_file_limits.sh` to raise file descriptor limits before large deployments
+- Keep network namespaces enabled (default) to avoid systemd-networkd overhead
+- Run `./diagnose_system.sh` to verify system readiness
+- Use `./ubuntu_setup.sh` for automated Ubuntu system configuration
 
 ## Troubleshooting
 
@@ -653,28 +616,6 @@ sudo ./diagnose_system.sh
 - Application logs: stdout/stderr
 - System logs: `journalctl -u <service-name>`
 - Web access logs: Built into the application
-
-## Performance & Scaling
-
-The simulator is optimized for high-scale deployments:
-
-- **Tested**: Up to 30,000+ concurrent devices
-- **Memory**: ~50MB base + ~1KB per device
-- **CPU**: Minimal usage during steady state
-- **Network**: Network namespace isolation prevents systemd-networkd overhead
-<<<<<<< HEAD
-- **Optimization**: Pre-generated metrics (100-point sine-wave curves), lock-free atomic indexing, shared SSH/TLS keys, SNMP buffer pool
-- **Pre-allocation**: Automatic worker-pool pre-allocation for bulk device creation (10+ devices)
-=======
-- **Optimization**: Pre-generated 100-point metric arrays, lock-free sync.Map for O(1) OID lookups, pre-computed next-OID mappings, buffer pool for SNMP reads, shared SSH/TLS keys, parallel TUN pre-allocation
->>>>>>> 2cbad68 (Update readme file)
-
-### Scaling Tips
-
-- Use `./increase_file_limits.sh` to raise file descriptor limits before large deployments
-- Keep network namespaces enabled (default) to avoid systemd-networkd overhead
-- Run `./diagnose_system.sh` to verify system readiness
-- Use `./ubuntu_setup.sh` for automated Ubuntu system configuration
 
 ## Development
 
@@ -716,34 +657,6 @@ go test ./...
 4. Test thoroughly
 5. Submit a pull request
 
-<<<<<<< HEAD
-## REST API Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/v1/devices` | POST | Create devices (bulk, round-robin, category-based) |
-| `/api/v1/devices` | GET | List all devices |
-| `/api/v1/devices/{id}` | DELETE | Delete a specific device |
-| `/api/v1/devices` | DELETE | Delete all devices |
-| `/api/v1/devices/export` | GET | Export device list to CSV |
-| `/api/v1/devices/routes` | GET | Generate routing script |
-| `/api/v1/resources` | GET | List available device resource types |
-| `/api/v1/status` | GET | Manager status |
-| `/api/v1/system-stats` | GET | System stats (file descriptors, memory) |
-| `/health` | GET | Health check endpoint |
-
-## Documentation
-
-- [Ubuntu Requirements](UBUNTU_REQUIREMENTS.md) - System setup for Ubuntu
-- [Scaling Guide](SCALING_GUIDE.md) - High-scale deployment tips
-- [Port Binding Solutions](PORT_BINDING_SOLUTIONS.md) - Network configuration
-- [TUN Troubleshooting](TUN_TROUBLESHOOTING.md) - TUN/TAP interface issues
-- [Individual Interfaces Guide](INDIVIDUAL_INTERFACES_GUIDE.md) - Advanced networking
-- [Device Mock Data Requirements](go/simulator/DEVICE_MOCK_DATA_REQUIREMENTS.md) - Device simulation coverage
-- [Physical Inventory Coverage](go/simulator/PHYSICAL_INVENTORY_COVERAGE.md) - Hardware monitoring OIDs
-
-=======
->>>>>>> 2cbad68 (Update readme file)
 ## Use Cases
 
 - **Network Monitoring Testing**: Test SNMP v2c/v3 polling applications with dynamic metrics
