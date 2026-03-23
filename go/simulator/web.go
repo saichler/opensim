@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"runtime/pprof"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -160,6 +161,27 @@ func generateRouteScriptHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(script))
 }
 
+func pprofMemoryHandler(w http.ResponseWriter, r *http.Request) {
+	filename := fmt.Sprintf("opensim_heap_%s.pprof", time.Now().Format("2006-01-02_15-04-05"))
+	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filename))
+	if err := pprof.WriteHeapProfile(w); err != nil {
+		http.Error(w, "Failed to write heap profile", http.StatusInternalServerError)
+	}
+}
+
+func cpuProfileHandler(w http.ResponseWriter, r *http.Request) {
+	filename := fmt.Sprintf("opensim_cpu_%s.pprof", time.Now().Format("2006-01-02_15-04-05"))
+	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filename))
+	if err := pprof.StartCPUProfile(w); err != nil {
+		http.Error(w, "Failed to start CPU profile: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	time.Sleep(5 * time.Second)
+	pprof.StopCPUProfile()
+}
+
 // Helper functions for API responses
 func sendSuccessResponse(w http.ResponseWriter, message string) {
 	w.Header().Set("Content-Type", "application/json")
@@ -214,6 +236,8 @@ func setupRoutes() *mux.Router {
 	api.HandleFunc("/resources", listResourcesHandler).Methods("GET")
 	api.HandleFunc("/status", statusHandler).Methods("GET")
 	api.HandleFunc("/system-stats", systemStatsHandler).Methods("GET")
+	api.HandleFunc("/debug/pprof-memory", pprofMemoryHandler).Methods("GET")
+	api.HandleFunc("/debug/cpu-profile", cpuProfileHandler).Methods("GET")
 
 	// Static file for logo
 	router.HandleFunc("/logo.png", func(w http.ResponseWriter, r *http.Request) {

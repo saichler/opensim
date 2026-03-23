@@ -273,6 +273,46 @@ function pingDevice(ip) {
     showAlert('Ping from your terminal with: ping ' + ip, 'warning');
 }
 
+function downloadPprofMemory() {
+    try {
+        setLoading('pprofMemoryLoading', true);
+        const link = document.createElement('a');
+        link.href = API_BASE + '/debug/pprof-memory';
+        link.download = 'opensim_heap.pprof';
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showAlert('Heap profile download started', 'success');
+    } catch (error) {
+        showAlert('Failed to download heap profile: ' + error.message, 'error');
+    } finally {
+        setLoading('pprofMemoryLoading', false);
+    }
+}
+
+function downloadCpuProfile() {
+    try {
+        setLoading('cpuProfileLoading', true);
+        showAlert('Capturing CPU profile for 5 seconds...', 'warning');
+        const link = document.createElement('a');
+        link.href = API_BASE + '/debug/cpu-profile';
+        link.download = 'opensim_cpu.pprof';
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        // The server takes 5 seconds to respond, so keep the spinner a bit
+        setTimeout(() => {
+            setLoading('cpuProfileLoading', false);
+            showAlert('CPU profile captured (5 seconds)', 'success');
+        }, 6000);
+    } catch (error) {
+        showAlert('Failed to capture CPU profile: ' + error.message, 'error');
+        setLoading('cpuProfileLoading', false);
+    }
+}
+
 async function loadSystemStats() {
     try {
         const response = await apiCall('/system-stats');

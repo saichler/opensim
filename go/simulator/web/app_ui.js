@@ -7,6 +7,8 @@ const elements = {
     exportBtn: document.getElementById('exportBtn'),
     routeScriptBtn: document.getElementById('routeScriptBtn'),
     refreshBtn: document.getElementById('refreshBtn'),
+    pprofMemoryBtn: document.getElementById('pprofMemoryBtn'),
+    cpuProfileBtn: document.getElementById('cpuProfileBtn'),
     deleteAllBtn: document.getElementById('deleteAllBtn'),
     totalDevices: document.getElementById('totalDevices'),
     runningDevices: document.getElementById('runningDevices'),
@@ -293,6 +295,8 @@ elements.createForm.addEventListener('submit', async (e) => {
 elements.exportBtn.addEventListener('click', exportDevicesCSV);
 elements.routeScriptBtn.addEventListener('click', downloadRouteScript);
 elements.refreshBtn.addEventListener('click', loadDevices);
+elements.pprofMemoryBtn.addEventListener('click', downloadPprofMemory);
+elements.cpuProfileBtn.addEventListener('click', downloadCpuProfile);
 elements.deleteAllBtn.addEventListener('click', deleteAllDevices);
 
 // Pagination event listeners
