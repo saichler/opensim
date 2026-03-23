@@ -108,9 +108,9 @@ body {
 }
 
 .hero h1 {
-    max-width: 13ch;
+    max-width: 23.4ch;
     margin-bottom: 18px;
-    font-size: clamp(2.8rem, 5vw, 5rem);
+    font-size: clamp(2rem, 3.5vw, 3.5rem);
     letter-spacing: -0.045em;
 }
 
