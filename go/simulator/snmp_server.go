@@ -34,6 +34,12 @@ func min(a, b int) int {
 	return b
 }
 
+// snmpSocketBufSize is the kernel socket buffer size for SNMP UDP sockets.
+// SNMP packets are small (typically 200-1500 bytes), so 64KB is more than enough.
+// Without this, each socket inherits net.core.rmem_default (often 4MB),
+// and 30K sockets × 4MB = 120GB of kernel socket buffer memory.
+const snmpSocketBufSize = 65536
+
 // SNMP Server implementation
 func (s *SNMPServer) Start() error {
 	addr := &net.UDPAddr{
@@ -52,6 +58,11 @@ func (s *SNMPServer) Start() error {
 	if err != nil {
 		return err
 	}
+
+	// Shrink kernel socket buffers from the system default (often 4MB) to 64KB.
+	// At 30K devices this reduces kernel memory from ~240GB to ~3.8GB.
+	listener.SetReadBuffer(snmpSocketBufSize)
+	listener.SetWriteBuffer(snmpSocketBufSize)
 
 	s.listener = listener
 	s.running = true

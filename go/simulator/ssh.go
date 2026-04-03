@@ -16,6 +16,7 @@
 package main
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -72,7 +73,8 @@ func (s *SSHServer) Start() error {
 	if s.device.netNamespace != nil {
 		listener, err = s.device.netNamespace.ListenTCPInNamespace("tcp", addr)
 	} else {
-		listener, err = net.Listen("tcp", addr)
+		lc := net.ListenConfig{Control: setSocketBufferSize}
+		listener, err = lc.Listen(context.Background(), "tcp", addr)
 	}
 	if err != nil {
 		return err

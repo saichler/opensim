@@ -16,6 +16,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net"
@@ -473,8 +474,22 @@ func (ns *NetNamespace) ListenUDPInNamespace(addr *net.UDPAddr) (*net.UDPConn, e
 		return nil, fmt.Errorf("failed to return to original namespace: %v", err)
 	}
 
+	// Shrink kernel socket buffers — callers (e.g. SNMP server) may further
+	// override this, but set a sane default here so no UDP socket in the
+	// namespace inherits the system-wide rmem_default (often 4MB).
+	if conn != nil {
+		conn.SetReadBuffer(snmpSocketBufSize)
+		conn.SetWriteBuffer(snmpSocketBufSize)
+	}
+
 	return conn, listenErr
 }
+
+// tcpListenSocketBufSize is the kernel socket buffer size for TCP listeners.
+// SSH/API sessions are interactive with small payloads; 32KB is sufficient.
+// Without this, each listener inherits net.core.rmem_default (often 4MB),
+// and 35K listeners × 4MB = 140GB of potential kernel buffer memory.
+const tcpListenSocketBufSize = 32768
 
 // ListenTCPInNamespace creates a TCP listener inside the network namespace.
 // The returned net.Listener remains valid in the host namespace.
@@ -489,13 +504,17 @@ func (ns *NetNamespace) ListenTCPInNamespace(network, address string) (net.Liste
 	}
 	defer syscall.Close(origFd)
 
-	// Enter namespace
+	// Enter namespace — use ListenConfig with Control to set socket buffer
+	// sizes before the socket enters the listen state
+	lc := net.ListenConfig{
+		Control: setSocketBufferSize,
+	}
 	if err := unix.Setns(ns.NsFd, syscall.CLONE_NEWNET); err != nil {
 		return nil, fmt.Errorf("failed to enter namespace: %v", err)
 	}
 
-	// Create listener inside namespace
-	listener, listenErr := net.Listen(network, address)
+	// Create listener inside namespace with reduced buffer sizes
+	listener, listenErr := lc.Listen(context.Background(), network, address)
 
 	// Return to original namespace (must happen regardless)
 	if err := unix.Setns(origFd, syscall.CLONE_NEWNET); err != nil {
@@ -506,4 +525,13 @@ func (ns *NetNamespace) ListenTCPInNamespace(network, address string) (net.Liste
 	}
 
 	return listener, listenErr
+}
+
+// setSocketBufferSize is a Control function for net.ListenConfig that reduces
+// kernel send/receive buffers on TCP listener sockets before they start listening.
+func setSocketBufferSize(network, address string, c syscall.RawConn) error {
+	return c.Control(func(fd uintptr) {
+		syscall.SetsockoptInt(int(fd), syscall.SOL_SOCKET, syscall.SO_RCVBUF, tcpListenSocketBufSize)
+		syscall.SetsockoptInt(int(fd), syscall.SOL_SOCKET, syscall.SO_SNDBUF, tcpListenSocketBufSize)
+	})
 }

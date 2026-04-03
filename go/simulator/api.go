@@ -16,6 +16,7 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
@@ -65,7 +66,8 @@ func (s *APIServer) Start() error {
 	if s.device.netNamespace != nil {
 		listener, err = s.device.netNamespace.ListenTCPInNamespace("tcp", addr)
 	} else {
-		listener, err = net.Listen("tcp", addr)
+		lc := net.ListenConfig{Control: setSocketBufferSize}
+		listener, err = lc.Listen(context.Background(), "tcp", addr)
 	}
 	if err != nil {
 		return fmt.Errorf("failed to start API server on %s: %v", addr, err)
