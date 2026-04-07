@@ -16,8 +16,11 @@ FROM alpine:3.21
 
 RUN apk add --no-cache iproute2
 
+WORKDIR /app
+
 COPY --from=build /simulator /usr/local/bin/simulator
-COPY go/simulator/resources/ /resources/
+COPY go/simulator/resources/ /app/resources/
+COPY go/simulator/web/ /app/web/
 
 EXPOSE 8080/tcp 161/udp
 
