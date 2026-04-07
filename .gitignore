@@ -35,3 +35,6 @@ go/simulator/simulator
 go/simulator/simulator.pid
 go/simulator/startup.log
 
+# Release build artifacts
+dist/
+
