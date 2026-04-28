@@ -393,6 +393,8 @@ func getDeviceTypeFromName(name string) string {
 		return "Linux Server"
 	} else if strings.Contains(nameLower, "nvidia") || strings.Contains(nameLower, "dgx") || strings.Contains(nameLower, "hgx") {
 		return "NVIDIA GPU Server"
+	} else if strings.Contains(nameLower, "nayax") {
+		return "Nayax Cloud API"
 	}
 
 	// Capitalize first letter of name as fallback
@@ -439,6 +441,11 @@ func getDeviceCategoryFromName(name string) string {
 		strings.Contains(nameLower, "linux") || strings.Contains(nameLower, "poweredge") ||
 		strings.Contains(nameLower, "proliant") || strings.Contains(nameLower, "power_s") {
 		return "Servers"
+	}
+
+	// Nayax Cloud API
+	if strings.Contains(nameLower, "nayax") {
+		return "IoT/Payment"
 	}
 
 	return "Other"
