@@ -280,14 +280,13 @@ func extractPathParams(requestPath, pattern string) map[string]string {
 }
 
 // personalizeResponse creates a deep copy of the response and replaces values
-// based on path parameters. It replaces ID fields and varies numeric fields
-// using a hash of the parameter value for realistic per-device variation.
+// based on path parameters. Replaces ID fields, varies stock levels, and
+// recalculates summary fields for realistic per-device simulation.
 func personalizeResponse(response interface{}, params map[string]string) interface{} {
 	if len(params) == 0 {
 		return response
 	}
 
-	// Marshal and unmarshal to get a mutable deep copy
 	data, err := json.Marshal(response)
 	if err != nil {
 		return response
@@ -297,48 +296,75 @@ func personalizeResponse(response interface{}, params map[string]string) interfa
 		return response
 	}
 
-	// Apply parameter substitution recursively
-	return substituteParams(result, params)
-}
+	mid, hasMachineId := params["machineId"]
+	obj, isMap := result.(map[string]interface{})
+	if !isMap {
+		return result
+	}
 
-func substituteParams(value interface{}, params map[string]string) interface{} {
-	switch v := value.(type) {
-	case map[string]interface{}:
-		for key, val := range v {
-			// Replace ID fields that match a parameter name
-			if paramVal, ok := params[key]; ok {
-				v[key] = paramVal
-				continue
-			}
-			// For "machineId" field, always replace if we have the param
-			if key == "machineId" {
-				if mid, ok := params["machineId"]; ok {
-					v[key] = mid
-				}
-				continue
-			}
-			// Vary numeric fields based on the parameter hash for realistic data
-			if key == "currentStock" || key == "currentStock" {
-				if mid, ok := params["machineId"]; ok {
-					if num, ok2 := val.(float64); ok2 {
-						v[key] = varyNumber(num, mid, key)
-					}
-				}
-				continue
-			}
-			// Recurse into sub-objects and arrays
-			v[key] = substituteParams(val, params)
-		}
-	case []interface{}:
-		for i, item := range v {
-			v[i] = substituteParams(item, params)
+	// Replace machineId field
+	if hasMachineId {
+		if _, exists := obj["machineId"]; exists {
+			obj["machineId"] = mid
 		}
 	}
-	return value
+
+	// Vary slot stock levels and recalculate summaries
+	if slots, ok := obj["slots"].([]interface{}); ok && hasMachineId {
+		empty := 0
+		lowStock := 0
+		for i, slot := range slots {
+			s, ok := slot.(map[string]interface{})
+			if !ok {
+				continue
+			}
+			if stock, ok := s["currentStock"].(float64); ok {
+				newStock := varyNumber(stock, mid, fmt.Sprintf("slot%d", i))
+				cap := 10.0
+				if c, ok := s["capacity"].(float64); ok {
+					cap = c
+				}
+				if newStock > cap {
+					newStock = cap
+				}
+				s["currentStock"] = newStock
+				if newStock == 0 {
+					s["status"] = "empty"
+					empty++
+				} else if newStock <= 2 {
+					s["status"] = "critical"
+					lowStock++
+				} else if newStock <= cap/3 {
+					s["status"] = "low"
+					lowStock++
+				} else {
+					s["status"] = "ok"
+				}
+			}
+		}
+		obj["emptySlots"] = float64(empty)
+		obj["lowStockSlots"] = float64(lowStock)
+	}
+
+	// Replace machineId in any nested objects (recursive for non-slot fields)
+	for key, val := range obj {
+		if key == "slots" || key == "machineId" || key == "emptySlots" || key == "lowStockSlots" {
+			continue
+		}
+		switch v := val.(type) {
+		case map[string]interface{}:
+			if hasMachineId {
+				if _, exists := v["machineId"]; exists {
+					v["machineId"] = mid
+				}
+			}
+		}
+	}
+
+	return result
 }
 
-// varyNumber takes a base number and varies it using a hash of the id+field
-// to produce consistent but different values per machine.
+// varyNumber varies a base number using a hash of id+field for consistent per-device values.
 func varyNumber(base float64, id, field string) float64 {
 	h := 0
 	for _, c := range id + field {
@@ -347,7 +373,7 @@ func varyNumber(base float64, id, field string) float64 {
 	if h < 0 {
 		h = -h
 	}
-	variation := float64(h%5) - 2 // -2 to +2
+	variation := float64(h%5) - 2
 	result := base + variation
 	if result < 0 {
 		result = 0
