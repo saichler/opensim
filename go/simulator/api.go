@@ -147,8 +147,11 @@ func (s *APIServer) handleAPIRequestMultiMethod(w http.ResponseWriter, r *http.R
 		// In production, this would require proper authentication
 	}
 
-	// Return the simulated response
-	responseData, err := json.MarshalIndent(matchedResource.Response, "", "  ")
+	// Extract path parameters and personalize the response
+	params := extractPathParams(r.URL.Path, matchedResource.Path)
+	response := personalizeResponse(matchedResource.Response, params)
+
+	responseData, err := json.MarshalIndent(response, "", "  ")
 	if err != nil {
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
@@ -255,4 +258,99 @@ func matchPathPattern(requestPath, pattern string) bool {
 	}
 
 	return true
+}
+
+// extractPathParams extracts path parameter values from a request URL using the pattern.
+// e.g., requestPath="/lynx/v1/machines/M-100003/inventory", pattern="/lynx/v1/machines/{machineId}/inventory"
+// returns map["machineId"] = "M-100003"
+func extractPathParams(requestPath, pattern string) map[string]string {
+	params := make(map[string]string)
+	reqSegs := strings.Split(strings.Trim(requestPath, "/"), "/")
+	patSegs := strings.Split(strings.Trim(pattern, "/"), "/")
+	if len(reqSegs) != len(patSegs) {
+		return params
+	}
+	for i := range patSegs {
+		if strings.HasPrefix(patSegs[i], "{") && strings.HasSuffix(patSegs[i], "}") {
+			name := patSegs[i][1 : len(patSegs[i])-1]
+			params[name] = reqSegs[i]
+		}
+	}
+	return params
+}
+
+// personalizeResponse creates a deep copy of the response and replaces values
+// based on path parameters. It replaces ID fields and varies numeric fields
+// using a hash of the parameter value for realistic per-device variation.
+func personalizeResponse(response interface{}, params map[string]string) interface{} {
+	if len(params) == 0 {
+		return response
+	}
+
+	// Marshal and unmarshal to get a mutable deep copy
+	data, err := json.Marshal(response)
+	if err != nil {
+		return response
+	}
+	var result interface{}
+	if err := json.Unmarshal(data, &result); err != nil {
+		return response
+	}
+
+	// Apply parameter substitution recursively
+	return substituteParams(result, params)
+}
+
+func substituteParams(value interface{}, params map[string]string) interface{} {
+	switch v := value.(type) {
+	case map[string]interface{}:
+		for key, val := range v {
+			// Replace ID fields that match a parameter name
+			if paramVal, ok := params[key]; ok {
+				v[key] = paramVal
+				continue
+			}
+			// For "machineId" field, always replace if we have the param
+			if key == "machineId" {
+				if mid, ok := params["machineId"]; ok {
+					v[key] = mid
+				}
+				continue
+			}
+			// Vary numeric fields based on the parameter hash for realistic data
+			if key == "currentStock" || key == "currentStock" {
+				if mid, ok := params["machineId"]; ok {
+					if num, ok2 := val.(float64); ok2 {
+						v[key] = varyNumber(num, mid, key)
+					}
+				}
+				continue
+			}
+			// Recurse into sub-objects and arrays
+			v[key] = substituteParams(val, params)
+		}
+	case []interface{}:
+		for i, item := range v {
+			v[i] = substituteParams(item, params)
+		}
+	}
+	return value
+}
+
+// varyNumber takes a base number and varies it using a hash of the id+field
+// to produce consistent but different values per machine.
+func varyNumber(base float64, id, field string) float64 {
+	h := 0
+	for _, c := range id + field {
+		h = h*31 + int(c)
+	}
+	if h < 0 {
+		h = -h
+	}
+	variation := float64(h%5) - 2 // -2 to +2
+	result := base + variation
+	if result < 0 {
+		result = 0
+	}
+	return result
 }
