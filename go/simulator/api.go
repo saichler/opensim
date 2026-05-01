@@ -309,8 +309,25 @@ func personalizeResponse(response interface{}, params map[string]string) interfa
 		}
 	}
 
-	// Vary slot stock levels and recalculate summaries
+	// Vary slot count per machine, then vary stock levels and recalculate summaries
 	if slots, ok := obj["slots"].([]interface{}); ok && hasMachineId {
+		// Determine per-machine slot count from the template pool
+		slotCounts := []int{6, 8, 10, 12, 16}
+		h := 0
+		for _, c := range mid + "slotCount" {
+			h = h*31 + int(c)
+		}
+		if h < 0 {
+			h = -h
+		}
+		numSlots := slotCounts[h%len(slotCounts)]
+		if numSlots > len(slots) {
+			numSlots = len(slots)
+		}
+		slots = slots[:numSlots]
+		obj["slots"] = slots
+		obj["totalSlots"] = float64(numSlots)
+
 		empty := 0
 		lowStock := 0
 		for i, slot := range slots {

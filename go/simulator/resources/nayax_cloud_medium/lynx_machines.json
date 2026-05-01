@@ -263,11 +263,19 @@
           { "slotNumber": 5, "productName": "Monster Energy 16oz", "sku": "SKU-ME16", "price": 350, "capacity": 6, "currentStock": 6, "status": "ok" },
           { "slotNumber": 6, "productName": "Bottled Water 16oz", "sku": "SKU-BW16", "price": 150, "capacity": 12, "currentStock": 9, "status": "ok" },
           { "slotNumber": 7, "productName": "KitKat Bar", "sku": "SKU-KK01", "price": 200, "capacity": 8, "currentStock": 0, "status": "empty" },
-          { "slotNumber": 8, "productName": "Doritos Nacho", "sku": "SKU-DN01", "price": 225, "capacity": 8, "currentStock": 4, "status": "ok" }
+          { "slotNumber": 8, "productName": "Doritos Nacho", "sku": "SKU-DN01", "price": 225, "capacity": 8, "currentStock": 4, "status": "ok" },
+          { "slotNumber": 9, "productName": "Red Bull 8.4oz", "sku": "SKU-RB08", "price": 325, "capacity": 6, "currentStock": 4, "status": "ok" },
+          { "slotNumber": 10, "productName": "Gatorade Fruit Punch", "sku": "SKU-GF20", "price": 250, "capacity": 8, "currentStock": 6, "status": "ok" },
+          { "slotNumber": 11, "productName": "M&M's Peanut", "sku": "SKU-MM01", "price": 200, "capacity": 10, "currentStock": 2, "status": "low" },
+          { "slotNumber": 12, "productName": "Pringles Original", "sku": "SKU-PR01", "price": 275, "capacity": 6, "currentStock": 5, "status": "ok" },
+          { "slotNumber": 13, "productName": "Tropicana OJ 10oz", "sku": "SKU-TJ10", "price": 225, "capacity": 8, "currentStock": 8, "status": "ok" },
+          { "slotNumber": 14, "productName": "Reese's Cups", "sku": "SKU-RC01", "price": 200, "capacity": 10, "currentStock": 3, "status": "low" },
+          { "slotNumber": 15, "productName": "Smartwater 20oz", "sku": "SKU-SW20", "price": 250, "capacity": 8, "currentStock": 0, "status": "empty" },
+          { "slotNumber": 16, "productName": "Nature Valley Granola", "sku": "SKU-NV01", "price": 175, "capacity": 12, "currentStock": 10, "status": "ok" }
         ],
-        "totalSlots": 8,
-        "emptySlots": 1,
-        "lowStockSlots": 2
+        "totalSlots": 16,
+        "emptySlots": 2,
+        "lowStockSlots": 3
       }
     },
     {
