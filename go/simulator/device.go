@@ -245,6 +245,11 @@ func (sm *SimulatorManager) CreateDevicesWithOptions(startIP string, count int, 
 			device.metricsCycler = NewMetricsCycler(int64(i), profile)
 			device.metricsCycler.InitGPUMetrics(int64(i), profile.GPU)
 
+			// Initialize inventory cycler for vending devices
+			if isVendingResource(deviceResourceFile) {
+				device.inventoryCycler = NewInventoryCycler()
+			}
+
 			// Cache the dynamic values using atomic for lock-free access
 			device.cachedSysName.Store(sysNameValue)
 			device.cachedSysLocation.Store(sysLocationValue)
@@ -466,6 +471,11 @@ func (sm *SimulatorManager) createSingleDevice(deviceIndex int, deviceIP net.IP,
 	device.metricsCycler = NewMetricsCycler(int64(deviceIndex), profile)
 	device.metricsCycler.InitGPUMetrics(int64(deviceIndex), profile.GPU)
 
+	// Initialize inventory cycler for vending devices
+	if isVendingResource(resourceFile) {
+		device.inventoryCycler = NewInventoryCycler()
+	}
+
 	// Cache the dynamic values using atomic for lock-free access
 	device.cachedSysName.Store(sysNameValue)
 	device.cachedSysLocation.Store(sysLocationValue)
@@ -636,4 +646,12 @@ func (d *DeviceSimulator) stopListenersOnly() {
 		d.tunIface.destroy() // Close FD only, no ip link delete
 	}
 	d.running = false
+}
+
+// isVendingResource returns true if the resource file is a vending machine type
+// that should have time-based inventory cycling.
+func isVendingResource(resourceFile string) bool {
+	return strings.Contains(resourceFile, "nayax_cloud") ||
+		strings.Contains(resourceFile, "tcn_zk") ||
+		strings.Contains(resourceFile, "afen_")
 }

@@ -79,7 +79,8 @@ type DeviceSimulator struct {
 	// Cached frequently accessed values (lock-free)
 	cachedSysName     atomic.Value // Stores string
 	cachedSysLocation atomic.Value // Stores string
-	metricsCycler *MetricsCycler   // Per-device cycling CPU/memory metrics
+	metricsCycler    *MetricsCycler    // Per-device cycling CPU/memory metrics
+	inventoryCycler  *InventoryCycler  // Per-device time-based inventory depletion (vending only)
 	netNamespace  *NetNamespace   // Network namespace (nil if using root namespace)
 	running      bool
 	mu           sync.RWMutex

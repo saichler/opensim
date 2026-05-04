@@ -149,7 +149,7 @@ func (s *APIServer) handleAPIRequestMultiMethod(w http.ResponseWriter, r *http.R
 
 	// Extract path parameters and personalize the response
 	params := extractPathParams(r.URL.Path, matchedResource.Path)
-	response := personalizeResponse(matchedResource.Response, params)
+	response := personalizeResponse(matchedResource.Response, params, s.device.inventoryCycler)
 
 	responseData, err := json.MarshalIndent(response, "", "  ")
 	if err != nil {
@@ -282,7 +282,7 @@ func extractPathParams(requestPath, pattern string) map[string]string {
 // personalizeResponse creates a deep copy of the response and replaces values
 // based on path parameters. Replaces ID fields, varies stock levels, and
 // recalculates summary fields for realistic per-device simulation.
-func personalizeResponse(response interface{}, params map[string]string) interface{} {
+func personalizeResponse(response interface{}, params map[string]string, invCycler *InventoryCycler) interface{} {
 	if len(params) == 0 {
 		return response
 	}
@@ -335,14 +335,19 @@ func personalizeResponse(response interface{}, params map[string]string) interfa
 			if !ok {
 				continue
 			}
-			if stock, ok := s["currentStock"].(float64); ok {
-				newStock := varyNumber(stock, mid, fmt.Sprintf("slot%d", i))
+			if _, ok := s["currentStock"].(float64); ok {
 				cap := 10.0
 				if c, ok := s["capacity"].(float64); ok {
 					cap = c
 				}
-				if newStock > cap {
-					newStock = cap
+				var newStock float64
+				if invCycler != nil {
+					newStock = invCycler.GetStock(cap, mid, i)
+				} else {
+					newStock = varyNumber(cap, mid, fmt.Sprintf("slot%d", i))
+					if newStock > cap {
+						newStock = cap
+					}
 				}
 				s["currentStock"] = newStock
 				if newStock == 0 {
