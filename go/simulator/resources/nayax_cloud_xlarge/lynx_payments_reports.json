@@ -1,0 +1,227 @@
+{
+  "snmp": [],
+  "ssh": [],
+  "api": [
+    {
+      "method": "POST",
+      "path": "/lynx/v1/payments",
+      "response": {
+        "paymentId": "PAY-480001",
+        "transactionId": "TXN-xl-a1b2c3d4-0100",
+        "status": "approved",
+        "amount": 200,
+        "currency": "USD",
+        "authCode": "C78901",
+        "createdAt": "2026-04-17T12:00:00Z"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/lynx/v1/payments/{paymentId}/refund",
+      "response": {
+        "refundId": "REF-490001",
+        "paymentId": "PAY-480001",
+        "status": "approved",
+        "amount": 200,
+        "currency": "USD",
+        "createdAt": "2026-04-17T12:05:00Z"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/lynx/v1/reports/revenue",
+      "response": {
+        "period": "last_30_days",
+        "totalRevenue": 1710000000,
+        "totalTransactions": 7600000,
+        "averageTransactionValue": 225,
+        "currency": "USD",
+        "dailyBreakdown": [
+          { "date": "2026-04-17", "revenue": 57900000, "transactions": 257330 },
+          { "date": "2026-04-16", "revenue": 61560000, "transactions": 273600 },
+          { "date": "2026-04-15", "revenue": 56160000, "transactions": 249600 },
+          { "date": "2026-04-14", "revenue": 50520000, "transactions": 224530 },
+          { "date": "2026-04-13", "revenue": 46200000, "transactions": 205330 }
+        ],
+        "byMachineType": {
+          "vending_snack": { "revenue": 509580000, "percentage": 29.8 },
+          "vending_drink": { "revenue": 456570000, "percentage": 26.7 },
+          "coffee": { "revenue": 374490000, "percentage": 21.9 },
+          "ev_charger": { "revenue": 230850000, "percentage": 13.5 },
+          "laundry": { "revenue": 87210000, "percentage": 5.1 },
+          "car_wash": { "revenue": 53010000, "percentage": 3.1 }
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/lynx/v1/reports/sales-by-period",
+      "response": {
+        "period": "last_7_days",
+        "currency": "USD",
+        "data": [
+          { "date": "2026-04-17", "sales": 257330, "revenue": 57900000 },
+          { "date": "2026-04-16", "sales": 273600, "revenue": 61560000 },
+          { "date": "2026-04-15", "sales": 249600, "revenue": 56160000 },
+          { "date": "2026-04-14", "sales": 224530, "revenue": 50520000 },
+          { "date": "2026-04-13", "sales": 205330, "revenue": 46200000 },
+          { "date": "2026-04-12", "sales": 234000, "revenue": 52650000 },
+          { "date": "2026-04-11", "sales": 242400, "revenue": 54540000 }
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/lynx/v1/reports/machine-performance",
+      "response": {
+        "period": "last_30_days",
+        "machines": [
+          { "machineId": "M-400300", "name": "Salt Lake City Express Kiosk", "transactions": 14800, "revenue": 3700000, "uptimePercent": 99.9 },
+          { "machineId": "M-400004", "name": "Houston Campus Coffee Bar", "transactions": 15100, "revenue": 4530000, "uptimePercent": 99.8 },
+          { "machineId": "M-400100", "name": "San Jose Hub Coffee Bar", "transactions": 13900, "revenue": 4170000, "uptimePercent": 99.7 },
+          { "machineId": "M-400009", "name": "Dallas Plaza Snack Stop", "transactions": 12200, "revenue": 2684000, "uptimePercent": 99.6 },
+          { "machineId": "M-400001", "name": "New York Downtown Snack Wall", "transactions": 11400, "revenue": 2508000, "uptimePercent": 99.8 },
+          { "machineId": "M-400200", "name": "Miami Central Drinks", "transactions": 11100, "revenue": 2220000, "uptimePercent": 99.5 },
+          { "machineId": "M-400050", "name": "Nashville Metro Coffee Bar", "transactions": 10500, "revenue": 3150000, "uptimePercent": 98.5 },
+          { "machineId": "M-400002", "name": "Los Angeles Downtown Drinks", "transactions": 9900, "revenue": 1980000, "uptimePercent": 99.4 },
+          { "machineId": "M-400014", "name": "Charlotte Hub Snack Wall", "transactions": 8820, "revenue": 1940400, "uptimePercent": 99.3 },
+          { "machineId": "M-400010", "name": "San Jose Tower Beverages", "transactions": 8280, "revenue": 1656000, "uptimePercent": 99.6 },
+          { "machineId": "M-400003", "name": "Chicago Midtown Combo", "transactions": 7130, "revenue": 1782500, "uptimePercent": 99.5 },
+          { "machineId": "M-400250", "name": "Seattle Express Combo", "transactions": 6300, "revenue": 1575000, "uptimePercent": 99.8 },
+          { "machineId": "M-400008", "name": "San Diego Metro Kiosk", "transactions": 5940, "revenue": 1485000, "uptimePercent": 99.1 },
+          { "machineId": "M-400005", "name": "Phoenix Airport EV Station", "transactions": 650, "revenue": 1560000, "uptimePercent": 99.9 },
+          { "machineId": "M-400175", "name": "Minneapolis Tower Combo", "transactions": 5580, "revenue": 1395000, "uptimePercent": 99.4 }
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/lynx/v1/routes",
+      "response": {
+        "items": [
+          {
+            "routeId": "RTE-4001",
+            "name": "NYC Midtown Morning",
+            "driverId": "DRV-4101",
+            "driverName": "James Rodriguez",
+            "status": "in_progress",
+            "machineIds": ["M-400001", "M-400009", "M-400017"],
+            "scheduledDate": "2026-04-17",
+            "startedAt": "2026-04-17T06:30:00Z"
+          },
+          {
+            "routeId": "RTE-4002",
+            "name": "LA Central Route",
+            "driverId": "DRV-4102",
+            "driverName": "Maria Santos",
+            "status": "in_progress",
+            "machineIds": ["M-400002", "M-400010", "M-400018"],
+            "scheduledDate": "2026-04-17",
+            "startedAt": "2026-04-17T06:00:00Z"
+          },
+          {
+            "routeId": "RTE-4003",
+            "name": "Chicago Loop PM",
+            "driverId": "DRV-4103",
+            "driverName": "Kevin Washington",
+            "status": "scheduled",
+            "machineIds": ["M-400003", "M-400011", "M-400019"],
+            "scheduledDate": "2026-04-17"
+          },
+          {
+            "routeId": "RTE-4004",
+            "name": "Houston Medical District",
+            "driverId": "DRV-4104",
+            "driverName": "Lisa Chang",
+            "status": "scheduled",
+            "machineIds": ["M-400004", "M-400012", "M-400020"],
+            "scheduledDate": "2026-04-17"
+          },
+          {
+            "routeId": "RTE-4005",
+            "name": "Phoenix EV & Laundry",
+            "driverId": "DRV-4105",
+            "driverName": "Carlos Mendez",
+            "status": "completed",
+            "machineIds": ["M-400005", "M-400013"],
+            "scheduledDate": "2026-04-17",
+            "startedAt": "2026-04-17T05:00:00Z",
+            "completedAt": "2026-04-17T08:15:00Z"
+          }
+        ],
+        "totalCount": 580
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/lynx/v1/routes",
+      "response": {
+        "routeId": "RTE-4581",
+        "name": "New Route",
+        "status": "scheduled",
+        "createdAt": "2026-04-17T12:00:00Z"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/lynx/v1/tasks",
+      "response": {
+        "items": [
+          {
+            "taskId": "TSK-40001",
+            "routeId": "RTE-4001",
+            "machineId": "M-400001",
+            "type": "refill",
+            "status": "pending",
+            "priority": "medium",
+            "notes": "Refill slots 2, 4, 7 — low/empty stock",
+            "scheduledDate": "2026-04-17"
+          },
+          {
+            "taskId": "TSK-40002",
+            "routeId": "RTE-4001",
+            "machineId": "M-400150",
+            "type": "repair",
+            "status": "pending",
+            "priority": "high",
+            "notes": "Machine offline since last night — check connectivity module",
+            "scheduledDate": "2026-04-17"
+          },
+          {
+            "taskId": "TSK-40003",
+            "routeId": "RTE-4002",
+            "machineId": "M-400010",
+            "type": "refill",
+            "status": "in_progress",
+            "priority": "low",
+            "notes": "Routine restock — all slots",
+            "scheduledDate": "2026-04-17"
+          }
+        ],
+        "totalCount": 1020
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/lynx/v1/ereceipts/{transactionId}",
+      "response": {
+        "transactionId": "TXN-xl-a1b2c3d4-0001",
+        "receiptNumber": "RCP-20260417-400001",
+        "machineId": "M-400300",
+        "machineName": "Salt Lake City Express Kiosk",
+        "operatorName": "MegaVend International",
+        "operatorAddress": "500 Park Avenue, Floor 42, New York, NY 10022",
+        "items": [
+          { "name": "Premium Photo Print", "quantity": 1, "unitPrice": 250, "total": 250 }
+        ],
+        "subtotal": 250,
+        "tax": 20,
+        "total": 270,
+        "currency": "USD",
+        "paymentMethod": "Visa contactless ****4242",
+        "authCode": "XL40001",
+        "timestamp": "2026-04-17T09:22:10Z"
+      }
+    }
+  ]
+}

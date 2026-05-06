@@ -1,0 +1,210 @@
+{
+  "snmp": [],
+  "ssh": [],
+  "api": [
+    {
+      "method": "POST",
+      "path": "/lynx/v1/SignIn",
+      "response": {
+        "token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.sim.nayax-cloud-xlarge",
+        "expiresIn": 3600,
+        "tokenType": "Bearer",
+        "user": {
+          "userId": "USR-400",
+          "email": "admin@megavend.com",
+          "role": "operator",
+          "actorId": "ACT-4001"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/lynx/v1/SignOut",
+      "response": {
+        "success": true,
+        "message": "Session terminated"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/lynx/v1/actors",
+      "response": {
+        "items": [
+          {
+            "actorId": "ACT-4001",
+            "name": "MegaVend International",
+            "type": "operator",
+            "email": "ops@megavend.com",
+            "phone": "+1-555-4001",
+            "status": "active",
+            "machineCount": 30000,
+            "createdAt": "2021-06-01T10:00:00Z"
+          },
+          {
+            "actorId": "ACT-4002",
+            "name": "Northeast US Division",
+            "type": "sub-operator",
+            "email": "northeast@megavend.com",
+            "phone": "+1-555-4002",
+            "status": "active",
+            "machineCount": 4200,
+            "parentActorId": "ACT-4001",
+            "createdAt": "2021-08-15T09:00:00Z"
+          },
+          {
+            "actorId": "ACT-4003",
+            "name": "West Coast Division",
+            "type": "sub-operator",
+            "email": "westcoast@megavend.com",
+            "phone": "+1-555-4003",
+            "status": "active",
+            "machineCount": 5100,
+            "parentActorId": "ACT-4001",
+            "createdAt": "2021-08-15T10:00:00Z"
+          },
+          {
+            "actorId": "ACT-4004",
+            "name": "Southeast US Division",
+            "type": "sub-operator",
+            "email": "southeast@megavend.com",
+            "phone": "+1-555-4004",
+            "status": "active",
+            "machineCount": 3800,
+            "parentActorId": "ACT-4001",
+            "createdAt": "2021-10-01T08:00:00Z"
+          },
+          {
+            "actorId": "ACT-4005",
+            "name": "Midwest Division",
+            "type": "sub-operator",
+            "email": "midwest@megavend.com",
+            "phone": "+1-555-4005",
+            "status": "active",
+            "machineCount": 4500,
+            "parentActorId": "ACT-4001",
+            "createdAt": "2021-10-01T09:00:00Z"
+          },
+          {
+            "actorId": "ACT-4006",
+            "name": "Texas & Southwest Division",
+            "type": "sub-operator",
+            "email": "txsw@megavend.com",
+            "phone": "+1-555-4006",
+            "status": "active",
+            "machineCount": 3600,
+            "parentActorId": "ACT-4001",
+            "createdAt": "2022-01-10T08:00:00Z"
+          },
+          {
+            "actorId": "ACT-4007",
+            "name": "Pacific Northwest Division",
+            "type": "sub-operator",
+            "email": "pnw@megavend.com",
+            "phone": "+1-555-4007",
+            "status": "active",
+            "machineCount": 2200,
+            "parentActorId": "ACT-4001",
+            "createdAt": "2022-03-20T10:00:00Z"
+          },
+          {
+            "actorId": "ACT-4008",
+            "name": "Mountain & Plains Division",
+            "type": "sub-operator",
+            "email": "mountain@megavend.com",
+            "phone": "+1-555-4008",
+            "status": "active",
+            "machineCount": 1800,
+            "parentActorId": "ACT-4001",
+            "createdAt": "2022-06-15T09:00:00Z"
+          },
+          {
+            "actorId": "ACT-4009",
+            "name": "Great Lakes Division",
+            "type": "sub-operator",
+            "email": "greatlakes@megavend.com",
+            "phone": "+1-555-4009",
+            "status": "active",
+            "machineCount": 2500,
+            "parentActorId": "ACT-4001",
+            "createdAt": "2022-09-01T08:00:00Z"
+          },
+          {
+            "actorId": "ACT-4010",
+            "name": "Mid-Atlantic Division",
+            "type": "sub-operator",
+            "email": "midatlantic@megavend.com",
+            "phone": "+1-555-4010",
+            "status": "active",
+            "machineCount": 1500,
+            "parentActorId": "ACT-4001",
+            "createdAt": "2023-01-05T10:00:00Z"
+          },
+          {
+            "actorId": "ACT-4011",
+            "name": "New England Division",
+            "type": "sub-operator",
+            "email": "newengland@megavend.com",
+            "phone": "+1-555-4011",
+            "status": "active",
+            "machineCount": 900,
+            "parentActorId": "ACT-4001",
+            "createdAt": "2023-04-10T09:00:00Z"
+          },
+          {
+            "actorId": "ACT-4012",
+            "name": "Florida Operations",
+            "type": "sub-operator",
+            "email": "florida@megavend.com",
+            "phone": "+1-555-4012",
+            "status": "active",
+            "machineCount": 2100,
+            "parentActorId": "ACT-4001",
+            "createdAt": "2023-07-01T08:00:00Z"
+          }
+        ],
+        "totalCount": 12,
+        "page": 1,
+        "pageSize": 50
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/lynx/v1/actors/{actorId}",
+      "response": {
+        "actorId": "ACT-4001",
+        "name": "MegaVend International",
+        "type": "operator",
+        "email": "ops@megavend.com",
+        "phone": "+1-555-4001",
+        "status": "active",
+        "address": {
+          "street": "500 Park Avenue, Floor 42",
+          "city": "New York",
+          "state": "NY",
+          "zip": "10022",
+          "country": "US"
+        },
+        "machineCount": 30000,
+        "deviceCount": 35000,
+        "settings": {
+          "currency": "USD",
+          "timezone": "America/New_York",
+          "language": "en"
+        },
+        "createdAt": "2021-06-01T10:00:00Z",
+        "updatedAt": "2026-04-15T14:30:00Z"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/lynx/v1/actors",
+      "response": {
+        "actorId": "ACT-4013",
+        "name": "New Sub-Operator",
+        "type": "sub-operator",
+        "status": "active",
+        "createdAt": "2026-04-17T12:00:00Z"
+      }
+    }
+  ]
+}

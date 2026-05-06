@@ -28,12 +28,17 @@ const (
 	depletionSlow   = 0.4 // 40% depleted
 	// Jitter: ±15 minutes expressed as fraction of cycle
 	jitterMaxFraction = 15.0 / 360.0 // 15 min / 360 min
+	// Batch restocking: machines are assigned to batches that restock at staggered times.
+	// With 4 batches in a 6-hour cycle, a batch restocks every 90 minutes.
+	restockBatchCount = 4
 )
 
 var depletionRates = []float64{depletionFast, depletionNormal, depletionSlow}
 
 // InventoryCycler computes time-based stock depletion for vending machine slots.
-// Stock decreases linearly over a 6-hour cycle then resets to full (simulating restock).
+// Machines are grouped into batches that restock at staggered intervals within the
+// 6-hour cycle. Each batch depletes independently after its restock time, so at any
+// given moment some machines are freshly restocked while others are near-empty.
 // No goroutines or timers — uses time.Now() on each call.
 type InventoryCycler struct {
 	cycleDuration time.Duration
@@ -49,10 +54,31 @@ func NewInventoryCycler() *InventoryCycler {
 }
 
 // GetStock returns the current stock level for a slot based on elapsed time.
-// Each machineId+slotIndex combination gets a deterministic depletion rate and jitter.
+// The machine is assigned to a restock batch based on its ID hash. Each batch
+// restocks at a different offset within the cycle, so machines deplete and
+// restock in waves rather than all at once.
 func (ic *InventoryCycler) GetStock(capacity float64, machineId string, slotIndex int) float64 {
 	elapsed := time.Since(ic.startTime) % ic.cycleDuration
-	progress := float64(elapsed) / float64(ic.cycleDuration) // 0.0 → 1.0
+
+	// Assign machine to a restock batch (deterministic by machineId)
+	batchIndex := slotHash(machineId, 0, "batch") % restockBatchCount
+	batchInterval := ic.cycleDuration / time.Duration(restockBatchCount)
+	batchOffset := time.Duration(batchIndex) * batchInterval
+
+	// Time since this machine's most recent restock within the cycle
+	sinceRestock := elapsed - batchOffset
+	if sinceRestock < 0 {
+		// Machine hasn't restocked yet in this cycle; it's still depleting
+		// from the previous cycle's restock (which happened at batchOffset
+		// in the prior cycle).
+		sinceRestock += ic.cycleDuration
+	}
+
+	// Progress within this machine's depletion window (0.0 = just restocked, 1.0 = fully depleted)
+	progress := float64(sinceRestock) / float64(batchInterval)
+	if progress > 1 {
+		progress = 1
+	}
 
 	// Deterministic depletion rate from hash of machineId + slotIndex
 	h := slotHash(machineId, slotIndex, "rate")
@@ -60,7 +86,7 @@ func (ic *InventoryCycler) GetStock(capacity float64, machineId string, slotInde
 
 	// Per-slot jitter: shift progress by ±15 minutes
 	jh := slotHash(machineId, slotIndex, "jitter")
-	jitter := (float64(jh%100)/100.0*2.0 - 1.0) * jitterMaxFraction // -0.0417 to +0.0417
+	jitter := (float64(jh%100)/100.0*2.0 - 1.0) * jitterMaxFraction
 	progress = progress + jitter
 	if progress < 0 {
 		progress = 0
